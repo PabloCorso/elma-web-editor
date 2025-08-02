@@ -148,7 +148,7 @@ export class SpriteManager {
         frame.width,
         frame.height,
         x - width / 2,
-        y - height + bounceOffset,
+        y - height / 2,
         width,
         height
       );

@@ -27,7 +27,6 @@ export class EditorEngine {
   private lastPanX: number = 0;
   private lastPanY: number = 0;
   private lastPinchDistance: number = 0;
-  private lastPinchCenter: Position = { x: 0, y: 0 };
 
   // Selection and dragging state
   private isDragging: boolean = false;
@@ -587,7 +586,7 @@ export class EditorEngine {
         useStore
           .getState()
           .setCamera(
-            currentCamera.viewPortOffset.x - panAmount,
+            currentCamera.viewPortOffset.x + panAmount,
             currentCamera.viewPortOffset.y
           );
         break;
@@ -598,7 +597,7 @@ export class EditorEngine {
         useStore
           .getState()
           .setCamera(
-            currentCamera2.viewPortOffset.x + panAmount,
+            currentCamera2.viewPortOffset.x - panAmount,
             currentCamera2.viewPortOffset.y
           );
         break;
@@ -610,7 +609,7 @@ export class EditorEngine {
           .getState()
           .setCamera(
             currentCamera3.viewPortOffset.x,
-            currentCamera3.viewPortOffset.y - panAmount
+            currentCamera3.viewPortOffset.y + panAmount
           );
         break;
 
@@ -621,7 +620,7 @@ export class EditorEngine {
           .getState()
           .setCamera(
             currentCamera4.viewPortOffset.x,
-            currentCamera4.viewPortOffset.y + panAmount
+            currentCamera4.viewPortOffset.y - panAmount
           );
         break;
 
@@ -835,7 +834,9 @@ export class EditorEngine {
     });
 
     // Sort polygon indices in descending order to avoid index shifting issues
-    const sortedPolygonIndices = Array.from(verticesByPolygonIndex.keys()).sort((a, b) => b - a);
+    const sortedPolygonIndices = Array.from(verticesByPolygonIndex.keys()).sort(
+      (a, b) => b - a
+    );
 
     // Delete vertices from each polygon (working backwards to avoid index issues)
     sortedPolygonIndices.forEach((polygonIndex) => {
