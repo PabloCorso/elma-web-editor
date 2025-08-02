@@ -1,5 +1,3 @@
-import type { Polygon } from "elmajs";
-
 export const colors = {
   apple: "#dc0000",
   edges: "#db0855",

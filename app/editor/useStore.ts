@@ -2,7 +2,13 @@ import { create } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 
-export type EditorTool = "polygon" | "select" | "apple" | "killer" | "flower" | "hand";
+export type EditorTool =
+  | "polygon"
+  | "select"
+  | "apple"
+  | "killer"
+  | "flower"
+  | "hand";
 
 type Store = {
   // Level data
@@ -37,9 +43,13 @@ type Store = {
   addPolygon: (polygon: Polygon) => void;
   updatePolygon: (index: number, polygon: Polygon) => void;
   removePolygon: (index: number) => void;
+  removeVertex: (polygon: Polygon, vertex: Position) => void;
   addApple: (position: Position) => void;
+  removeApple: (position: Position) => void;
   addKiller: (position: Position) => void;
+  removeKiller: (position: Position) => void;
   addFlower: (position: Position) => void;
+  removeFlower: (position: Position) => void;
   setStart: (position: Position) => void;
   setDrawingPolygon: (vertices: Position[]) => void;
   setMousePosition: (position: Position) => void;
@@ -73,7 +83,7 @@ export const useStore = create<Store>((set, get) => ({
   killers: [],
   flowers: [{ x: 900, y: 500 }],
   start: { x: 100, y: 500 },
-  currentTool: "polygon",
+  currentTool: "select",
   drawingPolygon: [],
   mousePosition: { x: 0, y: 0 },
   viewPortOffset: { x: 150, y: 50 },
@@ -106,14 +116,48 @@ export const useStore = create<Store>((set, get) => ({
       polygons: state.polygons.filter((_, i) => i !== index),
     })),
 
+  removeVertex: (polygon, vertex) =>
+    set((state) => {
+      const updatedPolygons = state.polygons
+        .map((p) => {
+          if (p === polygon) {
+            const updatedVertices = p.vertices.filter((v) => v !== vertex);
+            // If polygon has less than 3 vertices after removal, remove the entire polygon
+            if (updatedVertices.length < 3) {
+              return null; // Will be filtered out
+            }
+            return { ...p, vertices: updatedVertices };
+          }
+          return p;
+        })
+        .filter(Boolean) as Polygon[];
+
+      return { polygons: updatedPolygons };
+    }),
+
   addApple: (position) =>
     set((state) => ({ apples: [...state.apples, position] })),
+
+  removeApple: (position) =>
+    set((state) => ({
+      apples: state.apples.filter((a) => a !== position),
+    })),
 
   addKiller: (position) =>
     set((state) => ({ killers: [...state.killers, position] })),
 
+  removeKiller: (position) =>
+    set((state) => ({
+      killers: state.killers.filter((k) => k !== position),
+    })),
+
   addFlower: (position) =>
     set((state) => ({ flowers: [...state.flowers, position] })),
+
+  removeFlower: (position) =>
+    set((state) => ({
+      flowers: state.flowers.filter((f) => f !== position),
+    })),
 
   setStart: (position) => set({ start: position }),
   setDrawingPolygon: (vertices) => set({ drawingPolygon: vertices }),
@@ -140,16 +184,19 @@ export const useStore = create<Store>((set, get) => ({
 
       // Update each selected vertex with its new position
       state.selectedVertices.forEach((selection, index) => {
-        const polygonIndex = updatedPolygons.findIndex(p => p === selection.polygon);
+        const polygonIndex = updatedPolygons.findIndex(
+          (p) => p === selection.polygon
+        );
         if (polygonIndex !== -1) {
           const vertexIndex = updatedPolygons[polygonIndex].vertices.findIndex(
-            v => v === selection.vertex
+            (v) => v === selection.vertex
           );
           if (vertexIndex !== -1) {
-            updatedPolygons[polygonIndex].vertices[vertexIndex] = newPositions[index];
+            updatedPolygons[polygonIndex].vertices[vertexIndex] =
+              newPositions[index];
             updatedSelectedVertices[index] = {
               polygon: updatedPolygons[polygonIndex],
-              vertex: newPositions[index]
+              vertex: newPositions[index],
             };
           }
         }
@@ -157,7 +204,7 @@ export const useStore = create<Store>((set, get) => ({
 
       return {
         polygons: updatedPolygons,
-        selectedVertices: updatedSelectedVertices
+        selectedVertices: updatedSelectedVertices,
       };
     }),
 
@@ -172,21 +219,21 @@ export const useStore = create<Store>((set, get) => ({
       // Update each selected object with its new position
       state.selectedObjects.forEach((object, index) => {
         const newPos = newPositions[index];
-        
+
         // Find and update the object in the appropriate array
-        const appleIndex = updatedApples.findIndex(a => a === object);
+        const appleIndex = updatedApples.findIndex((a) => a === object);
         if (appleIndex !== -1) {
           updatedApples[appleIndex] = newPos;
           updatedSelectedObjects[index] = newPos;
         }
 
-        const killerIndex = updatedKillers.findIndex(k => k === object);
+        const killerIndex = updatedKillers.findIndex((k) => k === object);
         if (killerIndex !== -1) {
           updatedKillers[killerIndex] = newPos;
           updatedSelectedObjects[index] = newPos;
         }
 
-        const flowerIndex = updatedFlowers.findIndex(f => f === object);
+        const flowerIndex = updatedFlowers.findIndex((f) => f === object);
         if (flowerIndex !== -1) {
           updatedFlowers[flowerIndex] = newPos;
           updatedSelectedObjects[index] = newPos;
@@ -205,7 +252,7 @@ export const useStore = create<Store>((set, get) => ({
         killers: updatedKillers,
         flowers: updatedFlowers,
         start: updatedStart,
-        selectedObjects: updatedSelectedObjects
+        selectedObjects: updatedSelectedObjects,
       };
     }),
 

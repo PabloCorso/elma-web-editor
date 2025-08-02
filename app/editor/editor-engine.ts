@@ -41,9 +41,7 @@ export class EditorEngine {
 
   // Hand tool state
   private isSpacePressed: boolean = false;
-  private previousTool: EditorTool = "polygon";
-  private lastTapTime: number = 0;
-  private lastTapPosition: Position = { x: 0, y: 0 };
+  private previousTool: EditorTool = "select";
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -664,6 +662,12 @@ export class EditorEngine {
           useStore.getState().setCurrentTool("hand");
         }
         break;
+
+      case "Delete":
+      case "Backspace":
+        e.preventDefault();
+        this.deleteSelection();
+        break;
     }
   };
 
@@ -813,6 +817,65 @@ export class EditorEngine {
         }
       }
     });
+  }
+
+  private deleteSelection() {
+    const state = useStore.getState();
+
+    // Group selected vertices by polygon index to handle multiple deletions properly
+    const verticesByPolygonIndex = new Map<number, Position[]>();
+    state.selectedVertices.forEach(({ polygon, vertex }) => {
+      const polygonIndex = state.polygons.indexOf(polygon);
+      if (polygonIndex !== -1) {
+        if (!verticesByPolygonIndex.has(polygonIndex)) {
+          verticesByPolygonIndex.set(polygonIndex, []);
+        }
+        verticesByPolygonIndex.get(polygonIndex)!.push(vertex);
+      }
+    });
+
+    // Sort polygon indices in descending order to avoid index shifting issues
+    const sortedPolygonIndices = Array.from(verticesByPolygonIndex.keys()).sort((a, b) => b - a);
+
+    // Delete vertices from each polygon (working backwards to avoid index issues)
+    sortedPolygonIndices.forEach((polygonIndex) => {
+      const polygon = state.polygons[polygonIndex];
+      const verticesToDelete = verticesByPolygonIndex.get(polygonIndex)!;
+
+      if (polygon) {
+        // Remove all selected vertices from this polygon
+        const updatedVertices = polygon.vertices.filter(
+          (vertex) => !verticesToDelete.includes(vertex)
+        );
+
+        // If polygon has less than 3 vertices after deletion, remove it entirely
+        if (updatedVertices.length < 3) {
+          state.removePolygon(polygonIndex);
+        } else {
+          // Update the polygon with remaining vertices
+          state.updatePolygon(polygonIndex, {
+            ...polygon,
+            vertices: updatedVertices,
+          });
+        }
+      }
+    });
+
+    // Delete selected objects
+    state.selectedObjects.forEach((object) => {
+      // Check which type of object it is and remove it accordingly
+      if (state.apples.includes(object)) {
+        state.removeApple(object);
+      } else if (state.killers.includes(object)) {
+        state.removeKiller(object);
+      } else if (state.flowers.includes(object)) {
+        state.removeFlower(object);
+      }
+      // Note: We don't delete the start position as it's required
+    });
+
+    // Clear selection after deletion
+    state.clearSelection();
   }
 
   public fitToView() {
@@ -1294,13 +1357,13 @@ export class EditorEngine {
     const width = maxX - minX;
     const height = maxY - minY;
 
-    // Draw semi-transparent fill
-    this.ctx.fillStyle = "rgba(0, 123, 255, 0.1)";
+    // Draw semi-transparent fill with more visible color
+    this.ctx.fillStyle = "rgba(255, 255, 0, 0.2)";
     this.ctx.fillRect(minX, minY, width, height);
 
-    // Draw border
-    this.ctx.strokeStyle = "rgba(0, 123, 255, 0.8)";
-    this.ctx.lineWidth = this.getDynamicLineWidth(1);
+    // Draw border with bright yellow and thicker line
+    this.ctx.strokeStyle = "#ffff00";
+    this.ctx.lineWidth = this.getDynamicLineWidth(2);
     this.ctx.setLineDash([
       5 / useStore.getState().zoom,
       5 / useStore.getState().zoom,
