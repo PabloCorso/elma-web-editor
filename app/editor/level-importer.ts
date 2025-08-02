@@ -20,9 +20,16 @@ export class LevelImporter {
    */
   static async importFromFile(file: File): Promise<ImportResult> {
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      return this.parseLevelData(data);
+      // Check if it's a .lev file
+      if (file.name.toLowerCase().endsWith('.lev')) {
+        const arrayBuffer = await file.arrayBuffer();
+        return await this.parseLevFile(arrayBuffer);
+      } else {
+        // Fallback to JSON parsing for other file types
+        const text = await file.text();
+        const data = JSON.parse(text);
+        return this.parseLevelData(data);
+      }
     } catch (error) {
       return {
         success: false,

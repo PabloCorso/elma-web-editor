@@ -88,24 +88,88 @@ export function Sidebar() {
     return categories;
   }, [searchTerm]);
 
-  const handleDownload = () => {
-    const state = useStore.getState();
-    const levelData = {
-      polygons: state.polygons,
-      apples: state.apples,
-      killers: state.killers,
-      start: state.start,
-      flowers: state.flowers,
-    };
+  const handleDownload = async () => {
+    try {
+      const state = useStore.getState();
 
-    const dataStr = JSON.stringify(levelData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
+      // Import elmajs dynamically
+      const elmajs = await import("elmajs");
 
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = "level.json";
-    link.click();
-    URL.revokeObjectURL(link.href);
+      // Scale factor to convert from our larger coordinates back to elmajs coordinates
+      const scaleFactor = 1 / 20;
+
+      // Prepare polygons for elmajs
+      const scaledPolygons = state.polygons.map((polygon) => ({
+        vertices: polygon.vertices.map((vertex) => ({
+          x: vertex.x * scaleFactor,
+          y: vertex.y * scaleFactor,
+        })),
+        grass: polygon.grass,
+      }));
+
+      // Prepare objects for elmajs
+      const scaledObjects = [
+        ...state.apples.map((apple) => ({
+          type: 2, // Apple
+          position: {
+            x: apple.x * scaleFactor,
+            y: apple.y * scaleFactor,
+          },
+          gravity: 0,
+          animation: 0,
+        })),
+        ...state.killers.map((killer) => ({
+          type: 3, // Killer
+          position: {
+            x: killer.x * scaleFactor,
+            y: killer.y * scaleFactor,
+          },
+          gravity: 0,
+          animation: 0,
+        })),
+        ...state.flowers.map((flower) => ({
+          type: 1, // Exit/Flower
+          position: {
+            x: flower.x * scaleFactor,
+            y: flower.y * scaleFactor,
+          },
+          gravity: 0,
+          animation: 0,
+        })),
+        {
+          type: 4, // Start
+          position: {
+            x: state.start.x * scaleFactor,
+            y: state.start.y * scaleFactor,
+          },
+          gravity: 0,
+          animation: 0,
+        },
+      ];
+
+      // Create a new level
+      const level = new elmajs.Level();
+      level.name = "Untitled";
+      level.polygons = scaledPolygons;
+      level.objects = scaledObjects;
+      level.integrity = level.calculateIntegrity();
+
+      // Convert to binary .lev format
+      const levData = level.toBuffer();
+
+      // Create and download the file
+      const dataBlob = new Blob([levData], {
+        type: "application/octet-stream",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = "level.lev";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error("Failed to download level:", error);
+      alert("Failed to download level. Please try again.");
+    }
   };
 
   const handleFileImport = async (
@@ -300,7 +364,7 @@ export function Sidebar() {
             <span>Import Level</span>
             <input
               type="file"
-              accept=".json"
+              accept=".lev,lev"
               onChange={handleFileImport}
               className="hidden"
             />
