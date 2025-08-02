@@ -8,6 +8,7 @@ import {
 import type { Position, Polygon } from "elmajs";
 import { SpriteManager } from "./sprite-manager";
 import { LevelImporter } from "./level-importer";
+import type { EditorTool } from "./useStore";
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -25,6 +26,8 @@ export class EditorEngine {
   private isPanning: boolean = false;
   private lastPanX: number = 0;
   private lastPanY: number = 0;
+  private lastPinchDistance: number = 0;
+  private lastPinchCenter: Position = { x: 0, y: 0 };
 
   // Selection and dragging state
   private isDragging: boolean = false;
@@ -35,6 +38,12 @@ export class EditorEngine {
   private isMarqueeSelecting: boolean = false;
   private marqueeStartPos: Position = { x: 0, y: 0 };
   private marqueeEndPos: Position = { x: 0, y: 0 };
+
+  // Hand tool state
+  private isSpacePressed: boolean = false;
+  private previousTool: EditorTool = "polygon";
+  private lastTapTime: number = 0;
+  private lastTapPosition: Position = { x: 0, y: 0 };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -66,6 +75,7 @@ export class EditorEngine {
 
     // Keyboard events
     document.addEventListener("keydown", this.handleKeyDown);
+    document.addEventListener("keyup", this.handleKeyUp); // Add keyup listener
     window.addEventListener("resize", this.handleResize);
   }
 
@@ -98,6 +108,11 @@ export class EditorEngine {
         useStore.getState().addKiller(worldPos);
       } else if (store.currentTool === "flower") {
         useStore.getState().addFlower(worldPos);
+      } else if (store.currentTool === "hand") {
+        // Start panning with hand tool
+        this.isPanning = true;
+        this.lastPanX = e.clientX;
+        this.lastPanY = e.clientY;
       } else if (store.currentTool === "select") {
         // Handle selection and dragging
         const vertex = this.findVertexNearPosition(worldPos);
@@ -161,6 +176,11 @@ export class EditorEngine {
 
     // Stop dragging and marquee selection
     if (e.button === 0) {
+      // Stop panning if hand tool is active
+      if (useStore.getState().currentTool === "hand") {
+        this.isPanning = false;
+      }
+
       this.isDragging = false;
 
       // Finalize marquee selection
@@ -323,42 +343,221 @@ export class EditorEngine {
 
   private handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
+
     if (e.touches.length === 2) {
+      // Two-finger gesture - panning and zooming
       this.isPanning = true;
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
+
+      // Calculate center point for panning
       this.lastPanX = (touch1.clientX + touch2.clientX) / 2;
       this.lastPanY = (touch1.clientY + touch2.clientY) / 2;
+
+      // Calculate initial pinch distance for zooming
+      this.lastPinchDistance = this.getDistance(touch1, touch2);
+
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      // Single touch - handle like mouse down
+      const touch = e.touches[0];
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const screenX = (touch.clientX - rect.left) * scaleX;
+      const screenY = (touch.clientY - rect.top) * scaleY;
+      const worldPos = this.screenToWorld(screenX, screenY);
+      console.log(useStore.getState().apples);
+      console.log({ touch, worldPos });
+
+      const store = useStore.getState();
+
+      if (store.currentTool === "polygon") {
+        // Add vertex to drawing polygon
+        const newVertices = [...store.drawingPolygon, worldPos];
+        useStore.getState().setDrawingPolygon(newVertices);
+      } else if (store.currentTool === "apple") {
+        useStore.getState().addApple(worldPos);
+      } else if (store.currentTool === "killer") {
+        useStore.getState().addKiller(worldPos);
+      } else if (store.currentTool === "flower") {
+        useStore.getState().addFlower(worldPos);
+      } else if (store.currentTool === "hand") {
+        // Start panning with hand tool
+        this.isPanning = true;
+        this.lastPanX = touch.clientX;
+        this.lastPanY = touch.clientY;
+      } else if (store.currentTool === "select") {
+        // Handle selection and dragging
+        const vertex = this.findVertexNearPosition(worldPos);
+        const object = this.findObjectNearPosition(worldPos);
+
+        if (vertex) {
+          // Select vertex
+          useStore.getState().selectVertex(vertex.polygon, vertex.vertex);
+          this.isDragging = true;
+          this.dragStartPos = worldPos;
+          this.dragOffset = { x: 0, y: 0 };
+        } else if (object) {
+          // Select object
+          useStore.getState().selectObject(object);
+          this.isDragging = true;
+          this.dragStartPos = worldPos;
+          this.dragOffset = { x: 0, y: 0 };
+        } else {
+          // Start marquee selection
+          this.isMarqueeSelecting = true;
+          this.marqueeStartPos = worldPos;
+          this.marqueeEndPos = worldPos;
+        }
+      }
     }
   };
 
   private handleTouchMove = (e: TouchEvent) => {
     e.preventDefault();
+
     if (e.touches.length === 2 && this.isPanning) {
+      // Two-finger gesture - zooming only (no panning)
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
-      const currentX = (touch1.clientX + touch2.clientX) / 2;
-      const currentY = (touch1.clientY + touch2.clientY) / 2;
-
-      const deltaX = currentX - this.lastPanX;
-      const deltaY = currentY - this.lastPanY;
 
       const currentCamera = useStore.getState();
-      useStore
-        .getState()
-        .setCamera(
-          currentCamera.viewPortOffset.x - deltaX * this.PAN_SPEED,
-          currentCamera.viewPortOffset.y - deltaY * this.PAN_SPEED
-        );
 
-      this.lastPanX = currentX;
-      this.lastPanY = currentY;
+      // Handle zooming
+      const newDist = this.getDistance(touch1, touch2);
+      if (this.lastPinchDistance > 0) {
+        // Only zoom if the distance change is significant enough
+        const distanceChange = Math.abs(newDist - this.lastPinchDistance);
+        const minDistanceChange = 5; // Minimum pixels of distance change to trigger zoom
+
+        if (distanceChange > minDistanceChange) {
+          const zoomFactor = newDist / this.lastPinchDistance;
+          // Make zoom less aggressive by using a smaller factor
+          const smoothedZoomFactor = 1 + (zoomFactor - 1) * 0.3;
+          const newZoom = Math.max(
+            this.MIN_ZOOM,
+            Math.min(this.MAX_ZOOM, currentCamera.zoom * smoothedZoomFactor)
+          );
+
+          if (newZoom !== currentCamera.zoom) {
+            // Get the midpoint of the two touches
+            const mid = this.getMidpoint(touch1, touch2);
+            const rect =
+              this.canvas.parentElement?.getBoundingClientRect() ||
+              this.canvas.getBoundingClientRect();
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            const midScreenX = (mid.clientX - rect.left) * scaleX;
+            const midScreenY = (mid.clientY - rect.top) * scaleY;
+
+            // Calculate what world position is currently under the midpoint
+            const currentWorldX =
+              midScreenX / currentCamera.zoom - currentCamera.viewPortOffset.x;
+            const currentWorldY =
+              midScreenY / currentCamera.zoom - currentCamera.viewPortOffset.y;
+
+            // Calculate new camera offset to keep the same world position under the midpoint
+            const newOffsetX = midScreenX / newZoom - currentWorldX;
+            const newOffsetY = midScreenY / newZoom - currentWorldY;
+
+            useStore.getState().setZoom(newZoom);
+            useStore.getState().setCamera(newOffsetX, newOffsetY);
+          }
+        }
+      }
+
+      this.lastPinchDistance = newDist;
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      // Single touch - handle like mouse move
+      const touch = e.touches[0];
+      const rect = this.canvas.getBoundingClientRect();
+      const screenX = touch.clientX - rect.left;
+      const screenY = touch.clientY - rect.top;
+      const worldPos = this.screenToWorld(screenX, screenY);
+
+      const store = useStore.getState();
+
+      // Update mouse position for drawing polygon preview
+      useStore.getState().setMousePosition(worldPos);
+
+      if (store.currentTool === "select") {
+        if (this.isDragging) {
+          // Drag selected items - calculate total delta from original position
+          const deltaX = worldPos.x - this.dragStartPos.x;
+          const deltaY = worldPos.y - this.dragStartPos.y;
+
+          // Update selected vertices
+          if (store.selectedVertices.length > 0) {
+            const newPositions = store.selectedVertices.map((sv) => ({
+              x: sv.vertex.x + deltaX,
+              y: sv.vertex.y + deltaY,
+            }));
+            useStore.getState().updateSelectedVertices(newPositions);
+          }
+
+          // Update selected objects
+          if (store.selectedObjects.length > 0) {
+            const newPositions = store.selectedObjects.map((obj) => ({
+              x: obj.x + deltaX,
+              y: obj.y + deltaY,
+            }));
+            useStore.getState().updateSelectedObjects(newPositions);
+          }
+        } else if (this.isMarqueeSelecting) {
+          // Update marquee selection
+          this.marqueeEndPos = worldPos;
+        }
+      } else if (store.currentTool === "hand" && this.isPanning) {
+        // Handle single-touch panning with hand tool
+        const deltaX = touch.clientX - this.lastPanX;
+        const deltaY = touch.clientY - this.lastPanY;
+
+        const currentCamera = useStore.getState();
+        useStore
+          .getState()
+          .setCamera(
+            currentCamera.viewPortOffset.x + deltaX * this.PAN_SPEED,
+            currentCamera.viewPortOffset.y + deltaY * this.PAN_SPEED
+          );
+
+        this.lastPanX = touch.clientX;
+        this.lastPanY = touch.clientY;
+      }
     }
   };
 
   private handleTouchEnd = (e: TouchEvent) => {
     if (e.touches.length < 2) {
       this.isPanning = false;
+      this.lastPinchDistance = 0;
+    }
+
+    if (e.touches.length === 0) {
+      // Touch ended - handle like mouse up
+      const store = useStore.getState();
+
+      // Stop panning if hand tool is active
+      if (store.currentTool === "hand") {
+        this.isPanning = false;
+      }
+
+      if (store.currentTool === "select") {
+        if (this.isMarqueeSelecting) {
+          // Finalize marquee selection
+          this.finalizeMarqueeSelection();
+          this.isMarqueeSelecting = false;
+        }
+
+        if (this.isDragging) {
+          this.isDragging = false;
+        }
+      }
     }
   };
 
@@ -456,6 +655,25 @@ export class EditorEngine {
         e.preventDefault();
         this.toggleDebugMode();
         break;
+
+      case " ":
+        e.preventDefault();
+        if (!this.isSpacePressed) {
+          this.isSpacePressed = true;
+          this.previousTool = useStore.getState().currentTool;
+          useStore.getState().setCurrentTool("hand");
+        }
+        break;
+    }
+  };
+
+  private handleKeyUp = (e: KeyboardEvent) => {
+    if (e.key === " ") {
+      e.preventDefault();
+      if (this.isSpacePressed) {
+        this.isSpacePressed = false;
+        useStore.getState().setCurrentTool(this.previousTool);
+      }
     }
   };
 
@@ -686,6 +904,17 @@ export class EditorEngine {
   private render() {
     const state = useStore.getState();
 
+    // Update cursor based on current tool
+    if (this.isPanning) {
+      this.canvas.style.cursor = "grabbing";
+    } else if (state.currentTool === "hand" || this.isSpacePressed) {
+      this.canvas.style.cursor = "grab";
+    } else if (state.currentTool === "select") {
+      this.canvas.style.cursor = "default";
+    } else {
+      this.canvas.style.cursor = "crosshair";
+    }
+
     // Clear canvas
     this.ctx.fillStyle = colors.ground;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -868,8 +1097,8 @@ export class EditorEngine {
 
     this.ctx.stroke();
 
-    // Draw preview line to mouse position
-    if (state.drawingPolygon.length > 0) {
+    // Draw preview line to mouse position (only on desktop)
+    if (state.drawingPolygon.length > 0 && !this.isMobile()) {
       const lastPoint = state.drawingPolygon[state.drawingPolygon.length - 1];
       this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom; // Dynamic line width for preview
@@ -1166,6 +1395,7 @@ export class EditorEngine {
     this.canvas.removeEventListener("touchmove", this.handleTouchMove);
     this.canvas.removeEventListener("touchend", this.handleTouchEnd);
     document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("keyup", this.handleKeyUp); // Remove keyup listener
     window.removeEventListener("resize", this.handleResize);
   }
 
@@ -1202,5 +1432,25 @@ export class EditorEngine {
     this.ctx.fillStyle = "#ffffff";
     this.ctx.fillText(line1, panelX + 10, panelY + 10);
     this.ctx.fillText(line2, panelX + 10, panelY + 35);
+  }
+
+  private getDistance(touch1: Touch, touch2: Touch): number {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  private getMidpoint(
+    t1: Touch,
+    t2: Touch
+  ): { clientX: number; clientY: number } {
+    return {
+      clientX: (t1.clientX + t2.clientX) / 2,
+      clientY: (t1.clientY + t2.clientY) / 2,
+    };
+  }
+
+  private isMobile(): boolean {
+    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
   }
 }

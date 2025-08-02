@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 
-export type EditorTool = "polygon" | "select" | "apple" | "killer" | "flower";
+export type EditorTool = "polygon" | "select" | "apple" | "killer" | "flower" | "hand";
 
 type Store = {
   // Level data

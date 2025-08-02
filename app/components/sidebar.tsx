@@ -42,6 +42,7 @@ export function Sidebar() {
       A: "apple",
       K: "killer",
       F: "flower",
+      H: "hand",
     };
     
     if (toolMap[key]) {
@@ -208,17 +209,6 @@ export function Sidebar() {
           <h2 className="text-sm font-semibold text-gray-300 mb-3">Tools</h2>
           <div className="space-y-2">
             <button
-              onClick={() => setCurrentTool("polygon")}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
-                currentTool === "polygon"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
-            >
-              <span className="text-lg">⬟</span>
-              <span>P<span className="underline decoration-gray-300/60 underline-offset-2">olygon</span></span>
-            </button>
-            <button
               onClick={() => setCurrentTool("select")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === "select"
@@ -227,7 +217,18 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">👆</span>
-              <span>S<span className="underline decoration-gray-300/60 underline-offset-2">elect</span></span>
+              <span><span className="underline decoration-gray-300/60 underline-offset-2">S</span>elect</span>
+            </button>
+            <button
+              onClick={() => setCurrentTool("polygon")}
+              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+                currentTool === "polygon"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+              }`}
+            >
+              <span className="text-lg">⬟</span>
+              <span><span className="underline decoration-gray-300/60 underline-offset-2">P</span>olygon</span>
             </button>
             <button
               onClick={() => setCurrentTool("apple")}
@@ -238,7 +239,7 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">🍎</span>
-              <span>A<span className="underline decoration-gray-300/60 underline-offset-2">pple</span></span>
+              <span><span className="underline decoration-gray-300/60 underline-offset-2">A</span>pple</span>
             </button>
             <button
               onClick={() => setCurrentTool("killer")}
@@ -249,7 +250,7 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">💀</span>
-              <span>K<span className="underline decoration-gray-300/60 underline-offset-2">iller</span></span>
+              <span><span className="underline decoration-gray-300/60 underline-offset-2">K</span>iller</span>
             </button>
             <button
               onClick={() => setCurrentTool("flower")}
@@ -260,7 +261,7 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">🌸</span>
-              <span>F<span className="underline decoration-gray-300/60 underline-offset-2">lower</span></span>
+              <span><span className="underline decoration-gray-300/60 underline-offset-2">F</span>lower</span>
             </button>
           </div>
         </div>
@@ -389,15 +390,15 @@ export function Sidebar() {
           <div className="flex items-center px-4 py-3 space-x-4 min-w-max">
             {/* Tools */}
             <button
-              onClick={() => setCurrentTool("polygon")}
+              onClick={() => setCurrentTool("hand")}
               className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 ${
-                currentTool === "polygon"
+                currentTool === "hand"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
             >
-              <span className="text-xl">⬟</span>
-              <span className="text-xs text-center">Polygon</span>
+              <span className="text-xl">👋</span>
+              <span className="text-xs text-center">Hand</span>
             </button>
             <button
               onClick={() => setCurrentTool("select")}
@@ -409,6 +410,17 @@ export function Sidebar() {
             >
               <span className="text-xl">👆</span>
               <span className="text-xs text-center">Select</span>
+            </button>
+            <button
+              onClick={() => setCurrentTool("polygon")}
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 ${
+                currentTool === "polygon"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+              }`}
+            >
+              <span className="text-xl">⬟</span>
+              <span className="text-xs text-center">Polygon</span>
             </button>
             <button
               onClick={() => setCurrentTool("apple")}

@@ -137,7 +137,9 @@ export class SpriteManager {
 
       // Add bouncing effect for apples and flowers
       const bounceOffset =
-        spriteName === "qfood1" || spriteName === "qexit" ? Math.sin(time * 0.006) * 1.5 : 0;
+        spriteName === "qfood1" || spriteName === "qexit"
+          ? Math.sin(time * 0.006) * 1.5
+          : 0;
 
       ctx.drawImage(
         sprite,
@@ -146,7 +148,7 @@ export class SpriteManager {
         frame.width,
         frame.height,
         x - width / 2,
-        y - height / 2 + bounceOffset,
+        y - height + bounceOffset,
         width,
         height
       );
@@ -170,7 +172,7 @@ export class SpriteManager {
     return this.sprites.size > 0;
   }
 
-    public drawStaticSprite(
+  public drawStaticSprite(
     ctx: CanvasRenderingContext2D,
     spriteName: string,
     x: number,
@@ -181,7 +183,7 @@ export class SpriteManager {
   ) {
     const sprite = this.sprites.get(spriteName);
     const animation = this.animations.get(spriteName);
-    
+
     if (!sprite) {
       console.warn(`Sprite ${spriteName} not found`);
       return;
@@ -206,12 +208,12 @@ export class SpriteManager {
         // Based on Figma: wheel is 19.59x19.59 at bottom-left of 60.34x55.64 image
         // So wheel center is at (19.59/2, 55.64 - 19.59/2) = (9.795, 45.845) from bottom-left
         // This means we need to offset the image by this amount to center the wheel
-        const wheelCenterX = (19.59 / 2) / 60.34; // 0.1624 of image width
+        const wheelCenterX = 19.59 / 2 / 60.34; // 0.1624 of image width
         const wheelCenterY = (55.64 - 19.59 / 2) / 55.64; // 0.824 of image height
-        
+
         const offsetX = width * wheelCenterX;
         const offsetY = height * wheelCenterY;
-        
+
         ctx.drawImage(
           sprite,
           0,
@@ -224,18 +226,37 @@ export class SpriteManager {
           height
         );
       } else {
-        // Fallback to centered positioning for other sprites
-        ctx.drawImage(
-          sprite,
-          0,
-          0,
-          40,
-          40,
-          x - width / 2,
-          y - height / 2,
-          width,
-          height
-        );
+        // For objects like apples, flowers, killers - position at bottom
+        if (
+          spriteName === "qfood1" ||
+          spriteName === "qexit" ||
+          spriteName === "qkiller"
+        ) {
+          ctx.drawImage(
+            sprite,
+            0,
+            0,
+            40,
+            40,
+            x - width / 2,
+            y - height,
+            width,
+            height
+          );
+        } else {
+          // Fallback to centered positioning for other sprites
+          ctx.drawImage(
+            sprite,
+            0,
+            0,
+            40,
+            40,
+            x - width / 2,
+            y - height / 2,
+            width,
+            height
+          );
+        }
       }
     }
   }
