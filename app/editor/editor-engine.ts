@@ -96,6 +96,27 @@ export class EditorEngine {
       const store = useStore.getState();
 
       if (store.currentTool === "polygon") {
+        // Check if we're clicking near the first point to finish the polygon
+        if (store.drawingPolygon.length >= 3) {
+          const firstPoint = store.drawingPolygon[0];
+          const distance = Math.sqrt(
+            Math.pow(worldPos.x - firstPoint.x, 2) +
+              Math.pow(worldPos.y - firstPoint.y, 2)
+          );
+          const threshold = 15 / store.zoom; // Allow some leeway based on zoom level
+
+          if (distance <= threshold) {
+            // Finish the polygon by adding it to the polygons array
+            const newPolygon = {
+              vertices: [...store.drawingPolygon],
+              grass: false,
+            };
+            store.addPolygon(newPolygon);
+            store.setDrawingPolygon([]); // Clear the drawing polygon
+            return;
+          }
+        }
+
         // Add vertex to drawing polygon
         const newVertices = [...store.drawingPolygon, worldPos];
         useStore.getState().setDrawingPolygon(newVertices);
@@ -372,6 +393,27 @@ export class EditorEngine {
       const store = useStore.getState();
 
       if (store.currentTool === "polygon") {
+        // Check if we're clicking near the first point to finish the polygon
+        if (store.drawingPolygon.length >= 3) {
+          const firstPoint = store.drawingPolygon[0];
+          const distance = Math.sqrt(
+            Math.pow(worldPos.x - firstPoint.x, 2) +
+              Math.pow(worldPos.y - firstPoint.y, 2)
+          );
+          const threshold = 15 / store.zoom; // Allow some leeway based on zoom level
+
+          if (distance <= threshold) {
+            // Finish the polygon by adding it to the polygons array
+            const newPolygon = {
+              vertices: [...store.drawingPolygon],
+              grass: false,
+            };
+            store.addPolygon(newPolygon);
+            store.setDrawingPolygon([]); // Clear the drawing polygon
+            return;
+          }
+        }
+
         // Add vertex to drawing polygon
         const newVertices = [...store.drawingPolygon, worldPos];
         useStore.getState().setDrawingPolygon(newVertices);
