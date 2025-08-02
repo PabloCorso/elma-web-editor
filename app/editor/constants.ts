@@ -10,4 +10,5 @@ export const colors = {
   selection: "#ff7b2e",
   sky: "#3078bc",
   start: "#309c30",
+  grass: "#00ff00",
 };

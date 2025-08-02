@@ -5,16 +5,24 @@ import {
   getLevelsByCategory,
   type BuiltinLevel,
 } from "../editor/builtin-levels";
+import { useState, useMemo, useEffect } from "react";
 
-const tools: { id: EditorTool; label: string; icon: string }[] = [
-  { id: "polygon", label: "Polygon", icon: "⬟" },
-  { id: "select", label: "Select", icon: "👆" },
-  { id: "apple", label: "Apple", icon: "🍎" },
-  { id: "killer", label: "Killer", icon: "💀" },
-  { id: "flower", label: "Flower", icon: "🌸" },
+const tools: {
+  id: EditorTool;
+  label: string;
+  icon: string;
+  shortcut: string;
+}[] = [
+  { id: "polygon", label: "Polygon", icon: "⬟", shortcut: "P" },
+  { id: "select", label: "Select", icon: "👆", shortcut: "S" },
+  { id: "apple", label: "Apple", icon: "🍎", shortcut: "A" },
+  { id: "killer", label: "Killer", icon: "💀", shortcut: "K" },
+  { id: "flower", label: "Flower", icon: "🌸", shortcut: "F" },
 ];
 
 export function Sidebar() {
+  const [searchTerm, setSearchTerm] = useState("");
+
   const {
     currentTool,
     setCurrentTool,
@@ -23,7 +31,62 @@ export function Sidebar() {
     showSprites,
     toggleShowSprites,
     importLevel,
+    triggerFitToView,
   } = useStore();
+
+  // Handle keyboard shortcuts for tools
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Don't handle shortcuts if user is typing in an input field
+    const activeElement = document.activeElement;
+    if (
+      activeElement &&
+      (activeElement.tagName === "INPUT" ||
+        activeElement.tagName === "TEXTAREA" ||
+        activeElement.tagName === "SELECT" ||
+        (activeElement as HTMLElement).contentEditable === "true")
+    ) {
+      return;
+    }
+
+    const key = e.key.toUpperCase();
+    const tool = tools.find((t) => t.shortcut === key);
+    if (tool) {
+      e.preventDefault();
+      setCurrentTool(tool.id);
+    }
+  };
+
+  // Add keyboard event listener
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Filter levels based on search term
+  const filteredLevels = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return getLevelsByCategory();
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+    const filtered = builtinLevels.filter(
+      (level) =>
+        level.name.toLowerCase().includes(searchLower) ||
+        level.category.toLowerCase().includes(searchLower) ||
+        level.filename.toLowerCase().includes(searchLower)
+    );
+
+    // Group filtered levels by category
+    const categories: Record<string, BuiltinLevel[]> = {};
+    filtered.forEach((level) => {
+      if (!categories[level.category]) {
+        categories[level.category] = [];
+      }
+      categories[level.category].push(level);
+    });
+
+    return categories;
+  }, [searchTerm]);
 
   const handleDownload = () => {
     const state = useStore.getState();
@@ -54,7 +117,7 @@ export function Sidebar() {
     const result = await LevelImporter.importFromFile(file);
     if (result.success && result.data) {
       importLevel(result.data);
-      alert("Level imported successfully!");
+      triggerFitToView();
     } else {
       alert(`Import failed: ${result.error}`);
     }
@@ -68,7 +131,7 @@ export function Sidebar() {
     if (result.success && result.data) {
       console.log(result.data);
       importLevel(result.data);
-      alert(`${level.name} imported successfully!`);
+      triggerFitToView();
     } else {
       alert(`Import failed: ${result.error}`);
     }
@@ -89,14 +152,30 @@ export function Sidebar() {
             <button
               key={tool.id}
               onClick={() => setCurrentTool(tool.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === tool.id
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
             >
               <span className="text-lg">{tool.icon}</span>
-              <span>{tool.label}</span>
+              <span>
+                {tool.label.split("").map((char, index) => {
+                  const isShortcut = char.toUpperCase() === tool.shortcut;
+                  return (
+                    <span
+                      key={index}
+                      className={
+                        isShortcut
+                          ? "underline decoration-gray-300/60 underline-offset-2"
+                          : ""
+                      }
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+              </span>
             </button>
           ))}
         </div>
@@ -110,7 +189,7 @@ export function Sidebar() {
         <div className="space-y-2">
           <button
             onClick={toggleShowSprites}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
               showSprites
                 ? "bg-blue-600 text-white"
                 : "bg-gray-700 text-gray-200 hover:bg-gray-600"
@@ -121,7 +200,7 @@ export function Sidebar() {
           </button>
           <button
             onClick={toggleAnimateSprites}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
               animateSprites
                 ? "bg-blue-600 text-white"
                 : "bg-gray-700 text-gray-200 hover:bg-gray-600"
@@ -132,22 +211,62 @@ export function Sidebar() {
               {animateSprites ? "Animated Sprites" : "Static Sprites"}
             </span>
           </button>
+          <button
+            onClick={triggerFitToView}
+            className="w-full flex items-center gap-3 px-3 py-1 bg-gray-700 text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            <span className="text-lg">🔍</span>
+            <span>Fit to View</span>
+          </button>
         </div>
       </div>
 
       {/* Built-in Levels Section */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="flex-1 p-4 border-t border-gray-700 flex flex-col min-h-0">
         <h2 className="text-sm font-semibold text-gray-300 mb-3">
           Built-in Levels
         </h2>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {Object.entries(getLevelsByCategory()).map(([category, levels]) => (
+
+        {/* Search Input */}
+        <div className="mb-3 flex-shrink-0">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search levels..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setSearchTerm("");
+                  e.currentTarget.blur();
+                }
+              }}
+              className="w-full px-3 py-1 bg-gray-700 text-gray-200 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm pr-8"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 text-sm"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {searchTerm.trim() && (
+            <div className="text-xs text-gray-400 mt-1">
+              {Object.values(filteredLevels).flat().length} levels found
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {Object.entries(filteredLevels).map(([category, levels]) => (
             <div key={category}>
               <h3 className="text-xs font-medium text-gray-400 mb-1">
                 {category}
               </h3>
               <div className="space-y-1">
-                {levels.slice(0, 5).map((level) => (
+                {levels.map((level) => (
                   <button
                     key={level.id}
                     onClick={() => handleBuiltinLevelImport(level)}
@@ -156,11 +275,6 @@ export function Sidebar() {
                     {level.name}
                   </button>
                 ))}
-                {levels.length > 5 && (
-                  <div className="text-xs text-gray-500 px-2">
-                    +{levels.length - 5} more...
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -175,13 +289,13 @@ export function Sidebar() {
         <div className="space-y-2">
           <button
             onClick={handleDownload}
-            className="w-full flex items-center gap-3 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
           >
             <span className="text-lg">⬇️</span>
             <span>Download Level</span>
           </button>
 
-          <label className="w-full flex items-center gap-3 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer">
+          <label className="w-full flex items-center gap-3 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer">
             <span className="text-lg">📁</span>
             <span>Import Level</span>
             <input
