@@ -1,74 +1,67 @@
-# React Router Netlify Template
+# ElastoMania Web Editor
 
-A modern, production-ready template for building full-stack React applications using React Router,
-deployed to Netlify.
+A web-based level editor for ElastoMania, built with React, TypeScript, and Canvas.
+
+## Architecture
+
+This editor follows a clean separation of concerns:
+
+- **React Components**: Handle UI/toolbar rendering
+- **CanvasEngine**: Independent canvas rendering with `requestAnimationFrame`
+- **Zustand Store**: Shared state management between React and Canvas
+- **Canvas**: Renders once, outside React control
+
+### Key Files
+
+- `app/editor/useStore.ts` - Zustand store for shared state
+- `app/editor/CanvasEngine.ts` - Canvas rendering engine (not React)
+- `app/editor/CanvasView.tsx` - React shell to mount canvas once
+- `app/components/sidebar.tsx` - Toolbar UI
+- `app/routes/home.tsx` - Main app layout
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-- 💻 Configured for deployment to Netlify
+- **Polygon Tool**: Click to add vertices, right-click to finish polygon
+- **Apple Tool**: Click to place apples
+- **Killer Tool**: Click to place killers
+- **Flower Tool**: Click to place flowers (multiple exit points)
+- **Select Tool**: Click to select objects (TODO: implement selection logic)
 
-## Getting Started
+## Level Structure
 
-### Installation
+- **Ground**: Dark purple background (#181048)
+- **Sky**: Blue areas inside polygons (#3078bc)
+- **Default Level**: 1000x600 world with a boundary polygon
+- **Camera**: Starts centered on the level
+- **Camera Controls**: 
+  - **Mouse wheel** to pan up/down
+  - **Shift + mouse wheel** to pan left/right
+  - **Cmd/Ctrl + mouse wheel** to zoom in/out
+  - Middle mouse drag to pan
+  - WASD/Arrow keys to move
+  - +/- to zoom in/out
+  - Q to fit to view
+  - Escape to cancel polygon drawing
 
-Install the dependencies:
+## Development
 
 ```bash
 npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
+## Building
 
 ```bash
 npm run build
 ```
 
-## Previewing a Production build
+## How It Works
 
-To preview a production build locally, use the [Netlify CLI](https://cli.netlify.com):
+1. React renders the toolbar and mounts the canvas once
+2. CanvasEngine takes control of the canvas and runs its own render loop
+3. Zustand store acts as the bridge between React UI and canvas state
+4. Canvas reads from store every frame and renders accordingly
+5. User interactions update the store, which triggers canvas re-renders
 
-```bash
-npx netlify-cli serve
-```
-
-```bash
-npm run build
-```
-
-## Deployment
-
-This template is preconfigured for deployment to Netlify.
-
-Follow <https://docs.netlify.com/welcome/add-new-site/> to add this project as a site
-in your Netlify account.
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
-## See also
-
-[Guide: how to deploy a React Router 7 site to Netlify](https://developers.netlify.com/guides/how-to-deploy-a-react-router-7-site-to-netlify/)
-
----
-
-Built with ❤️ using React Router.
+This architecture ensures smooth 60fps rendering while keeping React focused on UI concerns.
