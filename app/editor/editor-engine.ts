@@ -1,6 +1,10 @@
 import { useStore } from "./useStore";
 import { colors } from "./constants";
-import { isPolygonClockwise, shouldPolygonBeGround } from "./helpers";
+import {
+  isPolygonClockwise,
+  shouldPolygonBeGround,
+  debugPolygonOrientation,
+} from "./helpers";
 import type { Position, Polygon } from "elmajs";
 import { SpriteManager } from "./sprite-manager";
 import { LevelImporter } from "./level-importer";
@@ -10,6 +14,7 @@ export class EditorEngine {
   private ctx: CanvasRenderingContext2D;
   private animationId: number | null = null;
   private spriteManager: SpriteManager;
+  private debugMode: boolean = false; // Add debug mode flag
 
   // Camera system (matching reference editor)
   private readonly MIN_ZOOM = 0.1;
@@ -445,6 +450,12 @@ export class EditorEngine {
         e.preventDefault();
         this.fitToView();
         break;
+
+      case "d":
+      case "D":
+        e.preventDefault();
+        this.toggleDebugMode();
+        break;
     }
   };
 
@@ -676,32 +687,19 @@ export class EditorEngine {
     const state = useStore.getState();
 
     // Clear canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillStyle = colors.ground;
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Apply camera transformation (matching reference editor approach)
+    // Apply camera transformation
     this.ctx.save();
     this.ctx.translate(state.viewPortOffset.x, state.viewPortOffset.y);
     this.ctx.scale(state.zoom, state.zoom);
 
-    // Fill entire visible area with ground color first
-    this.ctx.fillStyle = colors.ground;
-
-    // Calculate the visible world bounds based on viewport and zoom
-    const visibleWidth = this.canvas.width / state.zoom;
-    const visibleHeight = this.canvas.height / state.zoom;
-    const visibleLeft = -state.viewPortOffset.x / state.zoom;
-    const visibleTop = -state.viewPortOffset.y / state.zoom;
-
-    // Fill the entire visible area with ground color
-    this.ctx.fillRect(visibleLeft, visibleTop, visibleWidth, visibleHeight);
-
     // Draw polygons with winding rule
     this.drawPolygonsWithWindingRule();
 
-    // Draw current polygon being created
-    if (state.currentTool === "polygon") {
-      this.drawDrawingPolygon();
-    }
+    // Draw the polygon being created
+    this.drawDrawingPolygon();
 
     // Draw objects
     this.drawObjects();
@@ -709,11 +707,16 @@ export class EditorEngine {
     // Draw selection handles
     this.drawSelectionHandles();
 
-    // Draw marquee selection box
+    // Draw marquee selection
     this.drawMarqueeSelection();
 
     // Restore transformation
     this.ctx.restore();
+
+    // Draw debug info panel
+    if (this.debugMode) {
+      this.drawDebugInfoPanel();
+    }
   }
 
   private drawPolygonsWithWindingRule() {
@@ -752,7 +755,21 @@ export class EditorEngine {
     state.polygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
-      // Apply winding rule: reverse vertices if needed
+      // For grass polygons, just draw them as-is (no orientation detection needed)
+      if (polygon.grass) {
+        this.ctx.strokeStyle = colors.grass;
+        this.ctx.lineWidth = 1 / state.zoom;
+        this.ctx.beginPath();
+        this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
+        for (let i = 1; i < polygon.vertices.length; i++) {
+          this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
+        }
+        this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
+        this.ctx.stroke();
+        return;
+      }
+
+      // Apply winding rule: reverse vertices if needed (only for non-grass polygons)
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
       const shouldBeGround = shouldPolygonBeGround(polygon, state.polygons);
@@ -761,8 +778,8 @@ export class EditorEngine {
         vertices.reverse();
       }
 
-      // Set stroke color based on polygon type
-      this.ctx.strokeStyle = polygon.grass ? colors.grass : colors.edges;
+      // Set stroke color for non-grass polygons
+      this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom; // Dynamic line width
 
       // Draw polygon edges
@@ -773,7 +790,64 @@ export class EditorEngine {
       }
       this.ctx.lineTo(vertices[0].x, vertices[0].y);
       this.ctx.stroke();
+
+      // Debug visualization (only for non-grass polygons)
+      if (this.debugMode) {
+        this.drawPolygonDebugInfo(
+          polygon,
+          state.polygons,
+          shouldBeGround,
+          isClockwise
+        );
+      }
     });
+  }
+
+  private drawPolygonDebugInfo(
+    polygon: Polygon,
+    allPolygons: Polygon[],
+    shouldBeGround: boolean,
+    isClockwise: boolean
+  ) {
+    const state = useStore.getState();
+    const debug = debugPolygonOrientation(polygon, allPolygons);
+
+    // Draw sample points
+    this.ctx.fillStyle = shouldBeGround ? "#00ff00" : "#ff0000"; // Green for ground, red for sky
+    debug.samplePoints.forEach((point, index) => {
+      const result = debug.containmentResults[index];
+      const pointColor = result.isGround ? "#00ff00" : "#ff0000";
+      this.ctx.fillStyle = pointColor;
+
+      this.ctx.beginPath();
+      this.ctx.arc(point.x, point.y, 3 / state.zoom, 0, 2 * Math.PI);
+      this.ctx.fill();
+
+      // Draw containment count
+      this.ctx.fillStyle = "#ffffff";
+      this.ctx.font = `${12 / state.zoom}px Arial`;
+      this.ctx.fillText(
+        `${result.containmentCount}`,
+        point.x + 5 / state.zoom,
+        point.y - 5 / state.zoom
+      );
+    });
+
+    // Draw polygon center with orientation info
+    const center = debug.samplePoints[0];
+    this.ctx.fillStyle = shouldBeGround ? "#00ff00" : "#ff0000";
+    this.ctx.beginPath();
+    this.ctx.arc(center.x, center.y, 5 / state.zoom, 0, 2 * Math.PI);
+    this.ctx.fill();
+
+    // Draw orientation text
+    this.ctx.fillStyle = "#ffffff";
+    this.ctx.font = `${14 / state.zoom}px Arial`;
+    this.ctx.fillText(
+      `${shouldBeGround ? "G" : "S"}${isClockwise ? "CW" : "CCW"}`,
+      center.x + 8 / state.zoom,
+      center.y + 5 / state.zoom
+    );
   }
 
   private drawDrawingPolygon() {
@@ -1011,7 +1085,6 @@ export class EditorEngine {
       const result = await LevelImporter.importBuiltinLevel("QWQUU001.lev");
       if (result.success && result.data) {
         useStore.getState().importLevel(result.data);
-        console.log("Successfully loaded QWQUU001.lev");
 
         // Center the camera on the loaded level
         this.centerCameraOnLevel(result.data);
@@ -1076,10 +1149,6 @@ export class EditorEngine {
     const viewPortY = this.canvas.height / 2 - centerY * optimalZoom;
     useStore.getState().setCamera(viewPortX, viewPortY);
     useStore.getState().setZoom(optimalZoom);
-
-    console.log(
-      `Centered camera on level at (${centerX.toFixed(2)}, ${centerY.toFixed(2)}) with zoom ${optimalZoom.toFixed(2)}`
-    );
   }
 
   public destroy() {
@@ -1098,5 +1167,40 @@ export class EditorEngine {
     this.canvas.removeEventListener("touchend", this.handleTouchEnd);
     document.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("resize", this.handleResize);
+  }
+
+  // Debug method to toggle polygon orientation visualization
+  public toggleDebugMode() {
+    this.debugMode = !this.debugMode;
+    console.debug("Debug mode:", this.debugMode ? "ON" : "OFF");
+  }
+
+  private drawDebugInfoPanel() {
+    const state = useStore.getState();
+
+    // Set font first so we can measure text
+    this.ctx.font = "14px 'Courier New', monospace";
+    this.ctx.textAlign = "left";
+    this.ctx.textBaseline = "top";
+
+    const line1 = "Debug Mode: ON";
+    const line2 = "Press 'D' to exit debug mode";
+
+    // Measure text to determine panel width
+    const line1Width = this.ctx.measureText(line1).width;
+    const line2Width = this.ctx.measureText(line2).width;
+    const maxTextWidth = Math.max(line1Width, line2Width);
+
+    const panelWidth = maxTextWidth + 20; // Add padding
+    const panelHeight = 60;
+    const panelX = this.canvas.width - panelWidth - 10;
+    const panelY = 10;
+
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    this.ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+
+    this.ctx.fillStyle = "#ffffff";
+    this.ctx.fillText(line1, panelX + 10, panelY + 10);
+    this.ctx.fillText(line2, panelX + 10, panelY + 35);
   }
 }

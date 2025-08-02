@@ -193,7 +193,6 @@ export function Sidebar() {
   const handleBuiltinLevelImport = async (level: BuiltinLevel) => {
     const result = await LevelImporter.importBuiltinLevel(level.filename);
     if (result.success && result.data) {
-      console.log(result.data);
       importLevel(result.data);
       triggerFitToView();
     } else {
@@ -205,7 +204,7 @@ export function Sidebar() {
     <div className="w-64 h-screen bg-gray-800 text-white flex flex-col border-r border-gray-700">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
-        <h1 className="text-xl font-bold">Elma Editor</h1>
+        <h1 className="text-xl font-bold">Elma Web Editor</h1>
       </div>
 
       {/* Tools Section */}
