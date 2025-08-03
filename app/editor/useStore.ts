@@ -7,8 +7,7 @@ export type EditorTool =
   | "select"
   | "apple"
   | "killer"
-  | "flower"
-  | "hand";
+  | "flower";
 
 type Store = {
   // Level data

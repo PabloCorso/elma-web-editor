@@ -38,13 +38,12 @@ export function Sidebar() {
     const key = e.key.toUpperCase();
     const toolMap: Record<string, EditorTool> = {
       P: "polygon",
-      S: "select", 
+      S: "select",
       A: "apple",
       K: "killer",
       F: "flower",
-      H: "hand",
     };
-    
+
     if (toolMap[key]) {
       e.preventDefault();
       setCurrentTool(toolMap[key]);
@@ -198,7 +197,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex w-64 h-screen bg-gray-800 text-white flex-col border-r border-gray-700">
+      <div className="hidden md:flex w-64 h-screen bg-gray-800 text-white flex-col border-r border-gray-700 overflow-y-auto">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Elma Web Editor</h1>
@@ -217,7 +216,12 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">👆</span>
-              <span><span className="underline decoration-gray-300/60 underline-offset-2">S</span>elect</span>
+              <span>
+                <span className="underline decoration-gray-300/60 underline-offset-2">
+                  S
+                </span>
+                elect
+              </span>
             </button>
             <button
               onClick={() => setCurrentTool("polygon")}
@@ -228,7 +232,12 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">⬟</span>
-              <span><span className="underline decoration-gray-300/60 underline-offset-2">P</span>olygon</span>
+              <span>
+                <span className="underline decoration-gray-300/60 underline-offset-2">
+                  P
+                </span>
+                olygon
+              </span>
             </button>
             <button
               onClick={() => setCurrentTool("apple")}
@@ -239,7 +248,12 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">🍎</span>
-              <span><span className="underline decoration-gray-300/60 underline-offset-2">A</span>pple</span>
+              <span>
+                <span className="underline decoration-gray-300/60 underline-offset-2">
+                  A
+                </span>
+                pple
+              </span>
             </button>
             <button
               onClick={() => setCurrentTool("killer")}
@@ -250,7 +264,12 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">💀</span>
-              <span><span className="underline decoration-gray-300/60 underline-offset-2">K</span>iller</span>
+              <span>
+                <span className="underline decoration-gray-300/60 underline-offset-2">
+                  K
+                </span>
+                iller
+              </span>
             </button>
             <button
               onClick={() => setCurrentTool("flower")}
@@ -261,14 +280,21 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">🌸</span>
-              <span><span className="underline decoration-gray-300/60 underline-offset-2">F</span>lower</span>
+              <span>
+                <span className="underline decoration-gray-300/60 underline-offset-2">
+                  F
+                </span>
+                lower
+              </span>
             </button>
           </div>
         </div>
 
         {/* View Settings Section */}
         <div className="p-4 border-t border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-300 mb-3">View Settings</h2>
+          <h2 className="text-sm font-semibold text-gray-300 mb-3">
+            View Settings
+          </h2>
           <div className="space-y-2">
             <button
               onClick={toggleShowSprites}
@@ -290,7 +316,9 @@ export function Sidebar() {
               }`}
             >
               <span className="text-lg">{animateSprites ? "🎬" : "⏸️"}</span>
-              <span>{animateSprites ? "Animated Sprites" : "Static Sprites"}</span>
+              <span>
+                {animateSprites ? "Animated Sprites" : "Static Sprites"}
+              </span>
             </button>
             <button
               onClick={triggerFitToView}
@@ -303,8 +331,10 @@ export function Sidebar() {
         </div>
 
         {/* Built-in Levels Section */}
-        <div className="flex-1 p-4 border-t border-gray-700 flex flex-col min-h-0">
-          <h2 className="text-sm font-semibold text-gray-300 mb-3">Built-in Levels</h2>
+        <div className="flex-1 p-4 border-t border-gray-700 flex flex-col min-h-32">
+          <h2 className="text-sm font-semibold text-gray-300 mb-3">
+            Built-in Levels
+          </h2>
 
           {/* Search Input */}
           <div className="mb-3 flex-shrink-0">
@@ -341,7 +371,9 @@ export function Sidebar() {
           <div className="flex-1 overflow-y-auto space-y-2">
             {Object.entries(filteredLevels).map(([category, levels]) => (
               <div key={category}>
-                <h3 className="text-xs font-medium text-gray-400 mb-1">{category}</h3>
+                <h3 className="text-xs font-medium text-gray-400 mb-1">
+                  {category}
+                </h3>
                 <div className="space-y-1">
                   {levels.map((level) => (
                     <button
@@ -360,7 +392,9 @@ export function Sidebar() {
 
         {/* Actions Section */}
         <div className="p-4 mt-auto">
-          <h2 className="text-sm font-semibold text-gray-300 mb-3">Import/Export</h2>
+          <h2 className="text-sm font-semibold text-gray-300 mb-3">
+            Import/Export
+          </h2>
           <div className="space-y-2">
             <button
               onClick={handleDownload}
@@ -389,17 +423,6 @@ export function Sidebar() {
         <div className="overflow-x-auto">
           <div className="flex items-center px-4 py-3 space-x-4 min-w-max">
             {/* Tools */}
-            <button
-              onClick={() => setCurrentTool("hand")}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 ${
-                currentTool === "hand"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
-            >
-              <span className="text-xl">👋</span>
-              <span className="text-xs text-center">Hand</span>
-            </button>
             <button
               onClick={() => setCurrentTool("select")}
               className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 ${

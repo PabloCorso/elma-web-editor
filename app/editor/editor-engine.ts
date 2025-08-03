@@ -12,7 +12,6 @@ import {
 } from "./helpers";
 import { colors } from "./constants";
 import type { Polygon, Position } from "elmajs";
-import type { EditorTool } from "./useStore";
 import { initialLevelData, type LevelData } from "./level-importer";
 
 export class EditorEngine {
@@ -21,39 +20,56 @@ export class EditorEngine {
   private animationId: number | null = null;
   private spriteManager: SpriteManager;
   private objectRenderer: ObjectRenderer;
-  private debugMode: boolean = false;
+  private debugMode = false;
 
   // Camera system
-  private readonly MIN_ZOOM = 0.1;
-  private readonly MAX_ZOOM = 200;
-  private readonly PAN_SPEED = 1.0;
+  private minZoom = 0.1;
+  private maxZoom = 200;
+  private panSpeed = 1.0;
 
   // Navigation state
-  private isPanning: boolean = false;
-  private lastPanX: number = 0;
-  private lastPanY: number = 0;
-  private lastPinchDistance: number = 0;
+  private isPanning = false;
+  private lastPanX = 0;
+  private lastPanY = 0;
+  private lastPinchDistance = 0;
 
   // Selection and dragging state
-  private isDragging: boolean = false;
+  private isDragging = false;
   private dragStartPos: Position = { x: 0, y: 0 };
 
   // Marquee selection state
-  private isMarqueeSelecting: boolean = false;
+  private isMarqueeSelecting = false;
   private marqueeStartPos: Position = { x: 0, y: 0 };
   private marqueeEndPos: Position = { x: 0, y: 0 };
 
-  // Hand tool state
-  private isSpacePressed: boolean = false;
-  private previousTool: EditorTool = "select";
+  // Long-press detection for mobile
+  private longPressThreshold: number;
+  private longPressTimer: number | null = null;
+  private isLongPress = false;
 
-  constructor(canvas: HTMLCanvasElement, initialLevel = initialLevelData) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    {
+      initialLevel = initialLevelData,
+      minZoom = 0.1,
+      maxZoom = 200,
+      longPressThreshold = 100,
+    }: {
+      initialLevel?: LevelData;
+      minZoom?: number;
+      maxZoom?: number;
+      longPressThreshold?: number;
+    } = {}
+  ) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas context missing");
     this.ctx = ctx;
     this.spriteManager = new SpriteManager();
     this.objectRenderer = new ObjectRenderer(this.spriteManager);
+    this.minZoom = minZoom;
+    this.maxZoom = maxZoom;
+    this.longPressThreshold = longPressThreshold;
 
     this.setupEventListeners();
     this.setupStoreListeners();
@@ -114,7 +130,19 @@ export class EditorEngine {
         state.viewPortOffset,
         state.zoom
       );
-      this.handleLeftClick(context);
+
+      // Start long-press timer for mobile
+      if (this.isMobile()) {
+        this.isLongPress = false;
+        this.longPressTimer = window.setTimeout(() => {
+          this.isLongPress = true;
+          // On long press, switch to selection mode
+          this.handleSelectionClick(context);
+        }, this.longPressThreshold);
+      } else {
+        // Desktop: immediate action
+        this.handleLeftClick(context);
+      }
     }
   };
 
@@ -129,8 +157,6 @@ export class EditorEngine {
       store.addKiller(context.worldPos);
     } else if (store.currentTool === "flower") {
       store.addFlower(context.worldPos);
-    } else if (store.currentTool === "hand") {
-      this.startPanning(context.screenX, context.screenY);
     } else if (store.currentTool === "select") {
       this.handleSelectionClick(context);
     }
@@ -297,7 +323,7 @@ export class EditorEngine {
     if (this.isPanning) {
       const deltaX = e.clientX - this.lastPanX;
       const deltaY = e.clientY - this.lastPanY;
-      CameraUtils.updateCamera(deltaX, deltaY, this.PAN_SPEED);
+      CameraUtils.updateCamera(deltaX, deltaY, this.panSpeed);
       this.lastPanX = e.clientX;
       this.lastPanY = e.clientY;
       return;
@@ -321,31 +347,37 @@ export class EditorEngine {
     const state = useStore.getState();
     const touchContext = EventHandler.getTouchContext(e.touches);
 
-    if (e.touches.length === 2 && this.isPanning) {
+    if (touchContext.isMultiTouch) {
       this.handleMultiTouchZoom(touchContext);
       return;
     }
 
-    if (e.touches.length === 1) {
+    if (touchContext.touch1) {
       const context = EventHandler.getEventContext(
-        e.touches[0],
+        touchContext.touch1,
         this.canvas,
         state.viewPortOffset,
         state.zoom
       );
 
-      useStore.getState().setMousePosition(context.worldPos);
+      // On mobile, if we start moving before long press, cancel the timer and start panning
+      if (this.isMobile() && this.longPressTimer && !this.isLongPress) {
+        clearTimeout(this.longPressTimer);
+        this.longPressTimer = null;
+        this.startPanning(
+          touchContext.touch1.clientX,
+          touchContext.touch1.clientY
+        );
+      }
 
-      if (state.currentTool === "select") {
-        if (this.isDragging) {
-          this.handleDragging(context.worldPos);
-        } else if (this.isMarqueeSelecting) {
-          this.marqueeEndPos = context.worldPos;
-        }
-      } else if (state.currentTool === "hand" && this.isPanning) {
+      if (this.isDragging) {
+        this.handleDragging(context.worldPos);
+      } else if (this.isMarqueeSelecting) {
+        this.marqueeEndPos = context.worldPos;
+      } else if (this.isPanning) {
         const deltaX = e.touches[0].clientX - this.lastPanX;
         const deltaY = e.touches[0].clientY - this.lastPanY;
-        CameraUtils.updateCamera(deltaX, deltaY, this.PAN_SPEED);
+        CameraUtils.updateCamera(deltaX, deltaY, this.panSpeed);
         this.lastPanX = e.touches[0].clientX;
         this.lastPanY = e.touches[0].clientY;
       }
@@ -368,8 +400,8 @@ export class EditorEngine {
         const smoothedZoomFactor = 1 + (zoomFactor - 1) * 0.3;
         const currentZoom = useStore.getState().zoom;
         const newZoom = Math.max(
-          this.MIN_ZOOM,
-          Math.min(this.MAX_ZOOM, currentZoom * smoothedZoomFactor)
+          this.minZoom,
+          Math.min(this.maxZoom, currentZoom * smoothedZoomFactor)
         );
 
         if (newZoom !== currentZoom) {
@@ -387,8 +419,8 @@ export class EditorEngine {
 
           CameraUtils.updateZoom(
             newZoom,
-            this.MIN_ZOOM,
-            this.MAX_ZOOM,
+            this.minZoom,
+            this.maxZoom,
             midScreenX,
             midScreenY
           );
@@ -428,9 +460,7 @@ export class EditorEngine {
     }
 
     if (e.button === 0) {
-      if (useStore.getState().currentTool === "hand") {
-        this.isPanning = false;
-      }
+      this.isPanning = false;
       this.isDragging = false;
 
       if (this.isMarqueeSelecting) {
@@ -441,17 +471,18 @@ export class EditorEngine {
   };
 
   private handleTouchEnd = (e: TouchEvent) => {
-    if (e.touches.length < 2) {
-      this.isPanning = false;
-      this.lastPinchDistance = 0;
+    // Clear long press timer if it exists
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
     }
 
     if (e.touches.length === 0) {
       const store = useStore.getState();
 
-      if (store.currentTool === "hand") {
-        this.isPanning = false;
-      }
+      // Stop panning
+      this.isPanning = false;
+      this.lastPinchDistance = 0;
 
       if (store.currentTool === "select") {
         if (this.isMarqueeSelecting) {
@@ -462,6 +493,9 @@ export class EditorEngine {
           this.isDragging = false;
         }
       }
+
+      // Reset long press state
+      this.isLongPress = false;
     }
   };
 
@@ -542,8 +576,8 @@ export class EditorEngine {
       const newZoom = currentZoom * zoomFactor;
       CameraUtils.updateZoom(
         newZoom,
-        this.MIN_ZOOM,
-        this.MAX_ZOOM,
+        this.minZoom,
+        this.maxZoom,
         mouseX,
         mouseY
       );
@@ -553,12 +587,12 @@ export class EditorEngine {
     if (e.shiftKey) {
       const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
       const panAmount = -delta * 0.5;
-      CameraUtils.updateCamera(panAmount, 0, this.PAN_SPEED);
+      CameraUtils.updateCamera(panAmount, 0, this.panSpeed);
       return;
     }
 
     const panAmount = -e.deltaY * 0.5;
-    CameraUtils.updateCamera(0, panAmount, this.PAN_SPEED);
+    CameraUtils.updateCamera(0, panAmount, this.panSpeed);
   };
 
   private handleKeyDown = (e: KeyboardEvent) => {
@@ -575,22 +609,22 @@ export class EditorEngine {
 
       case "ArrowLeft":
         e.preventDefault();
-        CameraUtils.updateCamera(panAmount, 0, this.PAN_SPEED);
+        CameraUtils.updateCamera(panAmount, 0, this.panSpeed);
         break;
 
       case "ArrowRight":
         e.preventDefault();
-        CameraUtils.updateCamera(-panAmount, 0, this.PAN_SPEED);
+        CameraUtils.updateCamera(-panAmount, 0, this.panSpeed);
         break;
 
       case "ArrowUp":
         e.preventDefault();
-        CameraUtils.updateCamera(0, panAmount, this.PAN_SPEED);
+        CameraUtils.updateCamera(0, panAmount, this.panSpeed);
         break;
 
       case "ArrowDown":
         e.preventDefault();
-        CameraUtils.updateCamera(0, -panAmount, this.PAN_SPEED);
+        CameraUtils.updateCamera(0, -panAmount, this.panSpeed);
         break;
 
       case "+":
@@ -599,8 +633,8 @@ export class EditorEngine {
         const currentZoom = useStore.getState().zoom;
         CameraUtils.updateZoom(
           currentZoom + zoomAmount,
-          this.MIN_ZOOM,
-          this.MAX_ZOOM
+          this.minZoom,
+          this.maxZoom
         );
         break;
 
@@ -610,8 +644,8 @@ export class EditorEngine {
         const currentZoom2 = useStore.getState().zoom;
         CameraUtils.updateZoom(
           currentZoom2 - zoomAmount,
-          this.MIN_ZOOM,
-          this.MAX_ZOOM
+          this.minZoom,
+          this.maxZoom
         );
         break;
 
@@ -626,15 +660,6 @@ export class EditorEngine {
         this.toggleDebugMode();
         break;
 
-      case " ":
-        e.preventDefault();
-        if (!this.isSpacePressed) {
-          this.isSpacePressed = true;
-          this.previousTool = useStore.getState().currentTool;
-          useStore.getState().setCurrentTool("hand");
-        }
-        break;
-
       case "Delete":
       case "Backspace":
         e.preventDefault();
@@ -644,13 +669,7 @@ export class EditorEngine {
   };
 
   private handleKeyUp = (e: KeyboardEvent) => {
-    if (e.key === " ") {
-      e.preventDefault();
-      if (this.isSpacePressed) {
-        this.isSpacePressed = false;
-        useStore.getState().setCurrentTool(this.previousTool);
-      }
-    }
+    // Space key handling removed - no longer needed without hand tool
   };
 
   private handleResize = () => {
@@ -719,8 +738,8 @@ export class EditorEngine {
     CameraUtils.fitToView(
       this.canvas,
       state.polygons,
-      this.MIN_ZOOM,
-      this.MAX_ZOOM
+      this.minZoom,
+      this.maxZoom
     );
   }
 
@@ -775,8 +794,6 @@ export class EditorEngine {
   private updateCursor(state: any) {
     if (this.isPanning) {
       this.canvas.style.cursor = "grabbing";
-    } else if (state.currentTool === "hand" || this.isSpacePressed) {
-      this.canvas.style.cursor = "grab";
     } else if (state.currentTool === "select") {
       this.canvas.style.cursor = "default";
     } else {
