@@ -4,7 +4,23 @@ import type { LevelData } from "./level-importer";
 
 export type EditorTool = "polygon" | "select" | "apple" | "killer" | "flower";
 
-type Store = {
+// Tool-specific state types
+export type PolygonToolState = {
+  drawingPolygon: Position[];
+};
+
+export type SelectionToolState = {
+  selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
+  selectedObjects: Position[];
+};
+
+export type ToolState = {
+  polygon: PolygonToolState;
+  select: SelectionToolState;
+  [toolId: string]: any; // Allow other tools to extend
+};
+
+export type Store = {
   // Level data
   polygons: Polygon[];
   apples: Position[];
@@ -14,7 +30,6 @@ type Store = {
 
   // Editor state
   currentTool: EditorTool;
-  drawingPolygon: Position[];
   mousePosition: Position;
 
   // Camera state (matching reference editor approach)
@@ -25,35 +40,40 @@ type Store = {
   animateSprites: boolean;
   showSprites: boolean;
 
-  // Selection state
-  selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
-  selectedObjects: Position[];
+  // Tool state (extensible)
+  toolState: ToolState;
 
   // Fit to view trigger
   fitToViewTrigger: number;
 
   // Actions
   setCurrentTool: (tool: EditorTool) => void;
-  addPolygon: (polygon: Polygon) => void;
-  updatePolygon: (index: number, polygon: Polygon) => void;
-  removePolygon: (index: number) => void;
-  removeVertex: (polygon: Polygon, vertex: Position) => void;
-  addApple: (position: Position) => void;
-  removeApple: (position: Position) => void;
-  addKiller: (position: Position) => void;
-  removeKiller: (position: Position) => void;
-  addFlower: (position: Position) => void;
-  removeFlower: (position: Position) => void;
+  activateTool: (toolId: string) => void;
+
+  // Generic data operations
+  addObject: <K extends keyof Pick<Store, "apples" | "killers" | "flowers">>(
+    key: K,
+    item: Position
+  ) => void;
+  removeObject: <K extends keyof Pick<Store, "apples" | "killers" | "flowers">>(
+    key: K,
+    item: Position
+  ) => void;
+
+  // Object operations
   setStart: (position: Position) => void;
-  setDrawingPolygon: (vertices: Position[]) => void;
   setMousePosition: (position: Position) => void;
   setCamera: (x: number, y: number) => void;
   setZoom: (zoom: number) => void;
-  clearSelection: () => void;
-  selectVertex: (polygon: Polygon, vertex: Position) => void;
-  selectObject: (object: Position) => void;
-  updateSelectedVertices: (newPositions: Position[]) => void;
-  updateSelectedObjects: (newPositions: Position[]) => void;
+
+  // Tool state operations
+  setToolState: <K extends keyof ToolState>(
+    toolId: K,
+    state: Partial<ToolState[K]>
+  ) => void;
+  getToolState: <K extends keyof ToolState>(toolId: K) => ToolState[K];
+
+  // View operations
   toggleAnimateSprites: () => void;
   toggleShowSprites: () => void;
   importLevel: (levelData: LevelData) => void;
@@ -68,181 +88,69 @@ export const useStore = create<Store>((set, get) => ({
   flowers: [],
   start: { x: 0, y: 0 },
   currentTool: "select",
-  drawingPolygon: [],
   mousePosition: { x: 0, y: 0 },
   viewPortOffset: { x: 150, y: 50 },
   zoom: 1, // Start with a lower zoom to see the full level
   animateSprites: true,
   showSprites: true,
-  selectedVertices: [],
-  selectedObjects: [],
   fitToViewTrigger: 0,
+
+  // Tool state (extensible)
+  toolState: {
+    polygon: {
+      drawingPolygon: [],
+    },
+    select: {
+      selectedVertices: [],
+      selectedObjects: [],
+    },
+  },
 
   // Actions
   setCurrentTool: (tool) => {
     set({ currentTool: tool });
-    // Clear drawing polygon when switching away from polygon tool
-    if (tool !== "polygon") {
-      set({ drawingPolygon: [] });
-    }
-    // Clear selections when switching away from select tool
-    if (tool !== "select") {
-      set({ selectedVertices: [], selectedObjects: [] });
+  },
+
+  activateTool: (toolId) => {
+    // Map tool IDs to EditorTool values
+    const toolMap: Record<string, EditorTool> = {
+      polygon: "polygon",
+      select: "select",
+      apple: "apple",
+      killer: "killer",
+      flower: "flower",
+    };
+
+    const tool = toolMap[toolId];
+    if (tool) {
+      set({ currentTool: tool });
     }
   },
 
-  addPolygon: (polygon) =>
-    set((state) => ({ polygons: [...state.polygons, polygon] })),
-
-  updatePolygon: (index, polygon) =>
-    set((state) => ({
-      polygons: state.polygons.map((p, i) => (i === index ? polygon : p)),
+  // Tool state operations
+  setToolState: (toolId, state) =>
+    set((currentState) => ({
+      toolState: {
+        ...currentState.toolState,
+        [toolId]: {
+          ...currentState.toolState[toolId],
+          ...state,
+        },
+      },
     })),
 
-  removePolygon: (index) =>
-    set((state) => ({
-      polygons: state.polygons.filter((_, i) => i !== index),
-    })),
-
-  removeVertex: (polygon, vertex) =>
-    set((state) => {
-      const updatedPolygons = state.polygons
-        .map((p) => {
-          if (p === polygon) {
-            const updatedVertices = p.vertices.filter((v) => v !== vertex);
-            // If polygon has less than 3 vertices after removal, remove the entire polygon
-            if (updatedVertices.length < 3) {
-              return null; // Will be filtered out
-            }
-            return { ...p, vertices: updatedVertices };
-          }
-          return p;
-        })
-        .filter(Boolean) as Polygon[];
-
-      return { polygons: updatedPolygons };
-    }),
-
-  addApple: (position) =>
-    set((state) => ({ apples: [...state.apples, position] })),
-
-  removeApple: (position) =>
-    set((state) => ({
-      apples: state.apples.filter((a) => a !== position),
-    })),
-
-  addKiller: (position) =>
-    set((state) => ({ killers: [...state.killers, position] })),
-
-  removeKiller: (position) =>
-    set((state) => ({
-      killers: state.killers.filter((k) => k !== position),
-    })),
-
-  addFlower: (position) =>
-    set((state) => ({ flowers: [...state.flowers, position] })),
-
-  removeFlower: (position) =>
-    set((state) => ({
-      flowers: state.flowers.filter((f) => f !== position),
-    })),
+  getToolState: (toolId) => get().toolState[toolId],
 
   setStart: (position) => set({ start: position }),
-  setDrawingPolygon: (vertices) => set({ drawingPolygon: vertices }),
+  addObject: (key, item) => set((state) => ({ [key]: [...state[key], item] })),
+  removeObject: (key, item) =>
+    set((state) => ({
+      [key]: state[key].filter((i: Position) => i !== item),
+    })),
+
   setMousePosition: (position) => set({ mousePosition: position }),
   setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
   setZoom: (zoom) => set({ zoom }),
-
-  clearSelection: () => set({ selectedVertices: [], selectedObjects: [] }),
-
-  selectVertex: (polygon, vertex) =>
-    set((state) => ({
-      selectedVertices: [...state.selectedVertices, { polygon, vertex }],
-    })),
-
-  selectObject: (object) =>
-    set((state) => ({
-      selectedObjects: [...state.selectedObjects, object],
-    })),
-
-  updateSelectedVertices: (newPositions) =>
-    set((state) => {
-      const updatedPolygons = [...state.polygons];
-      const updatedSelectedVertices = [...state.selectedVertices];
-
-      // Update each selected vertex with its new position
-      state.selectedVertices.forEach((selection, index) => {
-        const polygonIndex = updatedPolygons.findIndex(
-          (p) => p === selection.polygon
-        );
-        if (polygonIndex !== -1) {
-          const vertexIndex = updatedPolygons[polygonIndex].vertices.findIndex(
-            (v) => v === selection.vertex
-          );
-          if (vertexIndex !== -1) {
-            updatedPolygons[polygonIndex].vertices[vertexIndex] =
-              newPositions[index];
-            updatedSelectedVertices[index] = {
-              polygon: updatedPolygons[polygonIndex],
-              vertex: newPositions[index],
-            };
-          }
-        }
-      });
-
-      return {
-        polygons: updatedPolygons,
-        selectedVertices: updatedSelectedVertices,
-      };
-    }),
-
-  updateSelectedObjects: (newPositions) =>
-    set((state) => {
-      const updatedApples = [...state.apples];
-      const updatedKillers = [...state.killers];
-      const updatedFlowers = [...state.flowers];
-      const updatedStart = { ...state.start };
-      const updatedSelectedObjects = [...state.selectedObjects];
-
-      // Update each selected object with its new position
-      state.selectedObjects.forEach((object, index) => {
-        const newPos = newPositions[index];
-
-        // Find and update the object in the appropriate array
-        const appleIndex = updatedApples.findIndex((a) => a === object);
-        if (appleIndex !== -1) {
-          updatedApples[appleIndex] = newPos;
-          updatedSelectedObjects[index] = newPos;
-        }
-
-        const killerIndex = updatedKillers.findIndex((k) => k === object);
-        if (killerIndex !== -1) {
-          updatedKillers[killerIndex] = newPos;
-          updatedSelectedObjects[index] = newPos;
-        }
-
-        const flowerIndex = updatedFlowers.findIndex((f) => f === object);
-        if (flowerIndex !== -1) {
-          updatedFlowers[flowerIndex] = newPos;
-          updatedSelectedObjects[index] = newPos;
-        }
-
-        // Check if it's the start position
-        if (object === state.start) {
-          updatedStart.x = newPos.x;
-          updatedStart.y = newPos.y;
-          updatedSelectedObjects[index] = updatedStart;
-        }
-      });
-
-      return {
-        apples: updatedApples,
-        killers: updatedKillers,
-        flowers: updatedFlowers,
-        start: updatedStart,
-        selectedObjects: updatedSelectedObjects,
-      };
-    }),
 
   toggleAnimateSprites: () =>
     set((state) => ({ animateSprites: !state.animateSprites })),
@@ -250,7 +158,7 @@ export const useStore = create<Store>((set, get) => ({
   toggleShowSprites: () =>
     set((state) => ({ showSprites: !state.showSprites })),
 
-  importLevel: (levelData: LevelData) =>
+  importLevel: (levelData) =>
     set({
       polygons: levelData.polygons,
       apples: levelData.apples,

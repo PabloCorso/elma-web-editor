@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { EditorEngine } from "../editor/editor-engine";
 
+// Global ref to share engine instance
+export const engineRef = { current: null as EditorEngine | null };
+
 export function EditorView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const engineRef = useRef<EditorEngine | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -12,12 +14,30 @@ export function EditorView() {
     const parent = canvas.parentElement;
     if (!parent) return;
 
-    const rect = parent.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    engineRef.current = new EditorEngine(canvas);
+    const updateCanvasSize = () => {
+      const rect = parent.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    updateCanvasSize();
+    
+    // Wait a frame to ensure canvas size is set
+    requestAnimationFrame(() => {
+      engineRef.current = new EditorEngine(canvas);
+    });
+
+    // Add resize observer to handle parent size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateCanvasSize();
+      if (engineRef.current) {
+        engineRef.current.fitToView();
+      }
+    });
+    resizeObserver.observe(parent);
 
     return () => {
+      resizeObserver.disconnect();
       if (engineRef.current) {
         engineRef.current.destroy();
         engineRef.current = null;

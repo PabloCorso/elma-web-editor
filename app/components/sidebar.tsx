@@ -3,20 +3,38 @@ import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
 import { useState, useEffect } from "react";
+import { engineRef } from "./editor-view";
 
 export function Sidebar() {
   const [isBuiltInLevelsOpen, setIsBuiltinLevelsOpen] = useState(false);
 
-  const {
-    currentTool,
-    setCurrentTool,
-    animateSprites,
-    toggleAnimateSprites,
-    showSprites,
-    toggleShowSprites,
-    importLevel,
-    triggerFitToView,
-  } = useStore();
+  const currentTool = useStore((state) => state.currentTool);
+  const animateSprites = useStore((state) => state.animateSprites);
+  const showSprites = useStore((state) => state.showSprites);
+
+  const setCurrentTool = useStore((state) => state.setCurrentTool);
+  const toggleAnimateSprites = useStore((state) => state.toggleAnimateSprites);
+  const toggleShowSprites = useStore((state) => state.toggleShowSprites);
+  const importLevel = useStore((state) => state.importLevel);
+  const triggerFitToView = useStore((state) => state.triggerFitToView);
+
+  const handleToolActivation = (toolId: string) => {
+    if (engineRef.current) {
+      engineRef.current.activateTool(toolId);
+    }
+    // Also update the store for UI state
+    const toolMap: Record<string, EditorTool> = {
+      polygon: "polygon",
+      select: "select",
+      apple: "apple",
+      killer: "killer",
+      flower: "flower",
+    };
+    const tool = toolMap[toolId];
+    if (tool) {
+      setCurrentTool(tool);
+    }
+  };
 
   // Handle keyboard shortcuts for tools
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,7 +61,7 @@ export function Sidebar() {
 
     if (toolMap[key]) {
       e.preventDefault();
-      setCurrentTool(toolMap[key]);
+      handleToolActivation(toolMap[key].toLowerCase());
     }
   };
 
@@ -123,7 +141,7 @@ export function Sidebar() {
       const levData = level.toBuffer();
 
       // Create and download the file
-      const dataBlob = new Blob([levData], {
+      const dataBlob = new Blob([levData] as any, {
         type: "application/octet-stream",
       });
       const link = document.createElement("a");
@@ -181,7 +199,12 @@ export function Sidebar() {
       <div className="w-64 h-screen bg-gray-800 text-white flex-col border-r border-gray-700 overflow-y-auto">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
-          <h1 className="text-xl font-bold">Elma Web Editor</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">Elma Web Editor</h1>
+            <span className="px-2 py-1 text-xs font-semibold bg-blue-500 text-white rounded-full">
+              BETA
+            </span>
+          </div>
         </div>
 
         {/* Tools Section */}
@@ -189,7 +212,7 @@ export function Sidebar() {
           <h2 className="text-sm font-semibold text-gray-300 mb-3">Tools</h2>
           <div className="space-y-2">
             <button
-              onClick={() => setCurrentTool("select")}
+              onClick={() => handleToolActivation("select")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === "select"
                   ? "bg-blue-600 text-white"
@@ -205,7 +228,7 @@ export function Sidebar() {
               </span>
             </button>
             <button
-              onClick={() => setCurrentTool("polygon")}
+              onClick={() => handleToolActivation("polygon")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === "polygon"
                   ? "bg-blue-600 text-white"
@@ -221,7 +244,7 @@ export function Sidebar() {
               </span>
             </button>
             <button
-              onClick={() => setCurrentTool("apple")}
+              onClick={() => handleToolActivation("apple")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === "apple"
                   ? "bg-blue-600 text-white"
@@ -237,7 +260,7 @@ export function Sidebar() {
               </span>
             </button>
             <button
-              onClick={() => setCurrentTool("killer")}
+              onClick={() => handleToolActivation("killer")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === "killer"
                   ? "bg-blue-600 text-white"
@@ -253,7 +276,7 @@ export function Sidebar() {
               </span>
             </button>
             <button
-              onClick={() => setCurrentTool("flower")}
+              onClick={() => handleToolActivation("flower")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
                 currentTool === "flower"
                   ? "bg-blue-600 text-white"
@@ -330,7 +353,9 @@ export function Sidebar() {
           <div className="space-y-2">
             <button
               onClick={handleDownload}
-              className="w-full flex items-center gap-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="w-full flex disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-600 items-center gap-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              title="Work in progress"
+              disabled
             >
               <span className="text-lg">⬇️</span>
               <span>Download Level</span>

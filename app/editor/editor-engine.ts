@@ -1,21 +1,8 @@
-import { useStore } from "./useStore";
+import { useStore, type Store } from "./useStore";
 import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
-import {
-  getEventContext,
-  isUserTyping,
-} from "./utils/event-handler";
-import { isWithinThreshold } from "./utils/coordinate-utils";
+import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
-import {
-  findVertexNearPosition,
-  findObjectNearPosition,
-  isVertexSelected,
-  isObjectSelected,
-  getAllObjects,
-  isPointInRect,
-  getSelectionBounds,
-} from "./utils/selection-utils";
 import {
   isPolygonClockwise,
   shouldPolygonBeGround,
@@ -24,6 +11,10 @@ import {
 import { colors } from "./constants";
 import type { Polygon, Position } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
+import { ToolRegistry } from "./tool-registry";
+import { PolygonTool } from "./tools/polygon-tool";
+import { SelectionTool } from "./tools/selection-tool";
+import { AppleTool, KillerTool, FlowerTool } from "./tools/object-tools";
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -32,6 +23,7 @@ export class EditorEngine {
   private spriteManager: SpriteManager;
   private objectRenderer: ObjectRenderer;
   private debugMode = false;
+  private toolRegistry: ToolRegistry;
 
   // Camera system
   private minZoom = 0.1;
@@ -42,15 +34,6 @@ export class EditorEngine {
   private isPanning = false;
   private lastPanX = 0;
   private lastPanY = 0;
-
-  // Selection and dragging state
-  private isDragging = false;
-  private dragStartPos: Position = { x: 0, y: 0 };
-
-  // Marquee selection state
-  private isMarqueeSelecting = false;
-  private marqueeStartPos: Position = { x: 0, y: 0 };
-  private marqueeEndPos: Position = { x: 0, y: 0 };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -72,13 +55,26 @@ export class EditorEngine {
     this.objectRenderer = new ObjectRenderer(this.spriteManager);
     this.minZoom = minZoom;
     this.maxZoom = maxZoom;
+    this.toolRegistry = new ToolRegistry();
 
+    this.setupTools();
     this.setupEventListeners();
     this.setupStoreListeners();
 
     useStore.setState(initialLevel);
     this.startRenderLoop();
     this.fitToView();
+  }
+
+  private setupTools() {
+    this.toolRegistry.register(new PolygonTool());
+    this.toolRegistry.register(new SelectionTool());
+    this.toolRegistry.register(new AppleTool());
+    this.toolRegistry.register(new KillerTool());
+    this.toolRegistry.register(new FlowerTool());
+
+    // Activate selection tool by default
+    this.toolRegistry.activateTool("select");
   }
 
   private setupEventListeners() {
@@ -108,136 +104,18 @@ export class EditorEngine {
     }
 
     if (e.button === 0) {
-      this.handleLeftClick(context);
-    }
-  };
-
-  private handleLeftClick(context: any) {
-    const store = useStore.getState();
-
-    if (store.currentTool === "polygon") {
-      this.handlePolygonClick(context.worldPos);
-    } else if (store.currentTool === "apple") {
-      store.addApple(context.worldPos);
-    } else if (store.currentTool === "killer") {
-      store.addKiller(context.worldPos);
-    } else if (store.currentTool === "flower") {
-      store.addFlower(context.worldPos);
-    } else if (store.currentTool === "select") {
-      this.handleSelectionClick(context);
-    }
-  }
-
-  private handlePolygonClick(worldPos: Position) {
-    const store = useStore.getState();
-
-    if (store.drawingPolygon.length >= 3) {
-      const firstPoint = store.drawingPolygon[0];
-      if (isWithinThreshold(worldPos, firstPoint, 15, store.zoom)) {
-        this.finishPolygon();
-        return;
+      const activeTool = this.toolRegistry.getActiveTool();
+      if (activeTool?.onPointerDown) {
+        const consumed = activeTool.onPointerDown(e as PointerEvent, context);
+        if (consumed) return;
       }
     }
-
-    const newVertices = [...store.drawingPolygon, worldPos];
-    store.setDrawingPolygon(newVertices);
-  }
-
-  private handleSelectionClick(context: any) {
-    const store = useStore.getState();
-    const vertex = findVertexNearPosition(
-      context.worldPos,
-      store.polygons,
-      10,
-      store.zoom
-    );
-    const object = this.findObjectNearPosition(context.worldPos);
-
-    if (vertex) {
-      this.handleVertexSelection(vertex, context.isCtrlKey);
-      this.startDragging(context.worldPos);
-    } else if (object) {
-      this.handleObjectSelection(object, context.isCtrlKey);
-      this.startDragging(context.worldPos);
-    } else {
-      this.startMarqueeSelection(context.worldPos, context.isCtrlKey);
-    }
-  }
-
-  private findObjectNearPosition(pos: Position): Position | null {
-    const store = useStore.getState();
-
-    const apple = findObjectNearPosition(pos, store.apples, 15, store.zoom);
-    if (apple) return apple;
-
-    const killer = findObjectNearPosition(pos, store.killers, 15, store.zoom);
-    if (killer) return killer;
-
-    const flower = findObjectNearPosition(pos, store.flowers, 15, store.zoom);
-    if (flower) return flower;
-
-    if (isWithinThreshold(pos, store.start, 15, store.zoom)) {
-      return store.start;
-    }
-
-    return null;
-  }
-
-  private handleVertexSelection(vertex: any, isCtrlKey: boolean) {
-    const store = useStore.getState();
-    const isSelected = isVertexSelected(vertex, store.selectedVertices);
-
-    if (!isCtrlKey && !isSelected) {
-      store.clearSelection();
-    }
-
-    if (!isSelected) {
-      store.selectVertex(vertex.polygon, vertex.vertex);
-    }
-  }
-
-  private handleObjectSelection(object: Position, isCtrlKey: boolean) {
-    const store = useStore.getState();
-    const isSelected = isObjectSelected(object, store.selectedObjects);
-
-    if (!isCtrlKey && !isSelected) {
-      store.clearSelection();
-    }
-
-    if (!isSelected) {
-      store.selectObject(object);
-    }
-  }
+  };
 
   private startPanning(clientX: number, clientY: number) {
     this.isPanning = true;
     this.lastPanX = clientX;
     this.lastPanY = clientY;
-  }
-
-  private startDragging(worldPos: Position) {
-    this.isDragging = true;
-    this.dragStartPos = worldPos;
-  }
-
-  private startMarqueeSelection(worldPos: Position, isCtrlKey: boolean) {
-    const store = useStore.getState();
-    if (!isCtrlKey) {
-      store.clearSelection();
-    }
-    this.isMarqueeSelecting = true;
-    this.marqueeStartPos = worldPos;
-    this.marqueeEndPos = worldPos;
-  }
-
-  private finishPolygon() {
-    const store = useStore.getState();
-    const newPolygon = {
-      vertices: [...store.drawingPolygon],
-      grass: false,
-    };
-    store.addPolygon(newPolygon);
-    store.setDrawingPolygon([]);
   }
 
   private handleMouseMove = (e: MouseEvent) => {
@@ -258,42 +136,14 @@ export class EditorEngine {
       return;
     }
 
-    if (this.isDragging) {
-      this.handleDragging(context.worldPos);
-      return;
-    }
-
-    if (this.isMarqueeSelecting) {
-      this.marqueeEndPos = context.worldPos;
-      return;
+    const activeTool = this.toolRegistry.getActiveTool();
+    if (activeTool?.onPointerMove) {
+      const consumed = activeTool.onPointerMove(e as PointerEvent, context);
+      if (consumed) return;
     }
 
     useStore.getState().setMousePosition(context.worldPos);
   };
-
-  private handleDragging(worldPos: Position) {
-    const store = useStore.getState();
-    const deltaX = worldPos.x - this.dragStartPos.x;
-    const deltaY = worldPos.y - this.dragStartPos.y;
-
-    if (store.selectedVertices.length > 0) {
-      const newVertexPositions = store.selectedVertices.map((sv) => ({
-        x: sv.vertex.x + deltaX,
-        y: sv.vertex.y + deltaY,
-      }));
-      store.updateSelectedVertices(newVertexPositions);
-    }
-
-    if (store.selectedObjects.length > 0) {
-      const newObjectPositions = store.selectedObjects.map((obj) => ({
-        x: obj.x + deltaX,
-        y: obj.y + deltaY,
-      }));
-      store.updateSelectedObjects(newObjectPositions);
-    }
-
-    this.dragStartPos = worldPos;
-  }
 
   private handleMouseUp = (e: MouseEvent) => {
     if (e.button === 1) {
@@ -301,69 +151,35 @@ export class EditorEngine {
     }
 
     if (e.button === 0) {
-      this.isPanning = false;
-      this.isDragging = false;
+      const state = useStore.getState();
+      const context = getEventContext(
+        e,
+        this.canvas,
+        state.viewPortOffset,
+        state.zoom
+      );
 
-      if (this.isMarqueeSelecting) {
-        this.finalizeMarqueeSelection();
-        this.isMarqueeSelecting = false;
+      const activeTool = this.toolRegistry.getActiveTool();
+      if (activeTool?.onPointerUp) {
+        activeTool.onPointerUp(e as PointerEvent, context);
       }
     }
   };
 
-  private finalizeMarqueeSelection() {
-    const state = useStore.getState();
-    const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
-
-    // Select vertices within the marquee
-    state.polygons.forEach((polygon) => {
-      polygon.vertices.forEach((vertex) => {
-        if (
-          isPointInRect(
-            vertex,
-            bounds.minX,
-            bounds.maxX,
-            bounds.minY,
-            bounds.maxY
-          )
-        ) {
-          const isSelected = state.selectedVertices.some(
-            (sv) => sv.polygon === polygon && sv.vertex === vertex
-          );
-          if (!isSelected) {
-            state.selectVertex(polygon, vertex);
-          }
-        }
-      });
-    });
-
-    // Select objects within the marquee
-    const allObjects = getAllObjects(
-      state.apples,
-      state.killers,
-      state.flowers,
-      state.start
-    );
-    allObjects.forEach(({ obj }) => {
-      if (
-        isPointInRect(obj, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY)
-      ) {
-        const isSelected = state.selectedObjects.includes(obj);
-        if (!isSelected) {
-          state.selectObject(obj);
-        }
-      }
-    });
-  }
-
   private handleRightClick = (e: MouseEvent) => {
     e.preventDefault();
-    const store = useStore.getState();
+    const state = useStore.getState();
+    const context = getEventContext(
+      e,
+      this.canvas,
+      state.viewPortOffset,
+      state.zoom
+    );
 
-    if (store.currentTool === "polygon" && store.drawingPolygon.length >= 3) {
-      this.finishPolygon();
-    } else if (store.drawingPolygon.length > 0) {
-      store.setDrawingPolygon([]);
+    const activeTool = this.toolRegistry.getActiveTool();
+    if (activeTool?.onRightClick) {
+      const consumed = activeTool.onRightClick(e, context);
+      if (consumed) return;
     }
   };
 
@@ -398,12 +214,22 @@ export class EditorEngine {
     const panAmount = 50 / useStore.getState().zoom;
     const zoomAmount = 0.1;
 
-    switch (e.key) {
-      case "Escape":
-        useStore.getState().setDrawingPolygon([]);
-        useStore.getState().clearSelection();
-        break;
+    // Let active tool handle the key first
+    const activeTool = this.toolRegistry.getActiveTool();
+    if (activeTool?.onKeyDown) {
+      const context = {
+        worldPos: { x: 0, y: 0 },
+        screenX: 0,
+        screenY: 0,
+        isCtrlKey: e.ctrlKey,
+        isShiftKey: e.shiftKey,
+        isMetaKey: e.metaKey,
+      };
+      const consumed = activeTool.onKeyDown(e, context);
+      if (consumed) return;
+    }
 
+    switch (e.key) {
       case "ArrowLeft":
         e.preventDefault();
         updateCamera(panAmount, 0, this.panSpeed);
@@ -448,12 +274,6 @@ export class EditorEngine {
         e.preventDefault();
         this.toggleDebugMode();
         break;
-
-      case "Delete":
-      case "Backspace":
-        e.preventDefault();
-        this.deleteSelection();
-        break;
     }
   };
 
@@ -468,59 +288,6 @@ export class EditorEngine {
       this.canvas.height = rect.height;
     }
   };
-
-  private deleteSelection() {
-    const state = useStore.getState();
-
-    // Group selected vertices by polygon index
-    const verticesByPolygonIndex = new Map<number, Position[]>();
-    state.selectedVertices.forEach(({ polygon, vertex }) => {
-      const polygonIndex = state.polygons.indexOf(polygon);
-      if (polygonIndex !== -1) {
-        if (!verticesByPolygonIndex.has(polygonIndex)) {
-          verticesByPolygonIndex.set(polygonIndex, []);
-        }
-        verticesByPolygonIndex.get(polygonIndex)!.push(vertex);
-      }
-    });
-
-    // Delete vertices from each polygon
-    const sortedPolygonIndices = Array.from(verticesByPolygonIndex.keys()).sort(
-      (a, b) => b - a
-    );
-    sortedPolygonIndices.forEach((polygonIndex) => {
-      const polygon = state.polygons[polygonIndex];
-      const verticesToDelete = verticesByPolygonIndex.get(polygonIndex)!;
-
-      if (polygon) {
-        const updatedVertices = polygon.vertices.filter(
-          (vertex) => !verticesToDelete.includes(vertex)
-        );
-
-        if (updatedVertices.length < 3) {
-          state.removePolygon(polygonIndex);
-        } else {
-          state.updatePolygon(polygonIndex, {
-            ...polygon,
-            vertices: updatedVertices,
-          });
-        }
-      }
-    });
-
-    // Delete selected objects
-    state.selectedObjects.forEach((object) => {
-      if (state.apples.includes(object)) {
-        state.removeApple(object);
-      } else if (state.killers.includes(object)) {
-        state.removeKiller(object);
-      } else if (state.flowers.includes(object)) {
-        state.removeFlower(object);
-      }
-    });
-
-    state.clearSelection();
-  }
 
   public fitToView() {
     const state = useStore.getState();
@@ -560,28 +327,27 @@ export class EditorEngine {
 
   private render() {
     const state = useStore.getState();
-    this.updateCursor(state);
     this.clearCanvas();
     this.applyCameraTransform(state);
-    this.drawPolygonsWithWindingRule();
-    this.drawDrawingPolygon();
+    this.drawPolygons();
     this.drawObjects();
-    this.drawSelectionHandles();
-    this.drawMarqueeSelection();
+
+    // Let active tool render
+    const activeTool = this.toolRegistry.getActiveTool();
+    if (activeTool?.onRender) {
+      activeTool.onRender(this.ctx, state);
+    }
+
     this.ctx.restore();
+
+    // Let active tool render overlay
+    if (activeTool?.onRenderOverlay) {
+      activeTool.onRenderOverlay(this.ctx, state);
+    }
 
     if (this.debugMode) {
       this.drawDebugInfoPanel();
-    }
-  }
-
-  private updateCursor(state: any) {
-    if (this.isPanning) {
-      this.canvas.style.cursor = "grabbing";
-    } else if (state.currentTool === "select") {
-      this.canvas.style.cursor = "default";
-    } else {
-      this.canvas.style.cursor = "crosshair";
+      this.drawMousePositionDebug(state);
     }
   }
 
@@ -590,13 +356,13 @@ export class EditorEngine {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  private applyCameraTransform(state: any) {
+  private applyCameraTransform(state: Store) {
     this.ctx.save();
     this.ctx.translate(state.viewPortOffset.x, state.viewPortOffset.y);
     this.ctx.scale(state.zoom, state.zoom);
   }
 
-  private drawPolygonsWithWindingRule() {
+  private drawPolygons() {
     const state = useStore.getState();
 
     if (state.polygons.length === 0) return;
@@ -715,43 +481,6 @@ export class EditorEngine {
     );
   }
 
-  private drawDrawingPolygon() {
-    const state = useStore.getState();
-
-    if (state.drawingPolygon.length === 0) return;
-
-    this.ctx.strokeStyle = colors.edges;
-    this.ctx.lineWidth = 1 / state.zoom;
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(state.drawingPolygon[0].x, state.drawingPolygon[0].y);
-
-    for (let i = 1; i < state.drawingPolygon.length; i++) {
-      this.ctx.lineTo(state.drawingPolygon[i].x, state.drawingPolygon[i].y);
-    }
-
-    this.ctx.stroke();
-
-    if (state.drawingPolygon.length > 0) {
-      const lastPoint = state.drawingPolygon[state.drawingPolygon.length - 1];
-      this.ctx.strokeStyle = colors.edges;
-      this.ctx.lineWidth = 1 / state.zoom;
-      this.ctx.setLineDash([5 / state.zoom, 5 / state.zoom]);
-      this.ctx.beginPath();
-      this.ctx.moveTo(lastPoint.x, lastPoint.y);
-      this.ctx.lineTo(state.mousePosition.x, state.mousePosition.y);
-      this.ctx.stroke();
-      this.ctx.setLineDash([]);
-    }
-
-    this.ctx.fillStyle = colors.edges;
-    state.drawingPolygon.forEach((vertex) => {
-      this.ctx.beginPath();
-      this.ctx.arc(vertex.x, vertex.y, 2 / state.zoom, 0, 2 * Math.PI);
-      this.ctx.fill();
-    });
-  }
-
   private drawObjects() {
     const state = useStore.getState();
     this.objectRenderer.renderObjects(
@@ -787,51 +516,8 @@ export class EditorEngine {
     );
   }
 
-  private drawSelectionHandles() {
-    const state = useStore.getState();
-    this.ctx.fillStyle = colors.selection;
-    const handleSize = Math.max(0.5, Math.min(10, 3 / state.zoom));
-
-    state.selectedVertices.forEach(({ vertex }) => {
-      this.ctx.fillRect(
-        vertex.x - handleSize,
-        vertex.y - handleSize,
-        handleSize * 2,
-        handleSize * 2
-      );
-    });
-
-    state.selectedObjects.forEach((object) => {
-      this.ctx.fillRect(
-        object.x - handleSize,
-        object.y - handleSize,
-        handleSize * 2,
-        handleSize * 2
-      );
-    });
-  }
-
-  private drawMarqueeSelection() {
-    if (!this.isMarqueeSelecting) return;
-
-    const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
-    const width = bounds.maxX - bounds.minX;
-    const height = bounds.maxY - bounds.minY;
-
-    this.ctx.fillStyle = "rgba(255, 255, 0, 0.2)";
-    this.ctx.fillRect(bounds.minX, bounds.minY, width, height);
-
-    this.ctx.strokeStyle = "#ffff00";
-    this.ctx.lineWidth = Math.max(
-      0.5,
-      Math.min(10, 2 / useStore.getState().zoom)
-    );
-    this.ctx.setLineDash([
-      5 / useStore.getState().zoom,
-      5 / useStore.getState().zoom,
-    ]);
-    this.ctx.strokeRect(bounds.minX, bounds.minY, width, height);
-    this.ctx.setLineDash([]);
+  public activateTool(toolId: string): boolean {
+    return this.toolRegistry.activateTool(toolId);
   }
 
   public destroy() {
@@ -852,6 +538,22 @@ export class EditorEngine {
   public toggleDebugMode() {
     this.debugMode = !this.debugMode;
     console.debug("Debug mode:", this.debugMode ? "ON" : "OFF");
+  }
+
+  private drawMousePositionDebug(state: Store) {
+    this.ctx.font = "12px 'Courier New', monospace";
+    this.ctx.fillStyle = "#ffffff";
+    this.ctx.textAlign = "left";
+    this.ctx.textBaseline = "top";
+
+    const text = `Mouse: (${state.mousePosition.x.toFixed(1)}, ${state.mousePosition.y.toFixed(1)})`;
+    this.ctx.fillText(text, 10, 30);
+
+    const cameraText = `Camera: (${state.viewPortOffset.x.toFixed(1)}, ${state.viewPortOffset.y.toFixed(1)})`;
+    this.ctx.fillText(cameraText, 10, 50);
+
+    const zoomText = `Zoom: ${state.zoom.toFixed(2)}`;
+    this.ctx.fillText(zoomText, 10, 70);
   }
 
   private drawDebugInfoPanel() {
