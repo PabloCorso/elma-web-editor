@@ -1,9 +1,15 @@
 import { useStore } from "./useStore";
 import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
-import { EventHandler } from "./utils/event-handler";
-import { CoordinateUtils } from "./utils/coordinate-utils";
-import { CameraUtils } from "./utils/camera-utils";
+import {
+  getEventContext,
+  getTouchContext,
+  getTouchDistance,
+  getTouchMidpoint,
+  isUserTyping,
+} from "./utils/event-handler";
+import { isWithinThreshold } from "./utils/coordinate-utils";
+import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
 import {
   findVertexNearPosition,
   findObjectNearPosition,
@@ -103,7 +109,7 @@ export class EditorEngine {
 
   private handleMouseDown = (e: MouseEvent) => {
     const state = useStore.getState();
-    const context = EventHandler.getEventContext(
+    const context = getEventContext(
       e,
       this.canvas,
       state.viewPortOffset,
@@ -124,7 +130,7 @@ export class EditorEngine {
   private handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
     const state = useStore.getState();
-    const touchContext = EventHandler.getTouchContext(e.touches);
+    const touchContext = getTouchContext(e.touches);
 
     if (touchContext.isMultiTouch) {
       this.startMultiTouchPanning(touchContext);
@@ -132,7 +138,7 @@ export class EditorEngine {
     }
 
     if (touchContext.touch1) {
-      const context = EventHandler.getEventContext(
+      const context = getEventContext(
         touchContext.touch1,
         this.canvas,
         state.viewPortOffset,
@@ -180,9 +186,7 @@ export class EditorEngine {
 
     if (store.drawingPolygon.length >= 3) {
       const firstPoint = store.drawingPolygon[0];
-      if (
-        CoordinateUtils.isWithinThreshold(worldPos, firstPoint, 15, store.zoom)
-      ) {
+      if (isWithinThreshold(worldPos, firstPoint, 15, store.zoom)) {
         this.finishPolygon();
         return;
       }
@@ -216,31 +220,16 @@ export class EditorEngine {
   private findObjectNearPosition(pos: Position): Position | null {
     const store = useStore.getState();
 
-    const apple = findObjectNearPosition(
-      pos,
-      store.apples,
-      15,
-      store.zoom
-    );
+    const apple = findObjectNearPosition(pos, store.apples, 15, store.zoom);
     if (apple) return apple;
 
-    const killer = findObjectNearPosition(
-      pos,
-      store.killers,
-      15,
-      store.zoom
-    );
+    const killer = findObjectNearPosition(pos, store.killers, 15, store.zoom);
     if (killer) return killer;
 
-    const flower = findObjectNearPosition(
-      pos,
-      store.flowers,
-      15,
-      store.zoom
-    );
+    const flower = findObjectNearPosition(pos, store.flowers, 15, store.zoom);
     if (flower) return flower;
 
-    if (CoordinateUtils.isWithinThreshold(pos, store.start, 15, store.zoom)) {
+    if (isWithinThreshold(pos, store.start, 15, store.zoom)) {
       return store.start;
     }
 
@@ -249,10 +238,7 @@ export class EditorEngine {
 
   private handleVertexSelection(vertex: any, isCtrlKey: boolean) {
     const store = useStore.getState();
-    const isSelected = isVertexSelected(
-      vertex,
-      store.selectedVertices
-    );
+    const isSelected = isVertexSelected(vertex, store.selectedVertices);
 
     if (!isCtrlKey && !isSelected) {
       store.clearSelection();
@@ -265,10 +251,7 @@ export class EditorEngine {
 
   private handleObjectSelection(object: Position, isCtrlKey: boolean) {
     const store = useStore.getState();
-    const isSelected = isObjectSelected(
-      object,
-      store.selectedObjects
-    );
+    const isSelected = isObjectSelected(object, store.selectedObjects);
 
     if (!isCtrlKey && !isSelected) {
       store.clearSelection();
@@ -292,7 +275,7 @@ export class EditorEngine {
         (touchContext.touch1.clientX + touchContext.touch2.clientX) / 2;
       this.lastPanY =
         (touchContext.touch1.clientY + touchContext.touch2.clientY) / 2;
-      this.lastPinchDistance = EventHandler.getTouchDistance(
+      this.lastPinchDistance = getTouchDistance(
         touchContext.touch1,
         touchContext.touch2
       );
@@ -326,7 +309,7 @@ export class EditorEngine {
 
   private handleMouseMove = (e: MouseEvent) => {
     const state = useStore.getState();
-    const context = EventHandler.getEventContext(
+    const context = getEventContext(
       e,
       this.canvas,
       state.viewPortOffset,
@@ -336,7 +319,7 @@ export class EditorEngine {
     if (this.isPanning) {
       const deltaX = e.clientX - this.lastPanX;
       const deltaY = e.clientY - this.lastPanY;
-      CameraUtils.updateCamera(deltaX, deltaY, this.panSpeed);
+      updateCamera(deltaX, deltaY, this.panSpeed);
       this.lastPanX = e.clientX;
       this.lastPanY = e.clientY;
       return;
@@ -358,7 +341,7 @@ export class EditorEngine {
   private handleTouchMove = (e: TouchEvent) => {
     e.preventDefault();
     const state = useStore.getState();
-    const touchContext = EventHandler.getTouchContext(e.touches);
+    const touchContext = getTouchContext(e.touches);
 
     if (touchContext.isMultiTouch) {
       this.handleMultiTouchZoom(touchContext);
@@ -366,7 +349,7 @@ export class EditorEngine {
     }
 
     if (touchContext.touch1) {
-      const context = EventHandler.getEventContext(
+      const context = getEventContext(
         touchContext.touch1,
         this.canvas,
         state.viewPortOffset,
@@ -390,7 +373,7 @@ export class EditorEngine {
       } else if (this.isPanning) {
         const deltaX = e.touches[0].clientX - this.lastPanX;
         const deltaY = e.touches[0].clientY - this.lastPanY;
-        CameraUtils.updateCamera(deltaX, deltaY, this.panSpeed);
+        updateCamera(deltaX, deltaY, this.panSpeed);
         this.lastPanX = e.touches[0].clientX;
         this.lastPanY = e.touches[0].clientY;
       }
@@ -400,10 +383,7 @@ export class EditorEngine {
   private handleMultiTouchZoom(touchContext: any) {
     if (!touchContext.touch1 || !touchContext.touch2) return;
 
-    const newDist = EventHandler.getTouchDistance(
-      touchContext.touch1,
-      touchContext.touch2
-    );
+    const newDist = getTouchDistance(touchContext.touch1, touchContext.touch2);
     if (this.lastPinchDistance > 0) {
       const distanceChange = Math.abs(newDist - this.lastPinchDistance);
       const minDistanceChange = 5;
@@ -418,7 +398,7 @@ export class EditorEngine {
         );
 
         if (newZoom !== currentZoom) {
-          const mid = EventHandler.getTouchMidpoint(
+          const mid = getTouchMidpoint(
             touchContext.touch1,
             touchContext.touch2
           );
@@ -430,7 +410,7 @@ export class EditorEngine {
           const midScreenX = (mid.clientX - rect.left) * scaleX;
           const midScreenY = (mid.clientY - rect.top) * scaleY;
 
-          CameraUtils.updateZoom(
+          updateZoom(
             newZoom,
             this.minZoom,
             this.maxZoom,
@@ -514,10 +494,7 @@ export class EditorEngine {
 
   private finalizeMarqueeSelection() {
     const state = useStore.getState();
-    const bounds = getSelectionBounds(
-      this.marqueeStartPos,
-      this.marqueeEndPos
-    );
+    const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
 
     // Select vertices within the marquee
     state.polygons.forEach((polygon) => {
@@ -550,13 +527,7 @@ export class EditorEngine {
     );
     allObjects.forEach(({ obj }) => {
       if (
-        isPointInRect(
-          obj,
-          bounds.minX,
-          bounds.maxX,
-          bounds.minY,
-          bounds.maxY
-        )
+        isPointInRect(obj, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY)
       ) {
         const isSelected = state.selectedObjects.includes(obj);
         if (!isSelected) {
@@ -587,29 +558,23 @@ export class EditorEngine {
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
       const currentZoom = useStore.getState().zoom;
       const newZoom = currentZoom * zoomFactor;
-      CameraUtils.updateZoom(
-        newZoom,
-        this.minZoom,
-        this.maxZoom,
-        mouseX,
-        mouseY
-      );
+      updateZoom(newZoom, this.minZoom, this.maxZoom, mouseX, mouseY);
       return;
     }
 
     if (e.shiftKey) {
       const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
       const panAmount = -delta * 0.5;
-      CameraUtils.updateCamera(panAmount, 0, this.panSpeed);
+      updateCamera(panAmount, 0, this.panSpeed);
       return;
     }
 
     const panAmount = -e.deltaY * 0.5;
-    CameraUtils.updateCamera(0, panAmount, this.panSpeed);
+    updateCamera(0, panAmount, this.panSpeed);
   };
 
   private handleKeyDown = (e: KeyboardEvent) => {
-    if (EventHandler.isUserTyping()) return;
+    if (isUserTyping()) return;
 
     const panAmount = 50 / useStore.getState().zoom;
     const zoomAmount = 0.1;
@@ -622,44 +587,36 @@ export class EditorEngine {
 
       case "ArrowLeft":
         e.preventDefault();
-        CameraUtils.updateCamera(panAmount, 0, this.panSpeed);
+        updateCamera(panAmount, 0, this.panSpeed);
         break;
 
       case "ArrowRight":
         e.preventDefault();
-        CameraUtils.updateCamera(-panAmount, 0, this.panSpeed);
+        updateCamera(-panAmount, 0, this.panSpeed);
         break;
 
       case "ArrowUp":
         e.preventDefault();
-        CameraUtils.updateCamera(0, panAmount, this.panSpeed);
+        updateCamera(0, panAmount, this.panSpeed);
         break;
 
       case "ArrowDown":
         e.preventDefault();
-        CameraUtils.updateCamera(0, -panAmount, this.panSpeed);
+        updateCamera(0, -panAmount, this.panSpeed);
         break;
 
       case "+":
       case "=":
         e.preventDefault();
         const currentZoom = useStore.getState().zoom;
-        CameraUtils.updateZoom(
-          currentZoom + zoomAmount,
-          this.minZoom,
-          this.maxZoom
-        );
+        updateZoom(currentZoom + zoomAmount, this.minZoom, this.maxZoom);
         break;
 
       case "-":
       case "_":
         e.preventDefault();
         const currentZoom2 = useStore.getState().zoom;
-        CameraUtils.updateZoom(
-          currentZoom2 - zoomAmount,
-          this.minZoom,
-          this.maxZoom
-        );
+        updateZoom(currentZoom2 - zoomAmount, this.minZoom, this.maxZoom);
         break;
 
       case "1":
@@ -748,12 +705,7 @@ export class EditorEngine {
 
   public fitToView() {
     const state = useStore.getState();
-    CameraUtils.fitToView(
-      this.canvas,
-      state.polygons,
-      this.minZoom,
-      this.maxZoom
-    );
+    fitToView(this.canvas, state.polygons, this.minZoom, this.maxZoom);
   }
 
   public loadLevel(levelData: LevelData) {
@@ -1043,10 +995,7 @@ export class EditorEngine {
   private drawMarqueeSelection() {
     if (!this.isMarqueeSelecting) return;
 
-    const bounds = getSelectionBounds(
-      this.marqueeStartPos,
-      this.marqueeEndPos
-    );
+    const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
     const width = bounds.maxX - bounds.minX;
     const height = bounds.maxY - bounds.minY;
 

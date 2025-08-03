@@ -1,5 +1,5 @@
 import type { Position, Polygon } from "elmajs";
-import { CoordinateUtils } from "./coordinate-utils";
+import { isWithinThreshold } from "./coordinate-utils";
 
 export type SelectedVertex = {
   polygon: Polygon;
@@ -14,7 +14,7 @@ export function findVertexNearPosition(
 ): { polygon: Polygon; vertex: Position } | null {
   for (const polygon of polygons) {
     for (const vertex of polygon.vertices) {
-      if (CoordinateUtils.isWithinThreshold(pos, vertex, threshold, zoom)) {
+      if (isWithinThreshold(pos, vertex, threshold, zoom)) {
         return { polygon, vertex };
       }
     }
@@ -29,7 +29,7 @@ export function findObjectNearPosition(
   zoom: number
 ): Position | null {
   for (const object of objects) {
-    if (CoordinateUtils.isWithinThreshold(pos, object, threshold, zoom)) {
+    if (isWithinThreshold(pos, object, threshold, zoom)) {
       return object;
     }
   }
