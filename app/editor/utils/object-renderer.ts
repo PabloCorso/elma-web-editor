@@ -2,13 +2,13 @@ import type { Position } from "elmajs";
 import { SpriteManager } from "../sprite-manager";
 import { colors } from "../constants";
 
-export interface ObjectRenderConfig {
+export type ObjectRenderConfig = {
   spriteName: string;
   fallbackColor: string;
   spriteWidth: number;
   spriteHeight: number;
   circleRadius: number;
-}
+};
 
 export class ObjectRenderer {
   private spriteManager: SpriteManager;

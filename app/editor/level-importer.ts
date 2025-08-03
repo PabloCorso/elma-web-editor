@@ -1,18 +1,18 @@
 import type { Polygon, Position } from "elmajs";
 
-export interface LevelData {
+export type LevelData = {
   polygons: Polygon[];
   apples: Position[];
   killers: Position[];
   flowers: Position[];
   start: Position;
-}
+};
 
-export interface ImportResult {
+export type ImportResult = {
   success: boolean;
   data?: LevelData;
   error?: string;
-}
+};
 
 export const initialLevelData: LevelData = {
   polygons: [

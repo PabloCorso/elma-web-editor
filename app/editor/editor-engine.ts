@@ -4,7 +4,15 @@ import { ObjectRenderer } from "./utils/object-renderer";
 import { EventHandler } from "./utils/event-handler";
 import { CoordinateUtils } from "./utils/coordinate-utils";
 import { CameraUtils } from "./utils/camera-utils";
-import { SelectionUtils } from "./utils/selection-utils";
+import {
+  findVertexNearPosition,
+  findObjectNearPosition,
+  isVertexSelected,
+  isObjectSelected,
+  getAllObjects,
+  isPointInRect,
+  getSelectionBounds,
+} from "./utils/selection-utils";
 import {
   isPolygonClockwise,
   shouldPolygonBeGround,
@@ -131,16 +139,21 @@ export class EditorEngine {
         state.zoom
       );
 
-      // Start long-press timer for mobile
       if (this.isMobile()) {
-        this.isLongPress = false;
-        this.longPressTimer = window.setTimeout(() => {
-          this.isLongPress = true;
-          // On long press, switch to selection mode
-          this.handleSelectionClick(context);
-        }, this.longPressThreshold);
+        // On mobile, handle differently based on tool
+        if (state.currentTool === "select") {
+          // For select tool, use long-press to activate selection
+          this.isLongPress = false;
+          this.longPressTimer = window.setTimeout(() => {
+            this.isLongPress = true;
+            this.handleSelectionClick(context);
+          }, this.longPressThreshold);
+        } else {
+          // For other tools (polygon, apple, killer, flower), execute immediately
+          this.handleLeftClick(context);
+        }
       } else {
-        // Desktop: immediate action
+        // Desktop: immediate action for all tools
         this.handleLeftClick(context);
       }
     }
@@ -181,7 +194,7 @@ export class EditorEngine {
 
   private handleSelectionClick(context: any) {
     const store = useStore.getState();
-    const vertex = SelectionUtils.findVertexNearPosition(
+    const vertex = findVertexNearPosition(
       context.worldPos,
       store.polygons,
       10,
@@ -203,7 +216,7 @@ export class EditorEngine {
   private findObjectNearPosition(pos: Position): Position | null {
     const store = useStore.getState();
 
-    const apple = SelectionUtils.findObjectNearPosition(
+    const apple = findObjectNearPosition(
       pos,
       store.apples,
       15,
@@ -211,7 +224,7 @@ export class EditorEngine {
     );
     if (apple) return apple;
 
-    const killer = SelectionUtils.findObjectNearPosition(
+    const killer = findObjectNearPosition(
       pos,
       store.killers,
       15,
@@ -219,7 +232,7 @@ export class EditorEngine {
     );
     if (killer) return killer;
 
-    const flower = SelectionUtils.findObjectNearPosition(
+    const flower = findObjectNearPosition(
       pos,
       store.flowers,
       15,
@@ -236,7 +249,7 @@ export class EditorEngine {
 
   private handleVertexSelection(vertex: any, isCtrlKey: boolean) {
     const store = useStore.getState();
-    const isSelected = SelectionUtils.isVertexSelected(
+    const isSelected = isVertexSelected(
       vertex,
       store.selectedVertices
     );
@@ -252,7 +265,7 @@ export class EditorEngine {
 
   private handleObjectSelection(object: Position, isCtrlKey: boolean) {
     const store = useStore.getState();
-    const isSelected = SelectionUtils.isObjectSelected(
+    const isSelected = isObjectSelected(
       object,
       store.selectedObjects
     );
@@ -471,7 +484,7 @@ export class EditorEngine {
   };
 
   private handleTouchEnd = (e: TouchEvent) => {
-    // Clear long press timer if it exists
+    // Clear long press timer if it exists (only set in select mode)
     if (this.longPressTimer) {
       clearTimeout(this.longPressTimer);
       this.longPressTimer = null;
@@ -501,7 +514,7 @@ export class EditorEngine {
 
   private finalizeMarqueeSelection() {
     const state = useStore.getState();
-    const bounds = SelectionUtils.getSelectionBounds(
+    const bounds = getSelectionBounds(
       this.marqueeStartPos,
       this.marqueeEndPos
     );
@@ -510,7 +523,7 @@ export class EditorEngine {
     state.polygons.forEach((polygon) => {
       polygon.vertices.forEach((vertex) => {
         if (
-          SelectionUtils.isPointInRect(
+          isPointInRect(
             vertex,
             bounds.minX,
             bounds.maxX,
@@ -529,7 +542,7 @@ export class EditorEngine {
     });
 
     // Select objects within the marquee
-    const allObjects = SelectionUtils.getAllObjects(
+    const allObjects = getAllObjects(
       state.apples,
       state.killers,
       state.flowers,
@@ -537,7 +550,7 @@ export class EditorEngine {
     );
     allObjects.forEach(({ obj }) => {
       if (
-        SelectionUtils.isPointInRect(
+        isPointInRect(
           obj,
           bounds.minX,
           bounds.maxX,
@@ -1030,7 +1043,7 @@ export class EditorEngine {
   private drawMarqueeSelection() {
     if (!this.isMarqueeSelecting) return;
 
-    const bounds = SelectionUtils.getSelectionBounds(
+    const bounds = getSelectionBounds(
       this.marqueeStartPos,
       this.marqueeEndPos
     );

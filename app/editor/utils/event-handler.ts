@@ -1,20 +1,20 @@
 import type { Position } from "elmajs";
 import { CoordinateUtils } from "./coordinate-utils";
 
-export interface EventContext {
+export type EventContext = {
   worldPos: Position;
   screenX: number;
   screenY: number;
   isCtrlKey: boolean;
   isShiftKey: boolean;
   isMetaKey: boolean;
-}
+};
 
-export interface TouchContext {
+export type TouchContext = {
   touch1?: Touch;
   touch2?: Touch;
   isMultiTouch: boolean;
-}
+};
 
 export class EventHandler {
   static getEventContext(
@@ -35,9 +35,9 @@ export class EventHandler {
       worldPos,
       screenX: coords.x,
       screenY: coords.y,
-      isCtrlKey: 'ctrlKey' in event ? event.ctrlKey : false,
-      isShiftKey: 'shiftKey' in event ? event.shiftKey : false,
-      isMetaKey: 'metaKey' in event ? event.metaKey : false,
+      isCtrlKey: "ctrlKey" in event ? event.ctrlKey : false,
+      isShiftKey: "shiftKey" in event ? event.shiftKey : false,
+      isMetaKey: "metaKey" in event ? event.metaKey : false,
     };
   }
 
@@ -55,7 +55,10 @@ export class EventHandler {
     return Math.hypot(dx, dy);
   }
 
-  static getTouchMidpoint(touch1: Touch, touch2: Touch): { clientX: number; clientY: number } {
+  static getTouchMidpoint(
+    touch1: Touch,
+    touch2: Touch
+  ): { clientX: number; clientY: number } {
     return {
       clientX: (touch1.clientX + touch2.clientX) / 2,
       clientY: (touch1.clientY + touch2.clientY) / 2,
@@ -73,4 +76,4 @@ export class EventHandler {
       (activeElement as HTMLElement).contentEditable === "true"
     );
   }
-} 
+}

@@ -1,9 +1,9 @@
-export interface BuiltinLevel {
+export type BuiltinLevel = {
   id: string;
   name: string;
   filename: string;
   category: string;
-}
+};
 
 export const builtinLevels: BuiltinLevel[] = [
   // TTC levels

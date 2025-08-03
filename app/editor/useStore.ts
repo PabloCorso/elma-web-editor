@@ -90,6 +90,10 @@ export const useStore = create<Store>((set, get) => ({
     if (tool !== "polygon") {
       set({ drawingPolygon: [] });
     }
+    // Clear selections when switching away from select tool
+    if (tool !== "select") {
+      set({ selectedVertices: [], selectedObjects: [] });
+    }
   },
 
   addPolygon: (polygon) =>

@@ -3,17 +3,17 @@ import qexitUrl from "../assets/elma/QEXIT.png";
 import qkillerUrl from "../assets/elma/QKILLER.png";
 import kuskiUrl from "../assets/kuski.png";
 
-export interface SpriteFrame {
+export type SpriteFrame = {
   x: number;
   y: number;
   width: number;
   height: number;
-}
+};
 
-export interface SpriteAnimation {
+export type SpriteAnimation = {
   frames: SpriteFrame[];
   frameDuration: number; // milliseconds per frame
-}
+};
 
 export class SpriteManager {
   private sprites: Map<string, HTMLImageElement> = new Map();
