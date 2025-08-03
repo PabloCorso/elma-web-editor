@@ -67,22 +67,12 @@ type Store = {
 };
 
 export const useStore = create<Store>((set, get) => ({
-  // Initial state
-  polygons: [
-    {
-      vertices: [
-        { x: 50, y: 50 },
-        { x: 950, y: 50 },
-        { x: 950, y: 550 },
-        { x: 50, y: 550 },
-      ],
-      grass: false,
-    },
-  ],
-  apples: [{ x: 500, y: 500 }],
+  // Initial state - level data will be injected via constructor
+  polygons: [],
+  apples: [],
   killers: [],
-  flowers: [{ x: 900, y: 500 }],
-  start: { x: 100, y: 500 },
+  flowers: [],
+  start: { x: 0, y: 0 },
   currentTool: "select",
   drawingPolygon: [],
   mousePosition: { x: 0, y: 0 },

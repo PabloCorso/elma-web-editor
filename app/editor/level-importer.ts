@@ -14,6 +14,24 @@ export interface ImportResult {
   error?: string;
 }
 
+export const initialLevelData: LevelData = {
+  polygons: [
+    {
+      vertices: [
+        { x: 50, y: 50 },
+        { x: 950, y: 50 },
+        { x: 950, y: 550 },
+        { x: 50, y: 550 },
+      ],
+      grass: false,
+    },
+  ],
+  apples: [{ x: 500, y: 500 }],
+  killers: [],
+  flowers: [{ x: 900, y: 500 }],
+  start: { x: 100, y: 500 },
+};
+
 export class LevelImporter {
   /**
    * Import level from a local file
@@ -21,7 +39,7 @@ export class LevelImporter {
   static async importFromFile(file: File): Promise<ImportResult> {
     try {
       // Check if it's a .lev file
-      if (file.name.toLowerCase().endsWith('.lev')) {
+      if (file.name.toLowerCase().endsWith(".lev")) {
         const arrayBuffer = await file.arrayBuffer();
         return await this.parseLevFile(arrayBuffer);
       } else {
@@ -62,14 +80,14 @@ export class LevelImporter {
     }
   }
 
-    /**
+  /**
    * Parse .lev file format using elmajs
    */
   private static async parseLevFile(data: ArrayBuffer): Promise<ImportResult> {
     try {
       const elmajs = await import("elmajs");
       const level = elmajs.Level.from(data);
-      
+
       // Convert elmajs objects array to separate arrays by type
       const apples: Position[] = [];
       const killers: Position[] = [];
@@ -78,13 +96,13 @@ export class LevelImporter {
 
       // Scale factor to make levels larger and more visible
       const scaleFactor = 20;
-      
+
       level.objects.forEach((obj: any) => {
-        const position = { 
-          x: obj.position.x * scaleFactor, 
-          y: obj.position.y * scaleFactor 
+        const position = {
+          x: obj.position.x * scaleFactor,
+          y: obj.position.y * scaleFactor,
         };
-        
+
         switch (obj.type) {
           case 1: // Exit/Flower
             flowers.push(position);
@@ -102,12 +120,12 @@ export class LevelImporter {
       });
 
       // Scale polygons as well
-      const scaledPolygons = level.polygons.map(polygon => ({
+      const scaledPolygons = level.polygons.map((polygon) => ({
         ...polygon,
-        vertices: polygon.vertices.map(vertex => ({
+        vertices: polygon.vertices.map((vertex) => ({
           x: vertex.x * scaleFactor,
-          y: vertex.y * scaleFactor
-        }))
+          y: vertex.y * scaleFactor,
+        })),
       }));
 
       const levelData: LevelData = {

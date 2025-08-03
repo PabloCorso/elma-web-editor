@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EditorEngine } from "../editor/editor-engine";
+import { initialLevelData } from "../editor/level-importer";
 
 export function EditorView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,8 +18,21 @@ export function EditorView() {
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    // Create the canvas engine
-    engineRef.current = new EditorEngine(canvas);
+    // Create the canvas engine with default level data
+    engineRef.current = new EditorEngine(canvas, initialLevelData);
+
+    // Example: You could also load different level data like this:
+    // const customLevel = {
+    //   polygons: [/* custom polygons */],
+    //   apples: [/* custom apples */],
+    //   killers: [/* custom killers */],
+    //   flowers: [/* custom flowers */],
+    //   start: { x: 200, y: 300 },
+    // };
+    // engineRef.current = new EditorEngine(canvas, customLevel);
+
+    // Or load a level after creation:
+    // engineRef.current.loadLevel(customLevel);
 
     return () => {
       if (engineRef.current) {
