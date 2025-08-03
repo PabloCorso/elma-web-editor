@@ -26,25 +26,12 @@ export function isWithinThreshold(
 }
 
 export function getCanvasCoordinates(
-  event: MouseEvent | Touch,
+  event: MouseEvent,
   canvas: HTMLCanvasElement
 ): { x: number; y: number } {
   const rect = canvas.getBoundingClientRect();
   return {
     x: event.clientX - rect.left,
     y: event.clientY - rect.top,
-  };
-}
-
-export function getScaledCanvasCoordinates(
-  touch: Touch,
-  canvas: HTMLCanvasElement
-): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  return {
-    x: (touch.clientX - rect.left) * scaleX,
-    y: (touch.clientY - rect.top) * scaleY,
   };
 }

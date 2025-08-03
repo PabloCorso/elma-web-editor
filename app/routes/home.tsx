@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex-1 pb-20 md:pb-0">
+      <div className="flex-1">
         <EditorView />
       </div>
     </div>

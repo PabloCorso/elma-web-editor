@@ -10,14 +10,8 @@ export type EventContext = {
   isMetaKey: boolean;
 };
 
-export type TouchContext = {
-  touch1?: Touch;
-  touch2?: Touch;
-  isMultiTouch: boolean;
-};
-
 export function getEventContext(
-  event: MouseEvent | Touch,
+  event: MouseEvent,
   canvas: HTMLCanvasElement,
   viewPortOffset: Position,
   zoom: number
@@ -29,33 +23,9 @@ export function getEventContext(
     worldPos,
     screenX: coords.x,
     screenY: coords.y,
-    isCtrlKey: "ctrlKey" in event ? event.ctrlKey : false,
-    isShiftKey: "shiftKey" in event ? event.shiftKey : false,
-    isMetaKey: "metaKey" in event ? event.metaKey : false,
-  };
-}
-
-export function getTouchContext(touches: TouchList): TouchContext {
-  return {
-    touch1: touches[0] || undefined,
-    touch2: touches[1] || undefined,
-    isMultiTouch: touches.length === 2,
-  };
-}
-
-export function getTouchDistance(touch1: Touch, touch2: Touch): number {
-  const dx = touch1.clientX - touch2.clientX;
-  const dy = touch1.clientY - touch2.clientY;
-  return Math.hypot(dx, dy);
-}
-
-export function getTouchMidpoint(
-  touch1: Touch,
-  touch2: Touch
-): { clientX: number; clientY: number } {
-  return {
-    clientX: (touch1.clientX + touch2.clientX) / 2,
-    clientY: (touch1.clientY + touch2.clientY) / 2,
+    isCtrlKey: event.ctrlKey,
+    isShiftKey: event.shiftKey,
+    isMetaKey: event.metaKey,
   };
 }
 

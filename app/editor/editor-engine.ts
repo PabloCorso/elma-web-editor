@@ -3,9 +3,6 @@ import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
 import {
   getEventContext,
-  getTouchContext,
-  getTouchDistance,
-  getTouchMidpoint,
   isUserTyping,
 } from "./utils/event-handler";
 import { isWithinThreshold } from "./utils/coordinate-utils";
@@ -45,7 +42,6 @@ export class EditorEngine {
   private isPanning = false;
   private lastPanX = 0;
   private lastPanY = 0;
-  private lastPinchDistance = 0;
 
   // Selection and dragging state
   private isDragging = false;
@@ -56,23 +52,16 @@ export class EditorEngine {
   private marqueeStartPos: Position = { x: 0, y: 0 };
   private marqueeEndPos: Position = { x: 0, y: 0 };
 
-  // Long-press detection for mobile
-  private longPressThreshold: number;
-  private longPressTimer: number | null = null;
-  private isLongPress = false;
-
   constructor(
     canvas: HTMLCanvasElement,
     {
       initialLevel = initialLevelData,
       minZoom = 0.1,
       maxZoom = 200,
-      longPressThreshold = 100,
     }: {
       initialLevel?: LevelData;
       minZoom?: number;
       maxZoom?: number;
-      longPressThreshold?: number;
     } = {}
   ) {
     this.canvas = canvas;
@@ -83,7 +72,6 @@ export class EditorEngine {
     this.objectRenderer = new ObjectRenderer(this.spriteManager);
     this.minZoom = minZoom;
     this.maxZoom = maxZoom;
-    this.longPressThreshold = longPressThreshold;
 
     this.setupEventListeners();
     this.setupStoreListeners();
@@ -99,9 +87,6 @@ export class EditorEngine {
     this.canvas.addEventListener("mouseup", this.handleMouseUp);
     this.canvas.addEventListener("contextmenu", this.handleRightClick);
     this.canvas.addEventListener("wheel", this.handleWheel);
-    this.canvas.addEventListener("touchstart", this.handleTouchStart);
-    this.canvas.addEventListener("touchmove", this.handleTouchMove);
-    this.canvas.addEventListener("touchend", this.handleTouchEnd);
     document.addEventListener("keydown", this.handleKeyDown);
     document.addEventListener("keyup", this.handleKeyUp);
     window.addEventListener("resize", this.handleResize);
@@ -124,44 +109,6 @@ export class EditorEngine {
 
     if (e.button === 0) {
       this.handleLeftClick(context);
-    }
-  };
-
-  private handleTouchStart = (e: TouchEvent) => {
-    e.preventDefault();
-    const state = useStore.getState();
-    const touchContext = getTouchContext(e.touches);
-
-    if (touchContext.isMultiTouch) {
-      this.startMultiTouchPanning(touchContext);
-      return;
-    }
-
-    if (touchContext.touch1) {
-      const context = getEventContext(
-        touchContext.touch1,
-        this.canvas,
-        state.viewPortOffset,
-        state.zoom
-      );
-
-      if (this.isMobile()) {
-        // On mobile, handle differently based on tool
-        if (state.currentTool === "select") {
-          // For select tool, use long-press to activate selection
-          this.isLongPress = false;
-          this.longPressTimer = window.setTimeout(() => {
-            this.isLongPress = true;
-            this.handleSelectionClick(context);
-          }, this.longPressThreshold);
-        } else {
-          // For other tools (polygon, apple, killer, flower), execute immediately
-          this.handleLeftClick(context);
-        }
-      } else {
-        // Desktop: immediate action for all tools
-        this.handleLeftClick(context);
-      }
     }
   };
 
@@ -268,20 +215,6 @@ export class EditorEngine {
     this.lastPanY = clientY;
   }
 
-  private startMultiTouchPanning(touchContext: any) {
-    this.isPanning = true;
-    if (touchContext.touch1 && touchContext.touch2) {
-      this.lastPanX =
-        (touchContext.touch1.clientX + touchContext.touch2.clientX) / 2;
-      this.lastPanY =
-        (touchContext.touch1.clientY + touchContext.touch2.clientY) / 2;
-      this.lastPinchDistance = getTouchDistance(
-        touchContext.touch1,
-        touchContext.touch2
-      );
-    }
-  }
-
   private startDragging(worldPos: Position) {
     this.isDragging = true;
     this.dragStartPos = worldPos;
@@ -338,91 +271,6 @@ export class EditorEngine {
     useStore.getState().setMousePosition(context.worldPos);
   };
 
-  private handleTouchMove = (e: TouchEvent) => {
-    e.preventDefault();
-    const state = useStore.getState();
-    const touchContext = getTouchContext(e.touches);
-
-    if (touchContext.isMultiTouch) {
-      this.handleMultiTouchZoom(touchContext);
-      return;
-    }
-
-    if (touchContext.touch1) {
-      const context = getEventContext(
-        touchContext.touch1,
-        this.canvas,
-        state.viewPortOffset,
-        state.zoom
-      );
-
-      // On mobile, if we start moving before long press, cancel the timer and start panning
-      if (this.isMobile() && this.longPressTimer && !this.isLongPress) {
-        clearTimeout(this.longPressTimer);
-        this.longPressTimer = null;
-        this.startPanning(
-          touchContext.touch1.clientX,
-          touchContext.touch1.clientY
-        );
-      }
-
-      if (this.isDragging) {
-        this.handleDragging(context.worldPos);
-      } else if (this.isMarqueeSelecting) {
-        this.marqueeEndPos = context.worldPos;
-      } else if (this.isPanning) {
-        const deltaX = e.touches[0].clientX - this.lastPanX;
-        const deltaY = e.touches[0].clientY - this.lastPanY;
-        updateCamera(deltaX, deltaY, this.panSpeed);
-        this.lastPanX = e.touches[0].clientX;
-        this.lastPanY = e.touches[0].clientY;
-      }
-    }
-  };
-
-  private handleMultiTouchZoom(touchContext: any) {
-    if (!touchContext.touch1 || !touchContext.touch2) return;
-
-    const newDist = getTouchDistance(touchContext.touch1, touchContext.touch2);
-    if (this.lastPinchDistance > 0) {
-      const distanceChange = Math.abs(newDist - this.lastPinchDistance);
-      const minDistanceChange = 5;
-
-      if (distanceChange > minDistanceChange) {
-        const zoomFactor = newDist / this.lastPinchDistance;
-        const smoothedZoomFactor = 1 + (zoomFactor - 1) * 0.3;
-        const currentZoom = useStore.getState().zoom;
-        const newZoom = Math.max(
-          this.minZoom,
-          Math.min(this.maxZoom, currentZoom * smoothedZoomFactor)
-        );
-
-        if (newZoom !== currentZoom) {
-          const mid = getTouchMidpoint(
-            touchContext.touch1,
-            touchContext.touch2
-          );
-          const rect =
-            this.canvas.parentElement?.getBoundingClientRect() ||
-            this.canvas.getBoundingClientRect();
-          const scaleX = this.canvas.width / rect.width;
-          const scaleY = this.canvas.height / rect.height;
-          const midScreenX = (mid.clientX - rect.left) * scaleX;
-          const midScreenY = (mid.clientY - rect.top) * scaleY;
-
-          updateZoom(
-            newZoom,
-            this.minZoom,
-            this.maxZoom,
-            midScreenX,
-            midScreenY
-          );
-        }
-      }
-    }
-    this.lastPinchDistance = newDist;
-  }
-
   private handleDragging(worldPos: Position) {
     const store = useStore.getState();
     const deltaX = worldPos.x - this.dragStartPos.x;
@@ -460,35 +308,6 @@ export class EditorEngine {
         this.finalizeMarqueeSelection();
         this.isMarqueeSelecting = false;
       }
-    }
-  };
-
-  private handleTouchEnd = (e: TouchEvent) => {
-    // Clear long press timer if it exists (only set in select mode)
-    if (this.longPressTimer) {
-      clearTimeout(this.longPressTimer);
-      this.longPressTimer = null;
-    }
-
-    if (e.touches.length === 0) {
-      const store = useStore.getState();
-
-      // Stop panning
-      this.isPanning = false;
-      this.lastPinchDistance = 0;
-
-      if (store.currentTool === "select") {
-        if (this.isMarqueeSelecting) {
-          this.finalizeMarqueeSelection();
-          this.isMarqueeSelecting = false;
-        }
-        if (this.isDragging) {
-          this.isDragging = false;
-        }
-      }
-
-      // Reset long press state
-      this.isLongPress = false;
     }
   };
 
@@ -913,7 +732,7 @@ export class EditorEngine {
 
     this.ctx.stroke();
 
-    if (state.drawingPolygon.length > 0 && !this.isMobile()) {
+    if (state.drawingPolygon.length > 0) {
       const lastPoint = state.drawingPolygon[state.drawingPolygon.length - 1];
       this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom;
@@ -1025,9 +844,6 @@ export class EditorEngine {
     this.canvas.removeEventListener("mouseup", this.handleMouseUp);
     this.canvas.removeEventListener("contextmenu", this.handleRightClick);
     this.canvas.removeEventListener("wheel", this.handleWheel);
-    this.canvas.removeEventListener("touchstart", this.handleTouchStart);
-    this.canvas.removeEventListener("touchmove", this.handleTouchMove);
-    this.canvas.removeEventListener("touchend", this.handleTouchEnd);
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
     window.removeEventListener("resize", this.handleResize);
@@ -1061,9 +877,5 @@ export class EditorEngine {
     this.ctx.fillStyle = "#ffffff";
     this.ctx.fillText(line1, panelX + 10, panelY + 10);
     this.ctx.fillText(line2, panelX + 10, panelY + 35);
-  }
-
-  private isMobile(): boolean {
-    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
   }
 }
