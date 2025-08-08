@@ -12,7 +12,6 @@ export function Sidebar() {
   const animateSprites = useStore((state) => state.animateSprites);
   const showSprites = useStore((state) => state.showSprites);
 
-  const setCurrentTool = useStore((state) => state.setCurrentTool);
   const toggleAnimateSprites = useStore((state) => state.toggleAnimateSprites);
   const toggleShowSprites = useStore((state) => state.toggleShowSprites);
   const importLevel = useStore((state) => state.importLevel);
@@ -21,18 +20,6 @@ export function Sidebar() {
   const handleToolActivation = (toolId: string) => {
     if (engineRef.current) {
       engineRef.current.activateTool(toolId);
-    }
-    // Also update the store for UI state
-    const toolMap: Record<string, EditorTool> = {
-      polygon: "polygon",
-      select: "select",
-      apple: "apple",
-      killer: "killer",
-      flower: "flower",
-    };
-    const tool = toolMap[toolId];
-    if (tool) {
-      setCurrentTool(tool);
     }
   };
 

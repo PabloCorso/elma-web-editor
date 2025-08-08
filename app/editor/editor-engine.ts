@@ -9,7 +9,7 @@ import {
   debugPolygonOrientation,
 } from "./helpers";
 import { colors } from "./constants";
-import type { Polygon, Position } from "elmajs";
+import type { Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import { ToolRegistry } from "./tool-registry";
 import { PolygonTool } from "./tools/polygon-tool";
@@ -104,7 +104,9 @@ export class EditorEngine {
     }
 
     if (e.button === 0) {
-      const activeTool = this.toolRegistry.getActiveTool();
+      const store = useStore.getState();
+      const currentToolId = store.currentTool;
+      const activeTool = this.toolRegistry.getTool(currentToolId);
       if (activeTool?.onPointerDown) {
         const consumed = activeTool.onPointerDown(e as PointerEvent, context);
         if (consumed) return;
@@ -136,7 +138,9 @@ export class EditorEngine {
       return;
     }
 
-    const activeTool = this.toolRegistry.getActiveTool();
+    const store = useStore.getState();
+    const currentToolId = store.currentTool;
+    const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onPointerMove) {
       const consumed = activeTool.onPointerMove(e as PointerEvent, context);
       if (consumed) return;
@@ -159,7 +163,9 @@ export class EditorEngine {
         state.zoom
       );
 
-      const activeTool = this.toolRegistry.getActiveTool();
+      const store = useStore.getState();
+      const currentToolId = store.currentTool;
+      const activeTool = this.toolRegistry.getTool(currentToolId);
       if (activeTool?.onPointerUp) {
         activeTool.onPointerUp(e as PointerEvent, context);
       }
@@ -176,7 +182,9 @@ export class EditorEngine {
       state.zoom
     );
 
-    const activeTool = this.toolRegistry.getActiveTool();
+    const store = useStore.getState();
+    const currentToolId = store.currentTool;
+    const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onRightClick) {
       const consumed = activeTool.onRightClick(e, context);
       if (consumed) return;
@@ -215,7 +223,9 @@ export class EditorEngine {
     const zoomAmount = 0.1;
 
     // Let active tool handle the key first
-    const activeTool = this.toolRegistry.getActiveTool();
+    const store = useStore.getState();
+    const currentToolId = store.currentTool;
+    const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onKeyDown) {
       const context = {
         worldPos: { x: 0, y: 0 },
@@ -517,7 +527,27 @@ export class EditorEngine {
   }
 
   public activateTool(toolId: string): boolean {
-    return this.toolRegistry.activateTool(toolId);
+    // Update the store (which is the source of truth)
+    const toolMap: Record<string, string> = {
+      polygon: "polygon",
+      select: "select",
+      apple: "apple",
+      killer: "killer",
+      flower: "flower",
+    };
+    const storeTool = toolMap[toolId];
+    if (storeTool) {
+      useStore.getState().setCurrentTool(storeTool as any);
+      // Also call the tool registry to handle activate/deactivate callbacks
+      this.toolRegistry.activateTool(toolId);
+      return true;
+    }
+    return false;
+  }
+
+  public getActiveTool(): string | null {
+    const activeTool = this.toolRegistry.getActiveTool();
+    return activeTool?.id || null;
   }
 
   public destroy() {

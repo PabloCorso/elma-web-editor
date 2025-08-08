@@ -89,3 +89,69 @@ export function getSelectionBounds(
     maxY: Math.max(startPos.y, endPos.y),
   };
 }
+
+export function findPolygonEdgeNearPosition(
+  pos: Position,
+  polygons: Polygon[],
+  threshold: number = 8,
+  zoom: number
+): Polygon | null {
+  const adjustedThreshold = threshold / zoom;
+  
+  for (const polygon of polygons) {
+    if (polygon.vertices.length < 3) continue;
+    
+    // Check each edge of the polygon
+    for (let i = 0; i < polygon.vertices.length; i++) {
+      const start = polygon.vertices[i];
+      const end = polygon.vertices[(i + 1) % polygon.vertices.length];
+      
+      // Calculate distance from point to line segment
+      const distance = distanceToLineSegment(pos, start, end);
+      
+      if (distance <= adjustedThreshold) {
+        return polygon;
+      }
+    }
+  }
+  
+  return null;
+}
+
+function distanceToLineSegment(
+  point: Position,
+  lineStart: Position,
+  lineEnd: Position
+): number {
+  const A = point.x - lineStart.x;
+  const B = point.y - lineStart.y;
+  const C = lineEnd.x - lineStart.x;
+  const D = lineEnd.y - lineStart.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  
+  if (lenSq === 0) {
+    // Line segment is actually a point
+    return Math.sqrt(A * A + B * B);
+  }
+  
+  let param = dot / lenSq;
+  
+  let xx, yy;
+  if (param < 0) {
+    xx = lineStart.x;
+    yy = lineStart.y;
+  } else if (param > 1) {
+    xx = lineEnd.x;
+    yy = lineEnd.y;
+  } else {
+    xx = lineStart.x + param * C;
+    yy = lineStart.y + param * D;
+  }
+  
+  const dx = point.x - xx;
+  const dy = point.y - yy;
+  
+  return Math.sqrt(dx * dx + dy * dy);
+}

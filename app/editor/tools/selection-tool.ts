@@ -5,6 +5,7 @@ import { useStore, type Store } from "../useStore";
 import {
   findVertexNearPosition,
   findObjectNearPosition,
+  findPolygonEdgeNearPosition,
   isVertexSelected,
   isObjectSelected,
   getAllObjects,
@@ -51,18 +52,29 @@ export class SelectionTool implements Tool {
       store.zoom
     );
     const object = this.findObjectNearPosition(context.worldPos);
+    const polygonEdge = findPolygonEdgeNearPosition(
+      context.worldPos,
+      store.polygons,
+      8,
+      store.zoom
+    );
 
     if (vertex) {
       this.handleVertexSelection(vertex, context.isCtrlKey);
       this.startDragging(context.worldPos);
+      return true;
     } else if (object) {
       this.handleObjectSelection(object, context.isCtrlKey);
       this.startDragging(context.worldPos);
+      return true;
+    } else if (polygonEdge) {
+      this.handlePolygonSelection(polygonEdge, context.isCtrlKey);
+      this.startDragging(context.worldPos);
+      return true;
     } else {
       this.startMarqueeSelection(context.worldPos, context.isCtrlKey);
+      return true;
     }
-
-    return true;
   }
 
   onPointerMove(event: PointerEvent, context: EventContext): boolean {
@@ -229,6 +241,25 @@ export class SelectionTool implements Tool {
     }
   }
 
+  private handlePolygonSelection(
+    polygon: Polygon,
+    isCtrlKey: boolean
+  ): void {
+    const store = useStore.getState();
+    const toolState = store.getToolState("select");
+    const isSelected = toolState.selectedVertices.some(
+      (sv: VertexSelection) => sv.polygon === polygon
+    );
+
+    if (!isCtrlKey && !isSelected) {
+      this.clearSelection();
+    }
+
+    if (!isSelected) {
+      this.selectPolygon(polygon);
+    }
+  }
+
   private startDragging(worldPos: Position): void {
     const store = useStore.getState();
     const toolState = store.getToolState("select");
@@ -357,6 +388,21 @@ export class SelectionTool implements Tool {
     const toolState = store.getToolState("select");
     store.setToolState("select", {
       selectedObjects: [...toolState.selectedObjects, object],
+    });
+  }
+
+  private selectPolygon(polygon: Polygon): void {
+    const store = useStore.getState();
+    const toolState = store.getToolState("select");
+    
+    // Filter out vertices that are already selected
+    const existingSelectedVertices = toolState.selectedVertices.filter(
+      (sv: VertexSelection) => sv.polygon !== polygon
+    );
+    
+    const polygonVertices = polygon.vertices.map(vertex => ({ polygon, vertex }));
+    store.setToolState("select", {
+      selectedVertices: [...existingSelectedVertices, ...polygonVertices],
     });
   }
 
