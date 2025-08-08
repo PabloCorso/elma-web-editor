@@ -27,7 +27,12 @@ export class PolygonTool implements Tool {
     if (toolState.drawingPolygon.length >= 3) {
       const firstPoint = toolState.drawingPolygon[0];
       if (isWithinThreshold(worldPos, firstPoint, 15, store.zoom)) {
-        this.finishPolygon();
+        const newPolygon = {
+          vertices: [...toolState.drawingPolygon],
+          grass: false,
+        };
+        this.addPolygon(newPolygon);
+        store.setToolState("polygon", { drawingPolygon: [] });
         return true;
       }
     }
@@ -90,14 +95,17 @@ export class PolygonTool implements Tool {
   onRenderOverlay(ctx: CanvasRenderingContext2D, state: any): void {
     const toolState = state.getToolState("polygon");
     if (toolState.drawingPolygon.length > 0) {
-      const lastPoint = toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
-      
+      const lastPoint =
+        toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
+
       // Convert world coordinates to screen coordinates
       const lastScreenX = lastPoint.x * state.zoom + state.viewPortOffset.x;
       const lastScreenY = lastPoint.y * state.zoom + state.viewPortOffset.y;
-      const mouseScreenX = state.mousePosition.x * state.zoom + state.viewPortOffset.x;
-      const mouseScreenY = state.mousePosition.y * state.zoom + state.viewPortOffset.y;
-      
+      const mouseScreenX =
+        state.mousePosition.x * state.zoom + state.viewPortOffset.x;
+      const mouseScreenY =
+        state.mousePosition.y * state.zoom + state.viewPortOffset.y;
+
       ctx.strokeStyle = colors.edges;
       ctx.lineWidth = 1;
       ctx.setLineDash([5, 5]);
@@ -109,19 +117,8 @@ export class PolygonTool implements Tool {
     }
   }
 
-  private finishPolygon(): void {
-    const store = useStore.getState();
-    const toolState = store.getToolState("polygon");
-    const newPolygon = {
-      vertices: [...toolState.drawingPolygon],
-      grass: false,
-    };
-    this.addPolygon(newPolygon);
-    store.setToolState("polygon", { drawingPolygon: [] });
-  }
-
   private addPolygon(polygon: Polygon): void {
     const store = useStore.getState();
     store.polygons = [...store.polygons, polygon];
   }
-} 
+}

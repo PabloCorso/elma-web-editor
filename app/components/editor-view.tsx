@@ -21,11 +21,8 @@ export function EditorView() {
     };
 
     updateCanvasSize();
-    
-    // Wait a frame to ensure canvas size is set
-    requestAnimationFrame(() => {
-      engineRef.current = new EditorEngine(canvas);
-    });
+
+    engineRef.current = new EditorEngine(canvas);
 
     // Add resize observer to handle parent size changes
     const resizeObserver = new ResizeObserver(() => {
