@@ -1,67 +1,82 @@
-# ElastoMania Web Editor
+# ElastoMania Web Editor - Project Overview
 
-A web-based level editor for ElastoMania, built with React, TypeScript, and Canvas.
+## Main Concept
 
-## Architecture
+This project is a **web-based level editor for ElastoMania**, a classic 2D motorcycle physics game. ElastoMania uses `.lev` files to define levels, which contain polygon geometry and game objects like apples, killers, flowers (exits), and start positions. This editor allows users to create, edit, and export these levels directly in the browser.
 
-This editor follows a clean separation of concerns:
+## Core Architecture
 
-- **React Components**: Handle UI/toolbar rendering
-- **CanvasEngine**: Independent canvas rendering with `requestAnimationFrame`
-- **Zustand Store**: Shared state management between React and Canvas
-- **Canvas**: Renders once, outside React control
+The project uses a **hybrid React + Canvas architecture** designed for high-performance real-time editing:
 
-### Key Files
+- **React Layer**: Handles UI components (toolbar, sidebar, controls)
+- **Canvas Layer**: Independent rendering engine with `requestAnimationFrame` for smooth 60fps graphics
+- **Zustand Store**: Acts as a bridge between React UI and Canvas, managing shared state
+- **ElmaJS Integration**: Uses the `elmajs` library to parse/export native `.lev` files
 
-- `app/editor/useStore.ts` - Zustand store for shared state
-- `app/editor/CanvasEngine.ts` - Canvas rendering engine (not React)
-- `app/editor/CanvasView.tsx` - React shell to mount canvas once
-- `app/components/sidebar.tsx` - Toolbar UI
-- `app/routes/home.tsx` - Main app layout
+## Key Components
 
-## Features
+### State Management (`app/editor/editor-store.ts`)
 
-- **Polygon Tool**: Click to add vertices, right-click to finish polygon
-- **Apple Tool**: Click to place apples
-- **Killer Tool**: Click to place killers
-- **Flower Tool**: Click to place flowers (multiple exit points)
-- **Select Tool**: Click to select objects (TODO: implement selection logic)
+- Zustand-based store managing level data (polygons, objects, camera, tools)
+- Tool-specific state for polygon drawing, object selection, etc.
+- Camera system with viewport offset and zoom controls
 
-## Level Structure
+### Rendering Engine (`app/editor/editor-engine.ts`)
 
-- **Ground**: Dark purple background (#181048)
-- **Sky**: Blue areas inside polygons (#3078bc)
-- **Default Level**: 1000x600 world with a boundary polygon
-- **Camera**: Starts centered on the level
-- **Camera Controls**: 
-  - **Mouse wheel** to pan up/down
-  - **Shift + mouse wheel** to pan left/right
-  - **Cmd/Ctrl + mouse wheel** to zoom in/out
-  - Middle mouse drag to pan
-  - WASD/Arrow keys to move
-  - +/- to zoom in/out
-  - Q to fit to view
-  - Escape to cancel polygon drawing
+- Independent Canvas-based renderer outside React control
+- Handles sprites, polygons, objects, and UI overlays
+- Manages camera transformations and viewport calculations
 
-## Development
+### Tool System (`app/editor/tools/`)
 
-```bash
-npm install
-npm run dev
-```
+- Extensible tool architecture for different editing modes
+- Polygon tool: Click to add vertices, create level geometry
+- Object tools: Place apples (collectibles), killers (hazards), flowers (exits)
+- Selection tool: Select and manipulate existing elements
 
-## Building
+### Level Import/Export (`app/editor/level-importer.ts`)
 
-```bash
-npm run build
-```
+- Imports `.lev` files using elmajs library
+- Scales coordinates (elmajs uses small coordinates, editor uses larger for visibility)
+- Exports back to native `.lev` format for use in ElastoMania
 
-## How It Works
+## ElastoMania Context
 
-1. React renders the toolbar and mounts the canvas once
-2. CanvasEngine takes control of the canvas and runs its own render loop
-3. Zustand store acts as the bridge between React UI and canvas state
-4. Canvas reads from store every frame and renders accordingly
-5. User interactions update the store, which triggers canvas re-renders
+- **ElastoMania**: Classic 2D motorcycle physics game where players navigate challenging levels
+- **Level Structure**: Polygons define solid ground/walls, sky areas are inside polygons
+- **Game Objects**:
+  - Apples: Collectible items
+  - Killers: Deadly obstacles that reset the player
+  - Flowers: Exit points to complete the level
+  - Start: Player spawn position
+- **Visual Style**: Distinctive purple ground (#181048) and blue sky (#3078bc)
 
-This architecture ensures smooth 60fps rendering while keeping React focused on UI concerns.
+## Technical Stack
+
+- **React 18** with React Router 7 for UI
+- **TypeScript** for type safety
+- **Canvas API** for high-performance graphics
+- **Zustand** for state management
+- **ElmaJS** library for `.lev` file handling
+- **Tailwind CSS** for styling
+- **Vite** for build tooling
+
+## Open Source & Extensibility Philosophy
+
+This project is designed with **open source extensibility** as a core principle. Every API and architecture decision should enable developers to easily create their own editor experiences.
+
+### API Design Principles
+
+- **Intuitive APIs**: All public interfaces should be self-documenting and follow common patterns
+- **Modular Architecture**: Components should be composable and replaceable
+- **Plugin System**: Tool system designed for easy extension without core modifications
+- **Clean Abstractions**: Clear separation between core engine and UI implementation
+- **TypeScript First**: Full type safety for excellent developer experience
+
+### Extensibility Patterns
+
+#### Tool System (`app/editor/tools/`)
+
+- **Plugin Architecture**: New tools can be added by implementing the `Tool` interface
+- **State Isolation**: Each tool manages its own state in the store
+- **Event Handling**: Standardized mouse/keyboard event patterns

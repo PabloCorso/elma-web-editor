@@ -9,15 +9,21 @@ import {
 const StoreContext = createContext<EditorStore | null>(null);
 
 export const EditorStoreProvider = ({
+  initialToolId = "select",
   children,
 }: {
+  initialToolId?: string;
   children: React.ReactNode;
 }) => {
   const storeRef = useRef<EditorStore>();
-  if (!storeRef.current) storeRef.current = createEditorStore();
-  const store = storeRef.current;
+  if (!storeRef.current) {
+    storeRef.current = createEditorStore({ initialToolId });
+  }
+
   return (
-    <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
+    <StoreContext.Provider value={storeRef.current}>
+      {children}
+    </StoreContext.Provider>
   );
 };
 
