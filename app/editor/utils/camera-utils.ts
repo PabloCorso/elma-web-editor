@@ -1,64 +1,101 @@
-import { useStore } from "../useStore";
-
-export function updateCamera(
-  deltaX: number,
-  deltaY: number,
-  panSpeed: number = 1.0
-) {
-  const currentCamera = useStore.getState();
-  useStore
-    .getState()
-    .setCamera(
-      currentCamera.viewPortOffset.x + deltaX * panSpeed,
-      currentCamera.viewPortOffset.y + deltaY * panSpeed
-    );
+export function updateCamera({
+  deltaX,
+  deltaY,
+  currentOffset,
+  setCamera,
+  panSpeed = 1.0,
+}: {
+  deltaX: number;
+  deltaY: number;
+  currentOffset: { x: number; y: number };
+  setCamera: (x: number, y: number) => void;
+  panSpeed?: number;
+}) {
+  setCamera(
+    currentOffset.x + deltaX * panSpeed,
+    currentOffset.y + deltaY * panSpeed
+  );
 }
 
-export function updateZoom(
-  newZoom: number,
-  minZoom: number,
-  maxZoom: number,
-  mouseX?: number,
-  mouseY?: number
-) {
+export function updateZoom({
+  newZoom,
+  minZoom,
+  maxZoom,
+  currentZoom,
+  setZoom,
+  mousePosition,
+  currentOffset,
+  setCamera,
+}: {
+  newZoom: number;
+  minZoom: number;
+  maxZoom: number;
+  currentZoom: number;
+  setZoom: (zoom: number) => void;
+  mousePosition?: { x: number; y: number };
+  currentOffset?: { x: number; y: number };
+  setCamera?: (x: number, y: number) => void;
+}) {
   const clampedZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
-  const currentZoom = useStore.getState().zoom;
 
   if (clampedZoom !== currentZoom) {
-    useStore.getState().setZoom(clampedZoom);
+    setZoom(clampedZoom);
 
     // Adjust viewport to keep mouse position fixed if coordinates provided
-    if (mouseX !== undefined && mouseY !== undefined) {
-      adjustViewportForZoom(mouseX, mouseY, currentZoom, clampedZoom);
+    if (mousePosition && currentOffset && setCamera) {
+      adjustViewportForZoom({
+        mouseX: mousePosition.x,
+        mouseY: mousePosition.y,
+        oldZoom: currentZoom,
+        newZoom: clampedZoom,
+        currentOffset,
+        setCamera,
+      });
     }
   }
 }
 
-function adjustViewportForZoom(
-  mouseX: number,
-  mouseY: number,
-  oldZoom: number,
-  newZoom: number
-) {
-  const store = useStore.getState();
-
+function adjustViewportForZoom({
+  mouseX,
+  mouseY,
+  oldZoom,
+  newZoom,
+  currentOffset,
+  setCamera,
+}: {
+  mouseX: number;
+  mouseY: number;
+  oldZoom: number;
+  newZoom: number;
+  currentOffset: { x: number; y: number };
+  setCamera: (x: number, y: number) => void;
+}) {
   // Convert screen coordinates to world coordinates
-  const worldX = (mouseX - store.viewPortOffset.x) / oldZoom;
-  const worldY = (mouseY - store.viewPortOffset.y) / oldZoom;
+  const worldX = (mouseX - currentOffset.x) / oldZoom;
+  const worldY = (mouseY - currentOffset.y) / oldZoom;
 
   // Calculate new camera offset to keep the same world position under the mouse
   const newOffsetX = mouseX - worldX * newZoom;
   const newOffsetY = mouseY - worldY * newZoom;
 
-  useStore.getState().setCamera(newOffsetX, newOffsetY);
+  setCamera(newOffsetX, newOffsetY);
 }
 
-export function fitToView(
-  canvas: HTMLCanvasElement,
-  polygons: any[],
-  minZoom: number,
-  maxZoom: number
-) {
+export function fitToView({
+  canvas,
+  polygons,
+  minZoom,
+  maxZoom,
+  setCamera,
+  setZoom,
+}: {
+  canvas: HTMLCanvasElement;
+  polygons: any[];
+  minZoom: number;
+  maxZoom: number;
+  setCamera: (x: number, y: number) => void;
+  setZoom: (zoom: number) => void;
+}) {
   const levelWidth = 1000;
   const levelHeight = 600;
 
@@ -66,8 +103,8 @@ export function fitToView(
     // Center on the level bounds
     const centerX = canvas.width / 2 - levelWidth / 2;
     const centerY = canvas.height / 2 - levelHeight / 2;
-    useStore.getState().setCamera(centerX, centerY);
-    useStore.getState().setZoom(1);
+    setCamera(centerX, centerY);
+    setZoom(1);
     return;
   }
 
@@ -107,6 +144,6 @@ export function fitToView(
   // Set camera and zoom
   const viewPortX = canvas.width / 2 - centerX * newZoom;
   const viewPortY = canvas.height / 2 - centerY * newZoom;
-  useStore.getState().setCamera(viewPortX, viewPortY);
-  useStore.getState().setZoom(Math.max(minZoom, newZoom));
+  setCamera(viewPortX, viewPortY);
+  setZoom(Math.max(minZoom, newZoom));
 }

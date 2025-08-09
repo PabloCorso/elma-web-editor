@@ -1,8 +1,15 @@
 import type { Tool } from "./tools/tool-interface";
-import { useStore } from "./useStore";
+import type { StoreApi } from "zustand/vanilla";
+import type { EditorState } from "./editor-store";
 
 export class ToolRegistry {
   private tools = new Map<string, Tool>();
+
+  constructor(private store: StoreApi<EditorState>) {}
+
+  private get state() {
+    return this.store.getState();
+  }
 
   register(tool: Tool): void {
     this.tools.set(tool.id, tool);
@@ -10,7 +17,6 @@ export class ToolRegistry {
 
   unregister(toolId: string): void {
     this.tools.delete(toolId);
-    // No need to check activeTool since we get it from store
   }
 
   getTool(toolId: string): Tool | undefined {
@@ -28,21 +34,21 @@ export class ToolRegistry {
     }
 
     // Get current active tool from store and deactivate it
-    const store = useStore.getState();
-    const currentToolId = store.currentTool;
+    const currentToolId = this.state.currentTool;
     const currentTool = this.tools.get(currentToolId);
-    if (currentTool) {
-      currentTool.onDeactivate?.();
+    if (currentTool && currentTool.onDeactivate) {
+      currentTool.onDeactivate();
     }
 
     // Activate new tool
-    tool.onActivate?.();
+    if (tool.onActivate) {
+      tool.onActivate();
+    }
     return true;
   }
 
   getActiveTool(): Tool | null {
-    const store = useStore.getState();
-    const currentToolId = store.currentTool;
+    const currentToolId = this.state.currentTool;
     return this.tools.get(currentToolId) || null;
   }
 }

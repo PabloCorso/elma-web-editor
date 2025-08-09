@@ -1,4 +1,4 @@
-import { useStore, type Store } from "./useStore";
+import { createEditorStore, type EditorState, type EditorStore } from "./editor-store";
 import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
@@ -23,6 +23,7 @@ export class EditorEngine {
   private spriteManager: SpriteManager;
   private objectRenderer: ObjectRenderer;
   private debugMode = false;
+  private store: EditorStore;
   private toolRegistry: ToolRegistry;
 
   // Camera system
@@ -41,10 +42,12 @@ export class EditorEngine {
       initialLevel = initialLevelData,
       minZoom = 0.1,
       maxZoom = 200,
+      store,
     }: {
       initialLevel?: LevelData;
       minZoom?: number;
       maxZoom?: number;
+      store?: EditorStore;
     } = {}
   ) {
     this.canvas = canvas;
@@ -55,26 +58,35 @@ export class EditorEngine {
     this.objectRenderer = new ObjectRenderer(this.spriteManager);
     this.minZoom = minZoom;
     this.maxZoom = maxZoom;
-    this.toolRegistry = new ToolRegistry();
+
+    // Use provided store or create a new one
+    this.store = store || createEditorStore();
+    this.toolRegistry = new ToolRegistry(this.store);
 
     this.setupTools();
     this.setupEventListeners();
     this.setupStoreListeners();
 
-    useStore.setState(initialLevel);
+    // Initialize with level data
+    this.store.getState().importLevel(initialLevel);
     this.startRenderLoop();
     this.fitToView();
   }
 
   private setupTools() {
-    this.toolRegistry.register(new PolygonTool());
-    this.toolRegistry.register(new SelectionTool());
-    this.toolRegistry.register(new AppleTool());
-    this.toolRegistry.register(new KillerTool());
-    this.toolRegistry.register(new FlowerTool());
+    this.toolRegistry.register(new PolygonTool(this.store));
+    this.toolRegistry.register(new SelectionTool(this.store));
+    this.toolRegistry.register(new AppleTool(this.store));
+    this.toolRegistry.register(new KillerTool(this.store));
+    this.toolRegistry.register(new FlowerTool(this.store));
 
     // Activate selection tool by default
     this.toolRegistry.activateTool("select");
+  }
+
+  // Expose store for React integration
+  getStore(): EditorStore {
+    return this.store;
   }
 
   private setupEventListeners() {
@@ -95,7 +107,7 @@ export class EditorEngine {
     }
 
     if (event.button === 0) {
-      const store = useStore.getState();
+      const store = this.store.getState();
       const context = getEventContext(
         event,
         this.canvas,
@@ -124,13 +136,20 @@ export class EditorEngine {
     if (this.isPanning) {
       const deltaX = event.clientX - this.lastPanX;
       const deltaY = event.clientY - this.lastPanY;
-      updateCamera(deltaX, deltaY, this.panSpeed);
+      const state = this.store.getState();
+      updateCamera({
+        deltaX,
+        deltaY,
+        currentOffset: state.viewPortOffset,
+        setCamera: state.setCamera,
+        panSpeed: this.panSpeed,
+      });
       this.lastPanX = event.clientX;
       this.lastPanY = event.clientY;
       return;
     }
 
-    const store = useStore.getState();
+    const store = this.store.getState();
     const context = getEventContext(
       event,
       this.canvas,
@@ -144,7 +163,7 @@ export class EditorEngine {
       if (consumed) return;
     }
 
-    useStore.getState().setMousePosition(context.worldPos);
+    this.store.getState().setMousePosition(context.worldPos);
   };
 
   private handleMouseUp = (event: MouseEvent) => {
@@ -153,7 +172,7 @@ export class EditorEngine {
     }
 
     if (event.button === 0) {
-      const store = useStore.getState();
+      const store = this.store.getState();
 
       const currentToolId = store.currentTool;
       const activeTool = this.toolRegistry.getTool(currentToolId);
@@ -171,7 +190,7 @@ export class EditorEngine {
 
   private handleRightClick = (event: MouseEvent) => {
     event.preventDefault();
-    const store = useStore.getState();
+    const store = this.store.getState();
 
     const currentToolId = store.currentTool;
     const activeTool = this.toolRegistry.getTool(currentToolId);
@@ -189,38 +208,59 @@ export class EditorEngine {
 
   private handleWheel = (event: WheelEvent) => {
     event.preventDefault();
+    const state = this.store.getState();
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
     if (event.metaKey || event.ctrlKey) {
       const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-      const currentZoom = useStore.getState().zoom;
-      const newZoom = currentZoom * zoomFactor;
-      updateZoom(newZoom, this.minZoom, this.maxZoom, mouseX, mouseY);
+      const newZoom = state.zoom * zoomFactor;
+      updateZoom({
+        newZoom,
+        minZoom: this.minZoom,
+        maxZoom: this.maxZoom,
+        currentZoom: state.zoom,
+        setZoom: state.setZoom,
+        mousePosition: { x: mouseX, y: mouseY },
+        currentOffset: state.viewPortOffset,
+        setCamera: state.setCamera,
+      });
       return;
     }
 
     if (event.shiftKey) {
       const delta = event.deltaX !== 0 ? event.deltaX : event.deltaY;
       const panAmount = -delta * 0.5;
-      updateCamera(panAmount, 0, this.panSpeed);
+      updateCamera({
+        deltaX: panAmount,
+        deltaY: 0,
+        currentOffset: state.viewPortOffset,
+        setCamera: state.setCamera,
+        panSpeed: this.panSpeed,
+      });
       return;
     }
 
     const panAmount = -event.deltaY * 0.5;
-    updateCamera(0, panAmount, this.panSpeed);
+    updateCamera({
+      deltaX: 0,
+      deltaY: panAmount,
+      currentOffset: state.viewPortOffset,
+      setCamera: state.setCamera,
+      panSpeed: this.panSpeed,
+    });
   };
 
   private handleKeyDown = (event: KeyboardEvent) => {
     if (isUserTyping()) return;
 
-    const panAmount = 50 / useStore.getState().zoom;
+    const panAmount = 50 / this.store.getState().zoom;
     const zoomAmount = 0.1;
 
     // Let active tool handle the key first
-    const store = useStore.getState();
-    const currentToolId = store.currentTool;
+    const state = this.store.getState();
+    const currentToolId = state.currentTool;
     const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onKeyDown) {
       const context = {
@@ -235,36 +275,72 @@ export class EditorEngine {
     switch (event.key) {
       case "ArrowLeft":
         event.preventDefault();
-        updateCamera(panAmount, 0, this.panSpeed);
+        updateCamera({
+          deltaX: panAmount,
+          deltaY: 0,
+          currentOffset: state.viewPortOffset,
+          setCamera: state.setCamera,
+          panSpeed: this.panSpeed,
+        });
         break;
 
       case "ArrowRight":
         event.preventDefault();
-        updateCamera(-panAmount, 0, this.panSpeed);
+        updateCamera({
+          deltaX: -panAmount,
+          deltaY: 0,
+          currentOffset: state.viewPortOffset,
+          setCamera: state.setCamera,
+          panSpeed: this.panSpeed,
+        });
         break;
 
       case "ArrowUp":
         event.preventDefault();
-        updateCamera(0, panAmount, this.panSpeed);
+        updateCamera({
+          deltaX: 0,
+          deltaY: panAmount,
+          currentOffset: state.viewPortOffset,
+          setCamera: state.setCamera,
+          panSpeed: this.panSpeed,
+        });
         break;
 
       case "ArrowDown":
         event.preventDefault();
-        updateCamera(0, -panAmount, this.panSpeed);
+        updateCamera({
+          deltaX: 0,
+          deltaY: -panAmount,
+          currentOffset: state.viewPortOffset,
+          setCamera: state.setCamera,
+          panSpeed: this.panSpeed,
+        });
         break;
 
       case "+":
       case "=":
         event.preventDefault();
-        const currentZoom = useStore.getState().zoom;
-        updateZoom(currentZoom + zoomAmount, this.minZoom, this.maxZoom);
+        const currentZoom = state.zoom;
+        updateZoom({
+          newZoom: currentZoom + zoomAmount,
+          minZoom: this.minZoom,
+          maxZoom: this.maxZoom,
+          currentZoom: state.zoom,
+          setZoom: state.setZoom,
+        });
         break;
 
       case "-":
       case "_":
         event.preventDefault();
-        const currentZoom2 = useStore.getState().zoom;
-        updateZoom(currentZoom2 - zoomAmount, this.minZoom, this.maxZoom);
+        const currentZoom2 = state.zoom;
+        updateZoom({
+          newZoom: currentZoom2 - zoomAmount,
+          minZoom: this.minZoom,
+          maxZoom: this.maxZoom,
+          currentZoom: state.zoom,
+          setZoom: state.setZoom,
+        });
         break;
 
       case "1":
@@ -289,12 +365,19 @@ export class EditorEngine {
   };
 
   public fitToView() {
-    const store = useStore.getState();
-    fitToView(this.canvas, store.polygons, this.minZoom, this.maxZoom);
+    const state = this.store.getState();
+    fitToView({
+      canvas: this.canvas,
+      polygons: state.polygons,
+      minZoom: this.minZoom,
+      maxZoom: this.maxZoom,
+      setCamera: state.setCamera,
+      setZoom: state.setZoom,
+    });
   }
 
   public loadLevel(levelData: LevelData) {
-    useStore.setState({
+    this.store.setState({
       polygons: levelData.polygons,
       apples: levelData.apples,
       killers: levelData.killers,
@@ -313,9 +396,9 @@ export class EditorEngine {
 
   private setupStoreListeners() {
     // Subscribe directly to fitToViewTrigger changes
-    let lastFitToViewTrigger = useStore.getState().fitToViewTrigger;
+    let lastFitToViewTrigger = this.store.getState().fitToViewTrigger;
 
-    useStore.subscribe((state) => {
+    this.store.subscribe((state) => {
       const currentTrigger = state.fitToViewTrigger;
       if (currentTrigger !== lastFitToViewTrigger) {
         lastFitToViewTrigger = currentTrigger;
@@ -325,7 +408,7 @@ export class EditorEngine {
   }
 
   private render() {
-    const store = useStore.getState();
+    const store = this.store.getState();
     this.clearCanvas();
     this.applyCameraTransform(store);
     this.drawPolygons();
@@ -355,14 +438,14 @@ export class EditorEngine {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  private applyCameraTransform(state: Store) {
+  private applyCameraTransform(state: EditorState) {
     this.ctx.save();
     this.ctx.translate(state.viewPortOffset.x, state.viewPortOffset.y);
     this.ctx.scale(state.zoom, state.zoom);
   }
 
   private drawPolygons() {
-    const store = useStore.getState();
+    const store = this.store.getState();
 
     if (store.polygons.length === 0) return;
 
@@ -444,7 +527,7 @@ export class EditorEngine {
     shouldBeGround: boolean,
     isClockwise: boolean
   ) {
-    const store = useStore.getState();
+    const store = this.store.getState();
     const debug = debugPolygonOrientation(polygon, allPolygons);
 
     debug.samplePoints.forEach((point, index) => {
@@ -481,7 +564,7 @@ export class EditorEngine {
   }
 
   private drawObjects() {
-    const store = useStore.getState();
+    const store = this.store.getState();
     this.objectRenderer.renderObjects(
       this.ctx,
       store.apples,
@@ -526,7 +609,7 @@ export class EditorEngine {
     };
     const storeTool = toolMap[toolId];
     if (storeTool) {
-      useStore.getState().setCurrentTool(storeTool as any);
+      this.store.getState().setCurrentTool(storeTool as any);
       // Also call the tool registry to handle activate/deactivate callbacks
       this.toolRegistry.activateTool(toolId);
       return true;
@@ -558,7 +641,7 @@ export class EditorEngine {
     console.debug("Debug mode:", this.debugMode ? "ON" : "OFF");
   }
 
-  private drawMousePositionDebug(state: Store) {
+  private drawMousePositionDebug(state: EditorState) {
     this.ctx.font = "12px 'Courier New', monospace";
     this.ctx.fillStyle = "#ffffff";
     this.ctx.textAlign = "left";

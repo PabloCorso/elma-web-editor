@@ -1,21 +1,24 @@
-import { useStore, type EditorTool } from "../editor/useStore";
+import { useEditorStore } from "../editor/use-editor-store";
 import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
 import { useState, useEffect } from "react";
 import { engineRef } from "./editor-view";
+import type { EditorTool } from "~/editor/editor-store";
 
 export function Sidebar() {
   const [isBuiltInLevelsOpen, setIsBuiltinLevelsOpen] = useState(false);
 
-  const currentTool = useStore((state) => state.currentTool);
-  const animateSprites = useStore((state) => state.animateSprites);
-  const showSprites = useStore((state) => state.showSprites);
+  const currentTool = useEditorStore((state) => state.currentTool);
+  const animateSprites = useEditorStore((state) => state.animateSprites);
+  const showSprites = useEditorStore((state) => state.showSprites);
 
-  const toggleAnimateSprites = useStore((state) => state.toggleAnimateSprites);
-  const toggleShowSprites = useStore((state) => state.toggleShowSprites);
-  const importLevel = useStore((state) => state.importLevel);
-  const triggerFitToView = useStore((state) => state.triggerFitToView);
+  const toggleAnimateSprites = useEditorStore(
+    (state) => state.toggleAnimateSprites
+  );
+  const toggleShowSprites = useEditorStore((state) => state.toggleShowSprites);
+  const importLevel = useEditorStore((state) => state.importLevel);
+  const triggerFitToView = useEditorStore((state) => state.triggerFitToView);
 
   const handleToolActivation = (toolId: string) => {
     if (engineRef.current) {
@@ -60,7 +63,7 @@ export function Sidebar() {
 
   const handleDownload = async () => {
     try {
-      const store = useStore.getState();
+      const state = useEditorStore((state) => state);
 
       // Import elmajs dynamically
       const elmajs = await import("elmajs");
@@ -69,7 +72,7 @@ export function Sidebar() {
       const scaleFactor = 1 / 20;
 
       // Prepare polygons for elmajs
-      const scaledPolygons = store.polygons.map((polygon) => ({
+      const scaledPolygons = state.polygons.map((polygon) => ({
         vertices: polygon.vertices.map((vertex) => ({
           x: vertex.x * scaleFactor,
           y: vertex.y * scaleFactor,
@@ -79,7 +82,7 @@ export function Sidebar() {
 
       // Prepare objects for elmajs
       const scaledObjects = [
-        ...store.apples.map((apple) => ({
+        ...state.apples.map((apple) => ({
           type: 2, // Apple
           position: {
             x: apple.x * scaleFactor,
@@ -88,7 +91,7 @@ export function Sidebar() {
           gravity: 0,
           animation: 0,
         })),
-        ...store.killers.map((killer) => ({
+        ...state.killers.map((killer) => ({
           type: 3, // Killer
           position: {
             x: killer.x * scaleFactor,
@@ -97,7 +100,7 @@ export function Sidebar() {
           gravity: 0,
           animation: 0,
         })),
-        ...store.flowers.map((flower) => ({
+        ...state.flowers.map((flower) => ({
           type: 1, // Exit/Flower
           position: {
             x: flower.x * scaleFactor,
@@ -109,8 +112,8 @@ export function Sidebar() {
         {
           type: 4, // Start
           position: {
-            x: store.start.x * scaleFactor,
-            y: store.start.y * scaleFactor,
+            x: state.start.x * scaleFactor,
+            y: state.start.y * scaleFactor,
           },
           gravity: 0,
           animation: 0,
