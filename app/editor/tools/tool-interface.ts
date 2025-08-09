@@ -1,5 +1,4 @@
 import type { EventContext } from "../utils/event-handler";
-import type { Store } from "../useStore";
 
 export interface Tool {
   id: string;
