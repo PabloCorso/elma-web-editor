@@ -43,10 +43,23 @@ export class PolygonTool implements Tool {
   }
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
+    const store = useStore.getState();
+    const toolState = store.getToolState("polygon");
+
     if (event.key === "Escape") {
-      useStore.getState().setToolState("polygon", { drawingPolygon: [] });
+      store.setToolState("polygon", { drawingPolygon: [] });
       return true;
     }
+
+    if (event.key === " " || event.key === "Space") {
+      // Reverse the direction of the polygon by reversing the vertices array
+      if (toolState.drawingPolygon.length > 1) {
+        const reversedVertices = [...toolState.drawingPolygon].reverse();
+        store.setToolState("polygon", { drawingPolygon: reversedVertices });
+      }
+      return true;
+    }
+
     return false;
   }
 
