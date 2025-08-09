@@ -1,6 +1,7 @@
 import type { EventContext } from "../utils/event-handler";
 import type { StoreApi } from "zustand/vanilla";
 import type { EditorState } from "../editor-store";
+import type { Polygon } from "elmajs";
 
 export abstract class Tool {
   abstract readonly id: string;
@@ -39,6 +40,9 @@ export abstract class Tool {
   // Rendering
   onRender?(ctx: CanvasRenderingContext2D): void;
   onRenderOverlay?(ctx: CanvasRenderingContext2D): void;
+
+  // Temporary polygons for rendering calculations
+  getTemporaryPolygons?(): Polygon[];
 
   // Lifecycle
   onActivate?(): void;

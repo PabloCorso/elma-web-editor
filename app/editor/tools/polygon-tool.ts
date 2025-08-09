@@ -28,6 +28,22 @@ export class PolygonTool extends Tool {
     });
   }
 
+  getTemporaryPolygons(): Polygon[] {
+    const state = this.getState();
+    const toolState = state.getToolState("polygon");
+    const drawingPolygon = toolState.drawingPolygon;
+    
+    if (drawingPolygon.length >= 3) {
+      // Create a temporary polygon that includes the current mouse position
+      return [{
+        vertices: [...drawingPolygon, state.mousePosition],
+        grass: false
+      }];
+    }
+    
+    return [];
+  }
+
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
     const state = this.getState();
@@ -191,14 +207,29 @@ export class PolygonTool extends Tool {
       const mouseScreenY =
         state.mousePosition.y * state.zoom + state.viewPortOffset.y;
 
+      // Draw preview line from last point to mouse cursor (solid)
       ctx.strokeStyle = colors.edges;
       ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]);
       ctx.beginPath();
       ctx.moveTo(lastScreenX, lastScreenY);
       ctx.lineTo(mouseScreenX, mouseScreenY);
       ctx.stroke();
-      ctx.setLineDash([]);
+
+      // Draw potential closing line from first point to mouse cursor when we have 3+ vertices (dashed)
+      if (toolState.drawingPolygon.length >= 3) {
+        const firstPoint = toolState.drawingPolygon[0];
+        const firstScreenX = firstPoint.x * state.zoom + state.viewPortOffset.x;
+        const firstScreenY = firstPoint.y * state.zoom + state.viewPortOffset.y;
+
+        ctx.strokeStyle = colors.edges;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]); // Dashed line for closing edge
+        ctx.beginPath();
+        ctx.moveTo(firstScreenX, firstScreenY);
+        ctx.lineTo(mouseScreenX, mouseScreenY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
   }
 

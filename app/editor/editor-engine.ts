@@ -463,19 +463,26 @@ export class EditorEngine {
 
   private drawPolygons() {
     const store = this.store.getState();
+    
+    // Get temporary polygons from the active tool
+    const activeTool = this.toolRegistry.getActiveTool();
+    const temporaryPolygons = activeTool?.getTemporaryPolygons?.() || [];
 
-    if (store.polygons.length === 0) return;
+    // Include temporary polygons in the list for rendering calculations
+    const allPolygonsForRendering = [...store.polygons, ...temporaryPolygons];
+
+    if (allPolygonsForRendering.length === 0) return;
 
     // Draw non-grass polygons with fill
     this.ctx.fillStyle = colors.sky;
     this.ctx.beginPath();
 
-    store.polygons.forEach((polygon) => {
+    allPolygonsForRendering.forEach((polygon) => {
       if (polygon.vertices.length < 3 || polygon.grass) return;
 
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(polygon, store.polygons);
+      const shouldBeGround = shouldPolygonBeGround(polygon, allPolygonsForRendering);
 
       if (shouldBeGround !== isClockwise) {
         vertices.reverse();
@@ -510,7 +517,7 @@ export class EditorEngine {
 
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(polygon, store.polygons);
+      const shouldBeGround = shouldPolygonBeGround(polygon, allPolygonsForRendering);
 
       if (shouldBeGround !== isClockwise) {
         vertices.reverse();
