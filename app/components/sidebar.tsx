@@ -3,7 +3,6 @@ import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
 import { useState, useEffect } from "react";
-import type { EditorTool } from "~/editor/editor-store";
 
 export function Sidebar() {
   const [isBuiltInLevelsOpen, setIsBuiltinLevelsOpen] = useState(false);
@@ -39,7 +38,7 @@ export function Sidebar() {
     }
 
     const key = e.key.toUpperCase();
-    const toolMap: Record<string, EditorTool> = {
+    const toolMap: Record<string, string> = {
       P: "polygon",
       S: "select",
       A: "apple",
