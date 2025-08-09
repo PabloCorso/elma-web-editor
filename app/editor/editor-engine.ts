@@ -84,31 +84,31 @@ export class EditorEngine {
     this.canvas.addEventListener("contextmenu", this.handleRightClick);
     this.canvas.addEventListener("wheel", this.handleWheel);
     document.addEventListener("keydown", this.handleKeyDown);
-    document.addEventListener("keyup", this.handleKeyUp);
     window.addEventListener("resize", this.handleResize);
   }
 
-  private handleMouseDown = (e: MouseEvent) => {
-    const state = useStore.getState();
-    const context = getEventContext(
-      e,
-      this.canvas,
-      state.viewPortOffset,
-      state.zoom
-    );
-
-    if (e.button === 1) {
-      e.preventDefault();
-      this.startPanning(e.clientX, e.clientY);
+  private handleMouseDown = (event: MouseEvent) => {
+    if (event.button === 1) {
+      event.preventDefault();
+      this.startPanning(event.clientX, event.clientY);
       return;
     }
 
-    if (e.button === 0) {
+    if (event.button === 0) {
       const store = useStore.getState();
+      const context = getEventContext(
+        event,
+        this.canvas,
+        store.viewPortOffset,
+        store.zoom
+      );
       const currentToolId = store.currentTool;
       const activeTool = this.toolRegistry.getTool(currentToolId);
       if (activeTool?.onPointerDown) {
-        const consumed = activeTool.onPointerDown(e as PointerEvent, context);
+        const consumed = activeTool.onPointerDown(
+          event as PointerEvent,
+          context
+        );
         if (consumed) return;
       }
     }
@@ -120,103 +120,99 @@ export class EditorEngine {
     this.lastPanY = clientY;
   }
 
-  private handleMouseMove = (e: MouseEvent) => {
-    const state = useStore.getState();
-    const context = getEventContext(
-      e,
-      this.canvas,
-      state.viewPortOffset,
-      state.zoom
-    );
-
+  private handleMouseMove = (event: MouseEvent) => {
     if (this.isPanning) {
-      const deltaX = e.clientX - this.lastPanX;
-      const deltaY = e.clientY - this.lastPanY;
+      const deltaX = event.clientX - this.lastPanX;
+      const deltaY = event.clientY - this.lastPanY;
       updateCamera(deltaX, deltaY, this.panSpeed);
-      this.lastPanX = e.clientX;
-      this.lastPanY = e.clientY;
+      this.lastPanX = event.clientX;
+      this.lastPanY = event.clientY;
       return;
     }
 
     const store = useStore.getState();
+    const context = getEventContext(
+      event,
+      this.canvas,
+      store.viewPortOffset,
+      store.zoom
+    );
     const currentToolId = store.currentTool;
     const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onPointerMove) {
-      const consumed = activeTool.onPointerMove(e as PointerEvent, context);
+      const consumed = activeTool.onPointerMove(event as PointerEvent, context);
       if (consumed) return;
     }
 
     useStore.getState().setMousePosition(context.worldPos);
   };
 
-  private handleMouseUp = (e: MouseEvent) => {
-    if (e.button === 1) {
+  private handleMouseUp = (event: MouseEvent) => {
+    if (event.button === 1) {
       this.isPanning = false;
     }
 
-    if (e.button === 0) {
-      const state = useStore.getState();
-      const context = getEventContext(
-        e,
-        this.canvas,
-        state.viewPortOffset,
-        state.zoom
-      );
-
+    if (event.button === 0) {
       const store = useStore.getState();
+
       const currentToolId = store.currentTool;
       const activeTool = this.toolRegistry.getTool(currentToolId);
       if (activeTool?.onPointerUp) {
-        activeTool.onPointerUp(e as PointerEvent, context);
+        const context = getEventContext(
+          event,
+          this.canvas,
+          store.viewPortOffset,
+          store.zoom
+        );
+        activeTool.onPointerUp(event as PointerEvent, context);
       }
     }
   };
 
-  private handleRightClick = (e: MouseEvent) => {
-    e.preventDefault();
-    const state = useStore.getState();
-    const context = getEventContext(
-      e,
-      this.canvas,
-      state.viewPortOffset,
-      state.zoom
-    );
-
+  private handleRightClick = (event: MouseEvent) => {
+    event.preventDefault();
     const store = useStore.getState();
+
     const currentToolId = store.currentTool;
     const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onRightClick) {
-      const consumed = activeTool.onRightClick(e, context);
+      const context = getEventContext(
+        event,
+        this.canvas,
+        store.viewPortOffset,
+        store.zoom
+      );
+      const consumed = activeTool.onRightClick(event, context);
       if (consumed) return;
     }
   };
 
-  private handleWheel = (e: WheelEvent) => {
-    e.preventDefault();
+  private handleWheel = (event: WheelEvent) => {
+    event.preventDefault();
     const rect = this.canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
 
-    if (e.metaKey || e.ctrlKey) {
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    if (event.metaKey || event.ctrlKey) {
+      const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
       const currentZoom = useStore.getState().zoom;
       const newZoom = currentZoom * zoomFactor;
       updateZoom(newZoom, this.minZoom, this.maxZoom, mouseX, mouseY);
       return;
     }
 
-    if (e.shiftKey) {
-      const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+    if (event.shiftKey) {
+      const delta = event.deltaX !== 0 ? event.deltaX : event.deltaY;
       const panAmount = -delta * 0.5;
       updateCamera(panAmount, 0, this.panSpeed);
       return;
     }
 
-    const panAmount = -e.deltaY * 0.5;
+    const panAmount = -event.deltaY * 0.5;
     updateCamera(0, panAmount, this.panSpeed);
   };
 
-  private handleKeyDown = (e: KeyboardEvent) => {
+  private handleKeyDown = (event: KeyboardEvent) => {
     if (isUserTyping()) return;
 
     const panAmount = 50 / useStore.getState().zoom;
@@ -231,64 +227,57 @@ export class EditorEngine {
         worldPos: { x: 0, y: 0 },
         screenX: 0,
         screenY: 0,
-        isCtrlKey: e.ctrlKey,
-        isShiftKey: e.shiftKey,
-        isMetaKey: e.metaKey,
       };
-      const consumed = activeTool.onKeyDown(e, context);
+      const consumed = activeTool.onKeyDown(event, context);
       if (consumed) return;
     }
 
-    switch (e.key) {
+    switch (event.key) {
       case "ArrowLeft":
-        e.preventDefault();
+        event.preventDefault();
         updateCamera(panAmount, 0, this.panSpeed);
         break;
 
       case "ArrowRight":
-        e.preventDefault();
+        event.preventDefault();
         updateCamera(-panAmount, 0, this.panSpeed);
         break;
 
       case "ArrowUp":
-        e.preventDefault();
+        event.preventDefault();
         updateCamera(0, panAmount, this.panSpeed);
         break;
 
       case "ArrowDown":
-        e.preventDefault();
+        event.preventDefault();
         updateCamera(0, -panAmount, this.panSpeed);
         break;
 
       case "+":
       case "=":
-        e.preventDefault();
+        event.preventDefault();
         const currentZoom = useStore.getState().zoom;
         updateZoom(currentZoom + zoomAmount, this.minZoom, this.maxZoom);
         break;
 
       case "-":
       case "_":
-        e.preventDefault();
+        event.preventDefault();
         const currentZoom2 = useStore.getState().zoom;
         updateZoom(currentZoom2 - zoomAmount, this.minZoom, this.maxZoom);
         break;
 
       case "1":
-        e.preventDefault();
+        event.preventDefault();
         this.fitToView();
         break;
 
       case "d":
       case "D":
-        e.preventDefault();
+        event.preventDefault();
         this.toggleDebugMode();
         break;
     }
-  };
-
-  private handleKeyUp = (e: KeyboardEvent) => {
-    // Space key handling removed - no longer needed without hand tool
   };
 
   private handleResize = () => {
@@ -300,8 +289,8 @@ export class EditorEngine {
   };
 
   public fitToView() {
-    const state = useStore.getState();
-    fitToView(this.canvas, state.polygons, this.minZoom, this.maxZoom);
+    const store = useStore.getState();
+    fitToView(this.canvas, store.polygons, this.minZoom, this.maxZoom);
   }
 
   public loadLevel(levelData: LevelData) {
@@ -336,28 +325,28 @@ export class EditorEngine {
   }
 
   private render() {
-    const state = useStore.getState();
+    const store = useStore.getState();
     this.clearCanvas();
-    this.applyCameraTransform(state);
+    this.applyCameraTransform(store);
     this.drawPolygons();
     this.drawObjects();
 
     // Let active tool render
     const activeTool = this.toolRegistry.getActiveTool();
     if (activeTool?.onRender) {
-      activeTool.onRender(this.ctx, state);
+      activeTool.onRender(this.ctx);
     }
 
     this.ctx.restore();
 
     // Let active tool render overlay
     if (activeTool?.onRenderOverlay) {
-      activeTool.onRenderOverlay(this.ctx, state);
+      activeTool.onRenderOverlay(this.ctx);
     }
 
     if (this.debugMode) {
       this.drawDebugInfoPanel();
-      this.drawMousePositionDebug(state);
+      this.drawMousePositionDebug(store);
     }
   }
 
@@ -373,20 +362,20 @@ export class EditorEngine {
   }
 
   private drawPolygons() {
-    const state = useStore.getState();
+    const store = useStore.getState();
 
-    if (state.polygons.length === 0) return;
+    if (store.polygons.length === 0) return;
 
     // Draw non-grass polygons with fill
     this.ctx.fillStyle = colors.sky;
     this.ctx.beginPath();
 
-    state.polygons.forEach((polygon) => {
+    store.polygons.forEach((polygon) => {
       if (polygon.vertices.length < 3 || polygon.grass) return;
 
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(polygon, state.polygons);
+      const shouldBeGround = shouldPolygonBeGround(polygon, store.polygons);
 
       if (shouldBeGround !== isClockwise) {
         vertices.reverse();
@@ -403,12 +392,12 @@ export class EditorEngine {
     this.ctx.fill();
 
     // Draw all polygon edges
-    state.polygons.forEach((polygon) => {
+    store.polygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
         this.ctx.strokeStyle = colors.grass;
-        this.ctx.lineWidth = 1 / state.zoom;
+        this.ctx.lineWidth = 1 / store.zoom;
         this.ctx.beginPath();
         this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
         for (let i = 1; i < polygon.vertices.length; i++) {
@@ -421,14 +410,14 @@ export class EditorEngine {
 
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(polygon, state.polygons);
+      const shouldBeGround = shouldPolygonBeGround(polygon, store.polygons);
 
       if (shouldBeGround !== isClockwise) {
         vertices.reverse();
       }
 
       this.ctx.strokeStyle = colors.edges;
-      this.ctx.lineWidth = 1 / state.zoom;
+      this.ctx.lineWidth = 1 / store.zoom;
 
       this.ctx.beginPath();
       this.ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -441,7 +430,7 @@ export class EditorEngine {
       if (this.debugMode) {
         this.drawPolygonDebugInfo(
           polygon,
-          state.polygons,
+          store.polygons,
           shouldBeGround,
           isClockwise
         );
@@ -455,7 +444,7 @@ export class EditorEngine {
     shouldBeGround: boolean,
     isClockwise: boolean
   ) {
-    const state = useStore.getState();
+    const store = useStore.getState();
     const debug = debugPolygonOrientation(polygon, allPolygons);
 
     debug.samplePoints.forEach((point, index) => {
@@ -464,64 +453,64 @@ export class EditorEngine {
       this.ctx.fillStyle = pointColor;
 
       this.ctx.beginPath();
-      this.ctx.arc(point.x, point.y, 3 / state.zoom, 0, 2 * Math.PI);
+      this.ctx.arc(point.x, point.y, 3 / store.zoom, 0, 2 * Math.PI);
       this.ctx.fill();
 
       this.ctx.fillStyle = "#ffffff";
-      this.ctx.font = `${12 / state.zoom}px Arial`;
+      this.ctx.font = `${12 / store.zoom}px Arial`;
       this.ctx.fillText(
         `${result.containmentCount}`,
-        point.x + 5 / state.zoom,
-        point.y - 5 / state.zoom
+        point.x + 5 / store.zoom,
+        point.y - 5 / store.zoom
       );
     });
 
     const center = debug.samplePoints[0];
     this.ctx.fillStyle = shouldBeGround ? "#00ff00" : "#ff0000";
     this.ctx.beginPath();
-    this.ctx.arc(center.x, center.y, 5 / state.zoom, 0, 2 * Math.PI);
+    this.ctx.arc(center.x, center.y, 5 / store.zoom, 0, 2 * Math.PI);
     this.ctx.fill();
 
     this.ctx.fillStyle = "#ffffff";
-    this.ctx.font = `${14 / state.zoom}px Arial`;
+    this.ctx.font = `${14 / store.zoom}px Arial`;
     this.ctx.fillText(
       `${shouldBeGround ? "G" : "S"}${isClockwise ? "CW" : "CCW"}`,
-      center.x + 8 / state.zoom,
-      center.y + 5 / state.zoom
+      center.x + 8 / store.zoom,
+      center.y + 5 / store.zoom
     );
   }
 
   private drawObjects() {
-    const state = useStore.getState();
+    const store = useStore.getState();
     this.objectRenderer.renderObjects(
       this.ctx,
-      state.apples,
+      store.apples,
       ObjectRenderer.CONFIGS.apple,
-      state.showSprites,
-      state.animateSprites
+      store.showSprites,
+      store.animateSprites
     );
 
     this.objectRenderer.renderObjects(
       this.ctx,
-      state.killers,
+      store.killers,
       ObjectRenderer.CONFIGS.killer,
-      state.showSprites,
-      state.animateSprites
+      store.showSprites,
+      store.animateSprites
     );
 
     this.objectRenderer.renderObjects(
       this.ctx,
-      state.flowers,
+      store.flowers,
       ObjectRenderer.CONFIGS.flower,
-      state.showSprites,
-      state.animateSprites
+      store.showSprites,
+      store.animateSprites
     );
 
     this.objectRenderer.renderObject(
       this.ctx,
-      state.start,
+      store.start,
       ObjectRenderer.CONFIGS.start,
-      state.showSprites,
+      store.showSprites,
       false
     );
   }
@@ -561,7 +550,6 @@ export class EditorEngine {
     this.canvas.removeEventListener("contextmenu", this.handleRightClick);
     this.canvas.removeEventListener("wheel", this.handleWheel);
     document.removeEventListener("keydown", this.handleKeyDown);
-    document.removeEventListener("keyup", this.handleKeyUp);
     window.removeEventListener("resize", this.handleResize);
   }
 

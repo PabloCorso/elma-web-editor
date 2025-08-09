@@ -1,4 +1,4 @@
-import type { Tool } from "./tool-interface";
+import type { Tool } from "./tools/tool-interface";
 import { useStore } from "./useStore";
 
 export class ToolRegistry {

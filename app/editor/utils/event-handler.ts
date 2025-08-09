@@ -1,14 +1,22 @@
 import type { Position } from "elmajs";
-import { getCanvasCoordinates, screenToWorld } from "./coordinate-utils";
+import { screenToWorld } from "./coordinate-utils";
 
 export type EventContext = {
   worldPos: Position;
   screenX: number;
   screenY: number;
-  isCtrlKey: boolean;
-  isShiftKey: boolean;
-  isMetaKey: boolean;
 };
+
+export function getCanvasCoordinates(
+  event: MouseEvent,
+  canvas: HTMLCanvasElement
+): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
+}
 
 export function getEventContext(
   event: MouseEvent,
@@ -19,14 +27,7 @@ export function getEventContext(
   const coords = getCanvasCoordinates(event, canvas);
   const worldPos = screenToWorld(coords.x, coords.y, viewPortOffset, zoom);
 
-  return {
-    worldPos,
-    screenX: coords.x,
-    screenY: coords.y,
-    isCtrlKey: event.ctrlKey,
-    isShiftKey: event.shiftKey,
-    isMetaKey: event.metaKey,
-  };
+  return { worldPos, screenX: coords.x, screenY: coords.y };
 }
 
 export function isUserTyping(): boolean {

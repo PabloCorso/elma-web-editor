@@ -60,7 +60,7 @@ export function Sidebar() {
 
   const handleDownload = async () => {
     try {
-      const state = useStore.getState();
+      const store = useStore.getState();
 
       // Import elmajs dynamically
       const elmajs = await import("elmajs");
@@ -69,7 +69,7 @@ export function Sidebar() {
       const scaleFactor = 1 / 20;
 
       // Prepare polygons for elmajs
-      const scaledPolygons = state.polygons.map((polygon) => ({
+      const scaledPolygons = store.polygons.map((polygon) => ({
         vertices: polygon.vertices.map((vertex) => ({
           x: vertex.x * scaleFactor,
           y: vertex.y * scaleFactor,
@@ -79,7 +79,7 @@ export function Sidebar() {
 
       // Prepare objects for elmajs
       const scaledObjects = [
-        ...state.apples.map((apple) => ({
+        ...store.apples.map((apple) => ({
           type: 2, // Apple
           position: {
             x: apple.x * scaleFactor,
@@ -88,7 +88,7 @@ export function Sidebar() {
           gravity: 0,
           animation: 0,
         })),
-        ...state.killers.map((killer) => ({
+        ...store.killers.map((killer) => ({
           type: 3, // Killer
           position: {
             x: killer.x * scaleFactor,
@@ -97,7 +97,7 @@ export function Sidebar() {
           gravity: 0,
           animation: 0,
         })),
-        ...state.flowers.map((flower) => ({
+        ...store.flowers.map((flower) => ({
           type: 1, // Exit/Flower
           position: {
             x: flower.x * scaleFactor,
@@ -109,8 +109,8 @@ export function Sidebar() {
         {
           type: 4, // Start
           position: {
-            x: state.start.x * scaleFactor,
-            y: state.start.y * scaleFactor,
+            x: store.start.x * scaleFactor,
+            y: store.start.y * scaleFactor,
           },
           gravity: 0,
           animation: 0,

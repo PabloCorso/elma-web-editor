@@ -6,7 +6,7 @@
     "build": "react-router build",
     "dev": "react-router dev --host",
     "start": "npm run dev",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-router/node": "^7.5.2",

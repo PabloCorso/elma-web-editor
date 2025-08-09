@@ -1,5 +1,5 @@
-import type { EventContext } from "./utils/event-handler";
-import type { Store } from "./useStore";
+import type { EventContext } from "../utils/event-handler";
+import type { Store } from "../useStore";
 
 export interface Tool {
   id: string;
@@ -14,15 +14,10 @@ export interface Tool {
   onRightClick?(event: MouseEvent, context: EventContext): boolean;
 
   // Rendering
-  onRender?(ctx: CanvasRenderingContext2D, state: Store): void;
-  onRenderOverlay?(ctx: CanvasRenderingContext2D, state: Store): void;
+  onRender?(ctx: CanvasRenderingContext2D): void;
+  onRenderOverlay?(ctx: CanvasRenderingContext2D): void;
 
   // Lifecycle
   onActivate?(): void;
   onDeactivate?(): void;
-}
-
-export interface ToolContext {
-  store: Store;
-  canvas: HTMLCanvasElement;
 }

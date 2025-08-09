@@ -40,11 +40,11 @@ function adjustViewportForZoom(
   oldZoom: number,
   newZoom: number
 ) {
-  const state = useStore.getState();
+  const store = useStore.getState();
 
   // Convert screen coordinates to world coordinates
-  const worldX = (mouseX - state.viewPortOffset.x) / oldZoom;
-  const worldY = (mouseY - state.viewPortOffset.y) / oldZoom;
+  const worldX = (mouseX - store.viewPortOffset.x) / oldZoom;
+  const worldY = (mouseY - store.viewPortOffset.y) / oldZoom;
 
   // Calculate new camera offset to keep the same world position under the mouse
   const newOffsetX = mouseX - worldX * newZoom;

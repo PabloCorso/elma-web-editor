@@ -24,14 +24,3 @@ export function isWithinThreshold(
 ): boolean {
   return distance(pos1, pos2) <= threshold / zoom;
 }
-
-export function getCanvasCoordinates(
-  event: MouseEvent,
-  canvas: HTMLCanvasElement
-): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  };
-}

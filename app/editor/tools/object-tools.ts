@@ -1,4 +1,4 @@
-import type { Tool } from "../tool-interface";
+import type { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import { useStore } from "../useStore";
 
@@ -11,8 +11,8 @@ export class AppleTool implements Tool {
     // Object tools don't need to clear anything on activate
   }
 
-  onPointerDown(event: PointerEvent, context: EventContext): boolean {
-    useStore.getState().addObject('apples', context.worldPos);
+  onPointerDown(_event: PointerEvent, context: EventContext): boolean {
+    useStore.getState().addObject("apples", context.worldPos);
     return true;
   }
 }
@@ -26,8 +26,8 @@ export class KillerTool implements Tool {
     // Object tools don't need to clear anything on activate
   }
 
-  onPointerDown(event: PointerEvent, context: EventContext): boolean {
-    useStore.getState().addObject('killers', context.worldPos);
+  onPointerDown(_event: PointerEvent, context: EventContext): boolean {
+    useStore.getState().addObject("killers", context.worldPos);
     return true;
   }
 }
@@ -41,8 +41,8 @@ export class FlowerTool implements Tool {
     // Object tools don't need to clear anything on activate
   }
 
-  onPointerDown(event: PointerEvent, context: EventContext): boolean {
-    useStore.getState().addObject('flowers', context.worldPos);
+  onPointerDown(_event: PointerEvent, context: EventContext): boolean {
+    useStore.getState().addObject("flowers", context.worldPos);
     return true;
   }
-} 
+}
