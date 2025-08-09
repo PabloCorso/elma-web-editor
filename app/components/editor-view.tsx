@@ -2,10 +2,9 @@ import { useEffect, useRef } from "react";
 import { EditorEngine } from "../editor/editor-engine";
 import { useEditorStoreApi } from "~/editor/use-editor-store";
 
-export const engineRef = { current: null as EditorEngine | null };
-
 export function EditorView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const engineRef = useRef<EditorEngine | null>(null);
   const store = useEditorStoreApi();
 
   useEffect(

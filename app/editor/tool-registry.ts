@@ -7,6 +7,10 @@ export class ToolRegistry {
 
   constructor(private store: StoreApi<EditorState>) {}
 
+  private isValidEditorTool(toolId: string): boolean {
+    return this.tools.has(toolId);
+  }
+
   private get state() {
     return this.store.getState();
   }
@@ -27,18 +31,33 @@ export class ToolRegistry {
     return Array.from(this.tools.values());
   }
 
+  getRegisteredToolIds(): string[] {
+    return Array.from(this.tools.keys());
+  }
+
   activateTool(toolId: string): boolean {
     const tool = this.tools.get(toolId);
     if (!tool) {
       return false;
     }
 
+    // Validate that toolId is registered
+    if (!this.isValidEditorTool(toolId)) {
+      console.warn(
+        `Tool '${toolId}' is not registered. Available tools: ${this.getRegisteredToolIds().join(", ")}`
+      );
+      return false;
+    }
+
     // Get current active tool from store and deactivate it
-    const currentToolId = this.state.currentTool;
+    const currentToolId = this.state.currentToolId;
     const currentTool = this.tools.get(currentToolId);
     if (currentTool && currentTool.onDeactivate) {
       currentTool.onDeactivate();
     }
+
+    // Update store with new tool
+    this.store.getState().setCurrentToolId(toolId);
 
     // Activate new tool
     if (tool.onActivate) {
@@ -48,7 +67,7 @@ export class ToolRegistry {
   }
 
   getActiveTool(): Tool | null {
-    const currentToolId = this.state.currentTool;
+    const currentToolId = this.state.currentToolId;
     return this.tools.get(currentToolId) || null;
   }
 }

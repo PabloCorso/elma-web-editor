@@ -2,8 +2,6 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 
-export type EditorTool = "polygon" | "select" | "apple" | "killer" | "flower";
-
 // Tool-specific state types
 export type PolygonToolState = {
   drawingPolygon: Position[];
@@ -30,7 +28,7 @@ export type EditorState = {
   start: Position;
 
   // Editor state
-  currentTool: EditorTool;
+  currentToolId: string;
   mousePosition: Position;
 
   // Camera state (matching reference editor approach)
@@ -48,7 +46,7 @@ export type EditorState = {
   fitToViewTrigger: number;
 
   // Actions
-  setCurrentTool: (tool: EditorTool) => void;
+  setCurrentToolId: (toolId: string) => void;
   activateTool: (toolId: string) => void;
 
   // Generic data operations
@@ -88,7 +86,13 @@ export type EditorState = {
 
 export type EditorStore = StoreApi<EditorState>;
 
-export function createEditorStore(): EditorStore {
+type CreateEditorStoreOptions = {
+  initialToolId?: string;
+};
+
+export function createEditorStore({
+  initialToolId = "select",
+}: CreateEditorStoreOptions = {}): EditorStore {
   return createStore<EditorState>((set, get) => ({
     // Initial state - level data will be injected via constructor
     polygons: [],
@@ -98,7 +102,7 @@ export function createEditorStore(): EditorStore {
     start: { x: 0, y: 0 },
 
     // Editor state
-    currentTool: "select",
+    currentToolId: initialToolId,
     mousePosition: { x: 0, y: 0 },
 
     // Camera state
@@ -125,11 +129,11 @@ export function createEditorStore(): EditorStore {
     fitToViewTrigger: 0,
 
     // Actions
-    setCurrentTool: (tool) => set({ currentTool: tool }),
+    setCurrentToolId: (toolId) => set({ currentToolId: toolId }),
 
     activateTool: (toolId) => {
       // This will be handled by the ToolRegistry
-      set({ currentTool: toolId as EditorTool });
+      set({ currentToolId: toolId });
     },
 
     // Generic data operations

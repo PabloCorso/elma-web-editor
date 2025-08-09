@@ -3,13 +3,12 @@ import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
 import { useState, useEffect } from "react";
-import { engineRef } from "./editor-view";
 import type { EditorTool } from "~/editor/editor-store";
 
 export function Sidebar() {
   const [isBuiltInLevelsOpen, setIsBuiltinLevelsOpen] = useState(false);
 
-  const currentTool = useEditorStore((state) => state.currentTool);
+  const currentTool = useEditorStore((state) => state.currentToolId);
   const animateSprites = useEditorStore((state) => state.animateSprites);
   const showSprites = useEditorStore((state) => state.showSprites);
 
@@ -19,11 +18,10 @@ export function Sidebar() {
   const toggleShowSprites = useEditorStore((state) => state.toggleShowSprites);
   const importLevel = useEditorStore((state) => state.importLevel);
   const triggerFitToView = useEditorStore((state) => state.triggerFitToView);
+  const activateTool = useEditorStore((state) => state.activateTool);
 
   const handleToolActivation = (toolId: string) => {
-    if (engineRef.current) {
-      engineRef.current.activateTool(toolId);
-    }
+    activateTool(toolId);
   };
 
   // Handle keyboard shortcuts for tools

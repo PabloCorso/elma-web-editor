@@ -1,4 +1,8 @@
-import { createEditorStore, type EditorState, type EditorStore } from "./editor-store";
+import {
+  createEditorStore,
+  type EditorState,
+  type EditorStore,
+} from "./editor-store";
 import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
@@ -89,6 +93,11 @@ export class EditorEngine {
     return this.store;
   }
 
+  // Expose tool registry for React integration
+  getToolRegistry(): ToolRegistry {
+    return this.toolRegistry;
+  }
+
   private setupEventListeners() {
     this.canvas.addEventListener("mousedown", this.handleMouseDown);
     this.canvas.addEventListener("mousemove", this.handleMouseMove);
@@ -114,7 +123,7 @@ export class EditorEngine {
         store.viewPortOffset,
         store.zoom
       );
-      const currentToolId = store.currentTool;
+      const currentToolId = store.currentToolId;
       const activeTool = this.toolRegistry.getTool(currentToolId);
       if (activeTool?.onPointerDown) {
         const consumed = activeTool.onPointerDown(
@@ -156,7 +165,7 @@ export class EditorEngine {
       store.viewPortOffset,
       store.zoom
     );
-    const currentToolId = store.currentTool;
+    const currentToolId = store.currentToolId;
     const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onPointerMove) {
       const consumed = activeTool.onPointerMove(event as PointerEvent, context);
@@ -174,7 +183,7 @@ export class EditorEngine {
     if (event.button === 0) {
       const store = this.store.getState();
 
-      const currentToolId = store.currentTool;
+      const currentToolId = store.currentToolId;
       const activeTool = this.toolRegistry.getTool(currentToolId);
       if (activeTool?.onPointerUp) {
         const context = getEventContext(
@@ -192,7 +201,7 @@ export class EditorEngine {
     event.preventDefault();
     const store = this.store.getState();
 
-    const currentToolId = store.currentTool;
+    const currentToolId = store.currentToolId;
     const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onRightClick) {
       const context = getEventContext(
@@ -260,7 +269,7 @@ export class EditorEngine {
 
     // Let active tool handle the key first
     const state = this.store.getState();
-    const currentToolId = state.currentTool;
+    const currentToolId = state.currentToolId;
     const activeTool = this.toolRegistry.getTool(currentToolId);
     if (activeTool?.onKeyDown) {
       const context = {
@@ -397,12 +406,20 @@ export class EditorEngine {
   private setupStoreListeners() {
     // Subscribe directly to fitToViewTrigger changes
     let lastFitToViewTrigger = this.store.getState().fitToViewTrigger;
+    let lastCurrentTool = this.store.getState().currentToolId;
 
     this.store.subscribe((state) => {
       const currentTrigger = state.fitToViewTrigger;
       if (currentTrigger !== lastFitToViewTrigger) {
         lastFitToViewTrigger = currentTrigger;
         this.fitToView();
+      }
+
+      // Subscribe to tool changes
+      const currentTool = state.currentToolId;
+      if (currentTool !== lastCurrentTool) {
+        lastCurrentTool = currentTool;
+        this.toolRegistry.activateTool(currentTool);
       }
     });
   }
@@ -596,25 +613,6 @@ export class EditorEngine {
       store.showSprites,
       false
     );
-  }
-
-  public activateTool(toolId: string): boolean {
-    // Update the store (which is the source of truth)
-    const toolMap: Record<string, string> = {
-      polygon: "polygon",
-      select: "select",
-      apple: "apple",
-      killer: "killer",
-      flower: "flower",
-    };
-    const storeTool = toolMap[toolId];
-    if (storeTool) {
-      this.store.getState().setCurrentTool(storeTool as any);
-      // Also call the tool registry to handle activate/deactivate callbacks
-      this.toolRegistry.activateTool(toolId);
-      return true;
-    }
-    return false;
   }
 
   public getActiveTool(): string | null {
