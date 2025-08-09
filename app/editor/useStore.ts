@@ -7,6 +7,7 @@ export type EditorTool = "polygon" | "select" | "apple" | "killer" | "flower";
 // Tool-specific state types
 export type PolygonToolState = {
   drawingPolygon: Position[];
+  originalPolygon?: Polygon; // The polygon being edited (if any)
 };
 
 export type SelectionToolState = {
@@ -99,6 +100,7 @@ export const useStore = create<Store>((set, get) => ({
   toolState: {
     polygon: {
       drawingPolygon: [],
+      originalPolygon: undefined,
     },
     select: {
       selectedVertices: [],

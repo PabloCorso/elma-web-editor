@@ -24,3 +24,32 @@ export function isWithinThreshold(
 ): boolean {
   return distance(pos1, pos2) <= threshold / zoom;
 }
+
+export function getClosestPointOnLineSegment(
+  point: Position,
+  lineStart: Position,
+  lineEnd: Position
+): Position {
+  const A = point.x - lineStart.x;
+  const B = point.y - lineStart.y;
+  const C = lineEnd.x - lineStart.x;
+  const D = lineEnd.y - lineStart.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  
+  if (lenSq === 0) {
+    // Line segment is actually a point
+    return lineStart;
+  }
+  
+  let param = dot / lenSq;
+  
+  // Clamp param to [0, 1] to stay within the line segment
+  param = Math.max(0, Math.min(1, param));
+  
+  return {
+    x: lineStart.x + param * C,
+    y: lineStart.y + param * D
+  };
+}

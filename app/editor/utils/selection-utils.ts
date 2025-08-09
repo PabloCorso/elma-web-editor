@@ -1,5 +1,5 @@
 import type { Position, Polygon } from "elmajs";
-import { isWithinThreshold } from "./coordinate-utils";
+import { isWithinThreshold, getClosestPointOnLineSegment } from "./coordinate-utils";
 
 export type SelectedVertex = {
   polygon: Polygon;
@@ -154,4 +154,59 @@ function distanceToLineSegment(
   const dy = point.y - yy;
   
   return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function findPolygonVertexForEditing(
+  pos: Position,
+  polygons: Polygon[],
+  threshold: number = 10,
+  zoom: number
+): { polygon: Polygon; vertexIndex: number; vertex: Position } | null {
+  for (const polygon of polygons) {
+    for (let i = 0; i < polygon.vertices.length; i++) {
+      const vertex = polygon.vertices[i];
+      if (isWithinThreshold(pos, vertex, threshold, zoom)) {
+        return { polygon, vertexIndex: i, vertex };
+      }
+    }
+  }
+  return null;
+}
+
+export function findPolygonLineForEditing(
+  pos: Position,
+  polygons: Polygon[],
+  threshold: number = 8,
+  zoom: number
+): { polygon: Polygon; insertionIndex: number; insertionPoint: Position } | null {
+  const adjustedThreshold = threshold / zoom;
+  
+  for (const polygon of polygons) {
+    if (polygon.vertices.length < 3) continue;
+    
+    // Check each edge of the polygon
+    for (let i = 0; i < polygon.vertices.length; i++) {
+      const start = polygon.vertices[i];
+      const end = polygon.vertices[(i + 1) % polygon.vertices.length];
+      
+      // Calculate distance from point to line segment
+      const distance = distanceToLineSegment(pos, start, end);
+      
+      if (distance <= adjustedThreshold) {
+        // Find the closest point on this line segment
+        const insertionPoint = getClosestPointOnLineSegment(pos, start, end);
+        
+        // The insertion index is after the current vertex (i)
+        const insertionIndex = (i + 1) % polygon.vertices.length;
+        
+        return {
+          polygon,
+          insertionIndex,
+          insertionPoint
+        };
+      }
+    }
+  }
+  
+  return null;
 }

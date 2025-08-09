@@ -2,8 +2,9 @@ import type { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import { useStore, type Store } from "../useStore";
 import { isWithinThreshold } from "../utils/coordinate-utils";
+import { findPolygonLineForEditing, findPolygonVertexForEditing } from "../utils/selection-utils";
 import { colors } from "../constants";
-import type { Polygon } from "elmajs";
+import type { Polygon, Position } from "elmajs";
 
 export class PolygonTool implements Tool {
   id = "polygon";
@@ -15,8 +16,11 @@ export class PolygonTool implements Tool {
   }
 
   onDeactivate(): void {
-    // Clear drawing polygon when deactivating
-    useStore.getState().setToolState("polygon", { drawingPolygon: [] });
+    // Clear drawing polygon and original polygon when deactivating
+    useStore.getState().setToolState("polygon", {
+      drawingPolygon: [],
+      originalPolygon: undefined,
+    });
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
@@ -24,20 +28,59 @@ export class PolygonTool implements Tool {
     const worldPos = context.worldPos;
     const toolState = store.getToolState("polygon");
 
-    if (toolState.drawingPolygon.length >= 3) {
-      const firstPoint = toolState.drawingPolygon[0];
-      if (isWithinThreshold(worldPos, firstPoint, 15, store.zoom)) {
-        const newPolygon = {
-          vertices: [...toolState.drawingPolygon],
-          grass: false,
-        };
-        this.addPolygon(newPolygon);
-        store.setToolState("polygon", { drawingPolygon: [] });
-        return true;
+    // If we're already drawing a polygon, continue with normal drawing behavior
+    if (toolState.drawingPolygon.length > 0) {
+      // Check if clicking near the first point to close the polygon
+      if (toolState.drawingPolygon.length >= 3) {
+        const firstPoint = toolState.drawingPolygon[0];
+        if (isWithinThreshold(worldPos, firstPoint, 15, store.zoom)) {
+          const newPolygon = {
+            vertices: [...toolState.drawingPolygon],
+            grass: false,
+          };
+          this.addPolygon(newPolygon);
+          store.setToolState("polygon", {
+            drawingPolygon: [],
+            originalPolygon: undefined,
+          });
+          return true;
+        }
       }
+
+      // Continue drawing the current polygon
+      const newVertices = [...toolState.drawingPolygon, worldPos];
+      store.setToolState("polygon", { drawingPolygon: newVertices });
+      return true;
     }
 
-    const newVertices = [...toolState.drawingPolygon, worldPos];
+    // If we're not drawing a polygon, check if we clicked near an existing polygon vertex first
+    const vertexResult = findPolygonVertexForEditing(
+      worldPos,
+      store.polygons,
+      10,
+      store.zoom
+    );
+    if (vertexResult) {
+      // Start editing this polygon from the clicked vertex (without adding a new point)
+      this.startEditingFromVertex(vertexResult);
+      return true;
+    }
+
+    // If not near a vertex, check if we clicked near a polygon line
+    const lineResult = findPolygonLineForEditing(
+      worldPos,
+      store.polygons,
+      8,
+      store.zoom
+    );
+    if (lineResult) {
+      // Start editing this polygon from the clicked line
+      this.startEditingFromLine(lineResult);
+      return true;
+    }
+
+    // Start a new polygon
+    const newVertices = [worldPos];
     store.setToolState("polygon", { drawingPolygon: newVertices });
     return true;
   }
@@ -47,7 +90,17 @@ export class PolygonTool implements Tool {
     const toolState = store.getToolState("polygon");
 
     if (event.key === "Escape") {
-      store.setToolState("polygon", { drawingPolygon: [] });
+      // If we're editing an existing polygon, restore it
+      if (toolState.originalPolygon) {
+        store.polygons = [...store.polygons, toolState.originalPolygon];
+        store.setToolState("polygon", {
+          drawingPolygon: [],
+          originalPolygon: undefined,
+        });
+      } else {
+        // If we're creating a new polygon, just clear the drawing
+        store.setToolState("polygon", { drawingPolygon: [] });
+      }
       return true;
     }
 
@@ -73,9 +126,19 @@ export class PolygonTool implements Tool {
         grass: false,
       };
       this.addPolygon(newPolygon);
-      store.setToolState("polygon", { drawingPolygon: [] });
+      store.setToolState("polygon", {
+        drawingPolygon: [],
+        originalPolygon: undefined,
+      });
     } else if (toolState.drawingPolygon.length > 0) {
-      store.setToolState("polygon", { drawingPolygon: [] });
+      // If we're editing an existing polygon, restore it
+      if (toolState.originalPolygon) {
+        store.polygons = [...store.polygons, toolState.originalPolygon];
+      }
+      store.setToolState("polygon", {
+        drawingPolygon: [],
+        originalPolygon: undefined,
+      });
     }
     return true;
   }
@@ -135,5 +198,64 @@ export class PolygonTool implements Tool {
   private addPolygon(polygon: Polygon): void {
     const store = useStore.getState();
     store.polygons = [...store.polygons, polygon];
+  }
+
+  private startEditingFromVertex(vertexResult: {
+    polygon: Polygon;
+    vertexIndex: number;
+    vertex: Position;
+  }): void {
+    const store = useStore.getState();
+    const { polygon, vertexIndex } = vertexResult;
+
+    // Store the original polygon for potential restoration on ESCAPE
+    const originalPolygon = polygon;
+
+    // Remove the original polygon from the store
+    store.polygons = store.polygons.filter((p) => p !== polygon);
+
+    // Create a new drawing polygon that starts from the clicked vertex
+    // and includes all vertices starting from that vertex index
+    const vertices = polygon.vertices;
+    const drawingVertices = [
+      ...vertices.slice(vertexIndex),
+      ...vertices.slice(0, vertexIndex),
+    ];
+
+    // Set this as the current drawing polygon and store the original
+    store.setToolState("polygon", {
+      drawingPolygon: drawingVertices,
+      originalPolygon: originalPolygon,
+    });
+  }
+
+  private startEditingFromLine(lineResult: {
+    polygon: Polygon;
+    insertionIndex: number;
+    insertionPoint: Position;
+  }): void {
+    const store = useStore.getState();
+    const { polygon, insertionIndex, insertionPoint } = lineResult;
+
+    // Store the original polygon for potential restoration on ESCAPE
+    const originalPolygon = polygon;
+
+    // Remove the original polygon from the store
+    store.polygons = store.polygons.filter((p) => p !== polygon);
+
+    // Create a new drawing polygon that starts from the insertion point
+    // and includes all vertices starting from the insertion index
+    const vertices = polygon.vertices;
+    const drawingVertices = [
+      insertionPoint,
+      ...vertices.slice(insertionIndex),
+      ...vertices.slice(0, insertionIndex),
+    ];
+
+    // Set this as the current drawing polygon and store the original
+    store.setToolState("polygon", {
+      drawingPolygon: drawingVertices,
+      originalPolygon: originalPolygon,
+    });
   }
 }
