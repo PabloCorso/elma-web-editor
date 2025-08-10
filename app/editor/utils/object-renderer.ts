@@ -87,30 +87,30 @@ export class ObjectRenderer {
     start: {
       spriteName: "kuski",
       fallbackColor: colors.start,
-      spriteWidth: 16.0 * 3.2, // Maintain aspect ratio: 60.34/55.64 ≈ 1.08
-      spriteHeight: 16.0 * 3.0, // Base size
-      circleRadius: 8.0,
+      spriteWidth: 0.8 * 3.2, // Maintain aspect ratio: 60.34/55.64 ≈ 1.08
+      spriteHeight: 0.8 * 3.0, // Base size
+      circleRadius: 0.4,
     },
     flower: {
       spriteName: "qexit",
       fallbackColor: colors.flower,
-      spriteWidth: 16.0,
-      spriteHeight: 16.0,
-      circleRadius: 8.0,
+      spriteWidth: 0.8,
+      spriteHeight: 0.8,
+      circleRadius: 0.4,
     },
     apple: {
       spriteName: "qfood1",
       fallbackColor: colors.apple,
-      spriteWidth: 16.0,
-      spriteHeight: 16.0,
-      circleRadius: 8.0,
+      spriteWidth: 0.8,
+      spriteHeight: 0.8,
+      circleRadius: 0.4,
     },
     killer: {
       spriteName: "qkiller",
       fallbackColor: colors.killer,
-      spriteWidth: 16.0,
-      spriteHeight: 16.0,
-      circleRadius: 8.0,
+      spriteWidth: 0.8,
+      spriteHeight: 0.8,
+      circleRadius: 0.4,
     },
   };
 }

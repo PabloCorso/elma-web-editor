@@ -18,18 +18,18 @@ export const initialLevelData: LevelData = {
   polygons: [
     {
       vertices: [
-        { x: 50, y: 50 },
-        { x: 950, y: 50 },
-        { x: 950, y: 550 },
-        { x: 50, y: 550 },
+        { x: 2.5, y: 2.5 },
+        { x: 47.5, y: 2.5 },
+        { x: 47.5, y: 27.5 },
+        { x: 2.5, y: 27.5 },
       ],
       grass: false,
     },
   ],
-  apples: [{ x: 500, y: 500 }],
+  apples: [{ x: 25, y: 25 }],
   killers: [],
-  flowers: [{ x: 900, y: 500 }],
-  start: { x: 100, y: 500 },
+  flowers: [{ x: 45, y: 25 }],
+  start: { x: 5, y: 25 },
 };
 
 export class LevelImporter {
@@ -92,16 +92,10 @@ export class LevelImporter {
       const apples: Position[] = [];
       const killers: Position[] = [];
       const flowers: Position[] = [];
-      let start: Position = { x: 100, y: 500 }; // Default start position
-
-      // Scale factor to make levels larger and more visible
-      const scaleFactor = 20;
+      let start: Position = { x: 5, y: 5 }; // Default start position
 
       level.objects.forEach((obj: any) => {
-        const position = {
-          x: obj.position.x * scaleFactor,
-          y: obj.position.y * scaleFactor,
-        };
+        const position = { x: obj.position.x, y: obj.position.y };
 
         switch (obj.type) {
           case 1: // Exit/Flower
@@ -119,17 +113,8 @@ export class LevelImporter {
         }
       });
 
-      // Scale polygons as well
-      const scaledPolygons = level.polygons.map((polygon) => ({
-        ...polygon,
-        vertices: polygon.vertices.map((vertex) => ({
-          x: vertex.x * scaleFactor,
-          y: vertex.y * scaleFactor,
-        })),
-      }));
-
       const levelData: LevelData = {
-        polygons: scaledPolygons,
+        polygons: level.polygons,
         apples,
         killers,
         flowers,

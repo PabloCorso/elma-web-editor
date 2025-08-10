@@ -138,7 +138,7 @@ export class SpriteManager {
       // Add bouncing effect for apples and flowers
       const bounceOffset =
         spriteName === "qfood1" || spriteName === "qexit"
-          ? Math.sin(time * 0.006) * 1.5
+          ? Math.sin(time * 0.006) * 0.075
           : 0;
 
       ctx.drawImage(
@@ -148,7 +148,7 @@ export class SpriteManager {
         frame.width,
         frame.height,
         x - width / 2,
-        y - height / 2,
+        y - height / 2 - bounceOffset,
         width,
         height
       );

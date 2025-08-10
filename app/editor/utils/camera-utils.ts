@@ -3,13 +3,13 @@ export function updateCamera({
   deltaY,
   currentOffset,
   setCamera,
-  panSpeed = 1.0,
+  panSpeed,
 }: {
   deltaX: number;
   deltaY: number;
   currentOffset: { x: number; y: number };
   setCamera: (x: number, y: number) => void;
-  panSpeed?: number;
+  panSpeed: number;
 }) {
   setCamera(
     currentOffset.x + deltaX * panSpeed,
@@ -124,7 +124,7 @@ export function fitToView({
   });
 
   // Add padding
-  const padding = 50;
+  const padding = 2;
   minX -= padding;
   minY -= padding;
   maxX += padding;
