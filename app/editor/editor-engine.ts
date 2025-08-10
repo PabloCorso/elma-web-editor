@@ -29,9 +29,9 @@ export class EditorEngine {
   private toolRegistry: ToolRegistry;
 
   // Camera system
-  private minZoom = 0.1;
-  private maxZoom = 200;
-  private panSpeed = 1.0;
+  private minZoom;
+  private maxZoom;
+  private panSpeed;
 
   // Navigation state
   private isPanning = false;
@@ -46,6 +46,7 @@ export class EditorEngine {
       initialToolId = "select",
       minZoom = 0.1,
       maxZoom = 200,
+      panSpeed = 1.0,
       store,
     }: {
       initialLevel?: LevelData;
@@ -53,6 +54,7 @@ export class EditorEngine {
       initialToolId?: string;
       minZoom?: number;
       maxZoom?: number;
+      panSpeed?: number;
       store?: EditorStore;
     } = {}
   ) {
@@ -64,6 +66,7 @@ export class EditorEngine {
     this.objectRenderer = new ObjectRenderer(this.spriteManager);
     this.minZoom = minZoom;
     this.maxZoom = maxZoom;
+    this.panSpeed = panSpeed;
 
     // Use provided store or create a new one
     this.store = store || createEditorStore();
