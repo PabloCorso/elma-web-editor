@@ -104,7 +104,7 @@ export function fitToView({
     const centerX = canvas.width / 2 - levelWidth / 2;
     const centerY = canvas.height / 2 - levelHeight / 2;
     setCamera(centerX, centerY);
-    setZoom(1);
+    setZoom(Math.max(minZoom, Math.min(maxZoom, 1)));
     return;
   }
 
@@ -139,11 +139,11 @@ export function fitToView({
   // Calculate optimal zoom
   const zoomX = (canvas.width * 0.9) / polygonWidth;
   const zoomY = (canvas.height * 0.9) / polygonHeight;
-  const newZoom = Math.min(zoomX, zoomY, maxZoom);
+  const newZoom = Math.max(minZoom, Math.min(maxZoom, Math.min(zoomX, zoomY)));
 
   // Set camera and zoom
   const viewPortX = canvas.width / 2 - centerX * newZoom;
   const viewPortY = canvas.height / 2 - centerY * newZoom;
   setCamera(viewPortX, viewPortY);
-  setZoom(Math.max(minZoom, newZoom));
+  setZoom(newZoom);
 }

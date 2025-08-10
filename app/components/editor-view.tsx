@@ -33,10 +33,7 @@ export function EditorView() {
         new KillerTool(store),
         new FlowerTool(store),
       ];
-      engineRef.current = new EditorEngine(canvas, {
-        store,
-        tools,
-      });
+      engineRef.current = new EditorEngine(canvas, { store, tools });
 
       // Add resize observer to handle parent size changes
       const resizeObserver = new ResizeObserver(() => {

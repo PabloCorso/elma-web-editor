@@ -44,8 +44,8 @@ export class EditorEngine {
       initialLevel = initialLevelData,
       tools = [],
       initialToolId = "select",
-      minZoom = 0.1,
-      maxZoom = 200,
+      minZoom = 0.2,
+      maxZoom = 10000,
       panSpeed = 1.0,
       store,
     }: {
@@ -109,9 +109,9 @@ export class EditorEngine {
       this.startPanning(event.clientX, event.clientY);
       return;
     }
-
     if (event.button === 0) {
       const store = this.store.getState();
+      console.log(store.zoom);
       const context = getEventContext(
         event,
         this.canvas,
