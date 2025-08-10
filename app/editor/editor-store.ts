@@ -1,9 +1,7 @@
 import { create, type StoreApi } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
-import type { Tool } from "./tools/tool-interface";
-
-type ToolState<T = unknown> = Record<string, T>;
+import type { Tool, ToolState } from "./tools/tool-interface";
 
 export type EditorState = {
   // Level data

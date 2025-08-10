@@ -3,6 +3,8 @@ import type { StoreApi } from "zustand/vanilla";
 import type { EditorState } from "../editor-store";
 import type { Polygon } from "elmajs";
 
+export type ToolState<T = unknown> = Record<string, T>;
+
 export abstract class Tool {
   abstract readonly id: string;
   abstract readonly name: string;
