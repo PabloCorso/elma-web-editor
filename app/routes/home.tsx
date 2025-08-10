@@ -13,7 +13,7 @@ export function meta({}: Route.MetaArgs) {
 export default function Home() {
   return (
     <EditorStoreProvider>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen">
         <Sidebar />
         <div className="flex-1">
           <EditorView />

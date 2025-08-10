@@ -47,4 +47,6 @@ export abstract class Tool {
   // Lifecycle
   onActivate?(): void;
   onDeactivate?(): void;
+
+  clear?(): void;
 }

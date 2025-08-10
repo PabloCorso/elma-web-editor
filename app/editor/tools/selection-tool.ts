@@ -40,8 +40,18 @@ export class SelectionTool extends Tool {
   private marqueeEndPos = { x: 0, y: 0 };
 
   onDeactivate(): void {
-    // Clear selections when deactivating selection tool
-    this.clearSelection();
+    this.clear();
+  }
+
+  clear(): void {
+    const state = this.getState();
+    state.setToolState("select", {
+      selectedVertices: [],
+      selectedObjects: [],
+    });
+    this.isDragging = false;
+    this.isMarqueeSelecting = false;
+    this.originalPositions = [];
   }
 
   onPointerDown(event: PointerEvent, context: EventContext): boolean {
@@ -113,7 +123,7 @@ export class SelectionTool extends Tool {
       return true;
     }
     if (event.key === "Escape") {
-      this.clearSelection();
+      this.clear();
       return true;
     }
     return false;
@@ -218,7 +228,7 @@ export class SelectionTool extends Tool {
     const isSelected = isVertexSelected(vertex, toolState.selectedVertices);
 
     if (!isCtrlKey && !isSelected) {
-      this.clearSelection();
+      this.clear();
     }
 
     if (!isSelected) {
@@ -235,7 +245,7 @@ export class SelectionTool extends Tool {
     const isSelected = isObjectSelected(object, toolState.selectedObjects);
 
     if (!isCtrlKey && !isSelected) {
-      this.clearSelection();
+      this.clear();
     }
 
     if (!isSelected) {
@@ -251,7 +261,7 @@ export class SelectionTool extends Tool {
     );
 
     if (!isCtrlKey && !isSelected) {
-      this.clearSelection();
+      this.clear();
     }
 
     if (!isSelected) {
@@ -277,7 +287,7 @@ export class SelectionTool extends Tool {
 
   private startMarqueeSelection(worldPos: Position, isCtrlKey: boolean): void {
     if (!isCtrlKey) {
-      this.clearSelection();
+      this.clear();
     }
     this.isMarqueeSelecting = true;
     this.marqueeStartPos = worldPos;
@@ -362,14 +372,6 @@ export class SelectionTool extends Tool {
           this.selectObject(obj);
         }
       }
-    });
-  }
-
-  private clearSelection(): void {
-    const state = this.getState();
-    state.setToolState("select", {
-      selectedVertices: [],
-      selectedObjects: [],
     });
   }
 
@@ -553,6 +555,6 @@ export class SelectionTool extends Tool {
       }
     });
 
-    this.clearSelection();
+    this.clear();
   }
 }

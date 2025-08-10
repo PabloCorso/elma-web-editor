@@ -1,6 +1,7 @@
 import { create, type StoreApi } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
+import type { Tool } from "./tools/tool-interface";
 
 // Tool-specific state types
 export type PolygonToolState = {
@@ -40,15 +41,8 @@ export type EditorState = {
   animateSprites: boolean;
   showSprites: boolean;
 
-  // Tool state (extensible)
-  toolState: ToolState;
-
   // Fit to view trigger
   fitToViewTrigger: number;
-
-  // Actions
-  setCurrentToolId: (toolId: string) => void;
-  activateTool: (toolId: string) => void;
 
   // Generic data operations
   addObject: <
@@ -72,12 +66,20 @@ export type EditorState = {
   setZoom: (zoom: number) => void;
   setPolygons: (polygons: Polygon[]) => void;
 
-  // Tool state operations
+  // Tools
+  toolsMap: Map<string, Tool>;
+  toolState: ToolState;
+
+  registerTool: (tool: Tool) => void;
+  activateTool: (toolId: string) => void;
+  getActiveTool: () => Tool | undefined;
+  getTool: (toolId: string) => Tool | undefined;
+
+  getToolState: <K extends keyof ToolState>(toolId: K) => ToolState[K];
   setToolState: <K extends keyof ToolState>(
     toolId: K,
     state: Partial<ToolState[K]>
   ) => void;
-  getToolState: <K extends keyof ToolState>(toolId: K) => ToolState[K];
 
   // View operations
   toggleAnimateSprites: () => void;
@@ -118,28 +120,8 @@ export function createEditorStore({
     animateSprites: true,
     showSprites: true,
 
-    // Tool state
-    toolState: {
-      polygon: {
-        drawingPolygon: [],
-        originalPolygon: undefined,
-      },
-      select: {
-        selectedVertices: [],
-        selectedObjects: [],
-      },
-    },
-
     // Fit to view trigger
     fitToViewTrigger: 0,
-
-    // Actions
-    setCurrentToolId: (toolId) => set({ currentToolId: toolId }),
-
-    activateTool: (toolId) => {
-      // This will be handled by the ToolRegistry
-      set({ currentToolId: toolId });
-    },
 
     // Generic data operations
     addObject: (key, item) =>
@@ -162,7 +144,44 @@ export function createEditorStore({
     setZoom: (zoom) => set({ zoom }),
     setPolygons: (polygons) => set({ polygons }),
 
-    // Tool state operations
+    // Tool state
+    toolsMap: new Map<string, Tool>(),
+    toolState: {
+      polygon: { drawingPolygon: [], originalPolygon: undefined },
+      select: { selectedVertices: [], selectedObjects: [] },
+    },
+
+    registerTool: (tool) =>
+      set((prev) => ({
+        toolsMap: prev.toolsMap.set(tool.id, tool),
+      })),
+    activateTool: (toolId: string) => {
+      set({ currentToolId: toolId });
+      // Validate that toolId is registered
+      const state = get();
+      if (!state.toolsMap.has(toolId)) {
+        console.warn(
+          `Tool '${toolId}' is not registered. Available tools: ${Array.from(state.toolsMap.keys()).join(", ")}`
+        );
+        return;
+      }
+
+      // Get current active tool from store and deactivate it
+      const currentToolId = state.currentToolId;
+      const currentTool = state.toolsMap.get(currentToolId);
+      if (currentTool && currentTool.onDeactivate) {
+        currentTool.onDeactivate();
+      }
+
+      // Update store with new tool
+      set({ currentToolId: toolId });
+      const tool = state.toolsMap.get(toolId);
+      tool?.onActivate?.();
+    },
+    getTool: (toolId) => get().toolsMap.get(toolId),
+    getActiveTool: () => get().toolsMap.get(get().currentToolId),
+
+    getToolState: (toolId) => get().toolState[toolId],
     setToolState: (toolId, state) =>
       set((prev) => ({
         toolState: {
@@ -170,8 +189,6 @@ export function createEditorStore({
           [toolId]: { ...prev.toolState[toolId], ...state },
         },
       })),
-
-    getToolState: (toolId) => get().toolState[toolId],
 
     // View operations
     toggleAnimateSprites: () =>

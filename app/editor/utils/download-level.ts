@@ -70,7 +70,9 @@ export async function downloadLevel(state: EditorState) {
     const buffer = level.toBuffer();
 
     // Create a blob and download it
-    const blob = new Blob([buffer], { type: "application/octet-stream" });
+    const blob = new Blob([buffer as any], {
+      type: "application/octet-stream",
+    });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");

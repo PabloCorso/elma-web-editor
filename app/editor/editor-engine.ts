@@ -15,7 +15,6 @@ import {
 import { colors } from "./constants";
 import type { Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
-import { ToolRegistry } from "./tool-registry";
 import type { Tool } from "./tools/tool-interface";
 
 export class EditorEngine {
@@ -26,7 +25,6 @@ export class EditorEngine {
   private objectRenderer: ObjectRenderer;
   private debugMode = false;
   private store: EditorStore;
-  private toolRegistry: ToolRegistry;
 
   // Camera system
   private minZoom;
@@ -70,9 +68,8 @@ export class EditorEngine {
 
     // Use provided store or create a new one
     this.store = store || createEditorStore();
-    this.toolRegistry = new ToolRegistry(this.store);
-    tools.forEach((tool) => this.toolRegistry.register(tool));
-    this.toolRegistry.activateTool(initialToolId);
+    tools.forEach((tool) => this.store.getState().registerTool(tool));
+    this.store.getState().activateTool(initialToolId);
 
     this.setupEventListeners();
     this.setupStoreListeners();
@@ -86,11 +83,6 @@ export class EditorEngine {
   // Expose store for React integration
   getStore(): EditorStore {
     return this.store;
-  }
-
-  // Expose tool registry for React integration
-  getToolRegistry(): ToolRegistry {
-    return this.toolRegistry;
   }
 
   private setupEventListeners() {
@@ -110,15 +102,14 @@ export class EditorEngine {
       return;
     }
     if (event.button === 0) {
-      const store = this.store.getState();
+      const state = this.store.getState();
       const context = getEventContext(
         event,
         this.canvas,
-        store.viewPortOffset,
-        store.zoom
+        state.viewPortOffset,
+        state.zoom
       );
-      const currentToolId = store.currentToolId;
-      const activeTool = this.toolRegistry.getTool(currentToolId);
+      const activeTool = state.getActiveTool();
       if (activeTool?.onPointerDown) {
         const consumed = activeTool.onPointerDown(
           event as PointerEvent,
@@ -152,15 +143,14 @@ export class EditorEngine {
       return;
     }
 
-    const store = this.store.getState();
+    const state = this.store.getState();
     const context = getEventContext(
       event,
       this.canvas,
-      store.viewPortOffset,
-      store.zoom
+      state.viewPortOffset,
+      state.zoom
     );
-    const currentToolId = store.currentToolId;
-    const activeTool = this.toolRegistry.getTool(currentToolId);
+    const activeTool = state.getActiveTool();
     if (activeTool?.onPointerMove) {
       const consumed = activeTool.onPointerMove(event as PointerEvent, context);
       if (consumed) return;
@@ -175,16 +165,15 @@ export class EditorEngine {
     }
 
     if (event.button === 0) {
-      const store = this.store.getState();
+      const state = this.store.getState();
 
-      const currentToolId = store.currentToolId;
-      const activeTool = this.toolRegistry.getTool(currentToolId);
+      const activeTool = state.getActiveTool();
       if (activeTool?.onPointerUp) {
         const context = getEventContext(
           event,
           this.canvas,
-          store.viewPortOffset,
-          store.zoom
+          state.viewPortOffset,
+          state.zoom
         );
         activeTool.onPointerUp(event as PointerEvent, context);
       }
@@ -193,16 +182,15 @@ export class EditorEngine {
 
   private handleRightClick = (event: MouseEvent) => {
     event.preventDefault();
-    const store = this.store.getState();
+    const state = this.store.getState();
 
-    const currentToolId = store.currentToolId;
-    const activeTool = this.toolRegistry.getTool(currentToolId);
+    const activeTool = state.getActiveTool();
     if (activeTool?.onRightClick) {
       const context = getEventContext(
         event,
         this.canvas,
-        store.viewPortOffset,
-        store.zoom
+        state.viewPortOffset,
+        state.zoom
       );
       const consumed = activeTool.onRightClick(event, context);
       if (consumed) return;
@@ -263,8 +251,7 @@ export class EditorEngine {
 
     // Let active tool handle the key first
     const state = this.store.getState();
-    const currentToolId = state.currentToolId;
-    const activeTool = this.toolRegistry.getTool(currentToolId);
+    const activeTool = state.getActiveTool();
     if (activeTool?.onKeyDown) {
       const context = {
         worldPos: { x: 0, y: 0 },
@@ -417,20 +404,20 @@ export class EditorEngine {
       const currentTool = state.currentToolId;
       if (currentTool !== lastCurrentTool) {
         lastCurrentTool = currentTool;
-        this.toolRegistry.activateTool(currentTool);
+        this.store.getState().activateTool(currentTool);
       }
     });
   }
 
   private render() {
-    const store = this.store.getState();
+    const state = this.store.getState();
     this.clearCanvas();
-    this.applyCameraTransform(store);
+    this.applyCameraTransform(state);
     this.drawPolygons();
     this.drawObjects();
 
     // Let active tool render
-    const activeTool = this.toolRegistry.getActiveTool();
+    const activeTool = state.getActiveTool();
     if (activeTool?.onRender) {
       activeTool.onRender(this.ctx);
     }
@@ -444,7 +431,7 @@ export class EditorEngine {
 
     if (this.debugMode) {
       this.drawDebugInfoPanel();
-      this.drawMousePositionDebug(store);
+      this.drawMousePositionDebug(state);
     }
   }
 
@@ -460,14 +447,14 @@ export class EditorEngine {
   }
 
   private drawPolygons() {
-    const store = this.store.getState();
+    const state = this.store.getState();
 
     // Get temporary polygons from the active tool
-    const activeTool = this.toolRegistry.getActiveTool();
+    const activeTool = state.getActiveTool();
     const temporaryPolygons = activeTool?.getTemporaryPolygons?.() || [];
 
     // Include temporary polygons in the list for rendering calculations
-    const allPolygonsForRendering = [...store.polygons, ...temporaryPolygons];
+    const allPolygonsForRendering = [...state.polygons, ...temporaryPolygons];
 
     if (allPolygonsForRendering.length === 0) return;
 
@@ -500,12 +487,12 @@ export class EditorEngine {
     this.ctx.fill();
 
     // Draw all polygon edges
-    store.polygons.forEach((polygon) => {
+    state.polygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
         this.ctx.strokeStyle = colors.grass;
-        this.ctx.lineWidth = 1 / store.zoom;
+        this.ctx.lineWidth = 1 / state.zoom;
         this.ctx.beginPath();
         this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
         for (let i = 1; i < polygon.vertices.length; i++) {
@@ -528,7 +515,7 @@ export class EditorEngine {
       }
 
       this.ctx.strokeStyle = colors.edges;
-      this.ctx.lineWidth = 1 / store.zoom;
+      this.ctx.lineWidth = 1 / state.zoom;
 
       this.ctx.beginPath();
       this.ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -541,7 +528,7 @@ export class EditorEngine {
       if (this.debugMode) {
         this.drawPolygonDebugInfo(
           polygon,
-          store.polygons,
+          state.polygons,
           shouldBeGround,
           isClockwise
         );
@@ -555,7 +542,7 @@ export class EditorEngine {
     shouldBeGround: boolean,
     isClockwise: boolean
   ) {
-    const store = this.store.getState();
+    const state = this.store.getState();
     const debug = debugPolygonOrientation(polygon, allPolygons);
 
     debug.samplePoints.forEach((point, index) => {
@@ -564,71 +551,66 @@ export class EditorEngine {
       this.ctx.fillStyle = pointColor;
 
       this.ctx.beginPath();
-      this.ctx.arc(point.x, point.y, 3 / store.zoom, 0, 2 * Math.PI);
+      this.ctx.arc(point.x, point.y, 3 / state.zoom, 0, 2 * Math.PI);
       this.ctx.fill();
 
       this.ctx.fillStyle = "#ffffff";
-      this.ctx.font = `${12 / store.zoom}px Arial`;
+      this.ctx.font = `${12 / state.zoom}px Arial`;
       this.ctx.fillText(
         `${result.containmentCount}`,
-        point.x + 5 / store.zoom,
-        point.y - 5 / store.zoom
+        point.x + 5 / state.zoom,
+        point.y - 5 / state.zoom
       );
     });
 
     const center = debug.samplePoints[0];
     this.ctx.fillStyle = shouldBeGround ? "#00ff00" : "#ff0000";
     this.ctx.beginPath();
-    this.ctx.arc(center.x, center.y, 5 / store.zoom, 0, 2 * Math.PI);
+    this.ctx.arc(center.x, center.y, 5 / state.zoom, 0, 2 * Math.PI);
     this.ctx.fill();
 
     this.ctx.fillStyle = "#ffffff";
-    this.ctx.font = `${14 / store.zoom}px Arial`;
+    this.ctx.font = `${14 / state.zoom}px Arial`;
     this.ctx.fillText(
       `${shouldBeGround ? "G" : "S"}${isClockwise ? "CW" : "CCW"}`,
-      center.x + 8 / store.zoom,
-      center.y + 5 / store.zoom
+      center.x + 8 / state.zoom,
+      center.y + 5 / state.zoom
     );
   }
 
   private drawObjects() {
-    const store = this.store.getState();
+    const state = this.store.getState();
     this.objectRenderer.renderObjects(
       this.ctx,
-      store.apples,
+      state.apples,
       ObjectRenderer.CONFIGS.apple,
-      store.showSprites,
-      store.animateSprites
+      state.showSprites,
+      state.animateSprites
     );
 
     this.objectRenderer.renderObjects(
       this.ctx,
-      store.killers,
+      state.killers,
       ObjectRenderer.CONFIGS.killer,
-      store.showSprites,
-      store.animateSprites
+      state.showSprites,
+      state.animateSprites
     );
 
     this.objectRenderer.renderObjects(
       this.ctx,
-      store.flowers,
+      state.flowers,
       ObjectRenderer.CONFIGS.flower,
-      store.showSprites,
-      store.animateSprites
+      state.showSprites,
+      state.animateSprites
     );
 
     this.objectRenderer.renderObject(
       this.ctx,
-      store.start,
+      state.start,
       ObjectRenderer.CONFIGS.start,
-      store.showSprites,
+      state.showSprites,
       false
     );
-  }
-
-  public getActiveTool(): string | null {
-    const activeTool = this.toolRegistry.getActiveTool();
-    return activeTool?.id || null;
   }
 
   public destroy() {

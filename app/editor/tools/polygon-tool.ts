@@ -20,7 +20,10 @@ export class PolygonTool extends Tool {
   }
 
   onDeactivate(): void {
-    // Clear drawing polygon and original polygon when deactivating
+    this.clear();
+  }
+
+  clear(): void {
     const state = this.getState();
     state.setToolState("polygon", {
       drawingPolygon: [],
@@ -32,15 +35,14 @@ export class PolygonTool extends Tool {
     const state = this.getState();
     const toolState = state.getToolState("polygon");
     const drawingPolygon = toolState.drawingPolygon;
-    
+
     if (drawingPolygon.length >= 3) {
       // Create a temporary polygon that includes the current mouse position
-      return [{
-        vertices: [...drawingPolygon, state.mousePosition],
-        grass: false
-      }];
+      return [
+        { vertices: [...drawingPolygon, state.mousePosition], grass: false },
+      ];
     }
-    
+
     return [];
   }
 
@@ -60,10 +62,7 @@ export class PolygonTool extends Tool {
             grass: false,
           };
           this.addPolygon(newPolygon);
-          state.setToolState("polygon", {
-            drawingPolygon: [],
-            originalPolygon: undefined,
-          });
+          this.clear();
           return true;
         }
       }
@@ -114,10 +113,7 @@ export class PolygonTool extends Tool {
       // If we're editing an existing polygon, restore it
       if (toolState.originalPolygon) {
         state.setPolygons([...state.polygons, toolState.originalPolygon]);
-        state.setToolState("polygon", {
-          drawingPolygon: [],
-          originalPolygon: undefined,
-        });
+        this.clear();
       } else {
         // If we're creating a new polygon, just clear the drawing
         state.setToolState("polygon", { drawingPolygon: [] });
@@ -149,19 +145,14 @@ export class PolygonTool extends Tool {
         grass: false,
       };
       this.addPolygon(newPolygon);
-      state.setToolState("polygon", {
-        drawingPolygon: [],
-        originalPolygon: undefined,
-      });
+      this.clear();
     } else if (toolState.drawingPolygon.length > 0) {
       // If we're editing an existing polygon, restore it
       if (toolState.originalPolygon) {
         state.setPolygons([...state.polygons, toolState.originalPolygon]);
       }
-      state.setToolState("polygon", {
-        drawingPolygon: [],
-        originalPolygon: undefined,
-      });
+
+      this.clear();
     }
     return true;
   }

@@ -8,7 +8,7 @@ import { downloadLevel } from "~/editor/utils/download-level";
 export function Sidebar() {
   const [isBuiltInLevelsOpen, setIsBuiltinLevelsOpen] = useState(false);
 
-  const currentTool = useEditorStore((state) => state.currentToolId);
+  const activeTool = useEditorStore((state) => state.getActiveTool());
   const animateSprites = useEditorStore((state) => state.animateSprites);
   const showSprites = useEditorStore((state) => state.showSprites);
 
@@ -68,7 +68,8 @@ export function Sidebar() {
       await downloadLevel(state);
     } catch (error) {
       console.error("Failed to download level:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       alert(`Failed to download level: ${errorMessage}`);
     }
   };
@@ -81,6 +82,7 @@ export function Sidebar() {
 
     const result = await LevelImporter.importFromFile(file);
     if (result.success && result.data) {
+      activeTool?.clear?.();
       importLevel(result.data);
       triggerFitToView();
     } else {
@@ -94,11 +96,17 @@ export function Sidebar() {
   const handleBuiltinLevelImport = async (level: BuiltinLevel) => {
     const result = await LevelImporter.importBuiltinLevel(level.filename);
     if (result.success && result.data) {
+      activeTool?.clear?.();
       importLevel(result.data);
       triggerFitToView();
     } else {
       alert(`Import failed: ${result.error}`);
     }
+  };
+
+  const handleOpenBuiltinLevels = () => {
+    activeTool?.clear?.();
+    setIsBuiltinLevelsOpen(true);
   };
 
   return (
@@ -114,7 +122,7 @@ export function Sidebar() {
       )}
 
       {/* Desktop Sidebar */}
-      <div className="w-64 h-screen bg-gray-800 text-white flex-col border-r border-gray-700 overflow-y-auto">
+      <div className="w-64 h-full bg-gray-800 text-white flex flex-col border-r border-gray-700 overflow-y-auto">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center gap-2">
@@ -132,7 +140,7 @@ export function Sidebar() {
             <button
               onClick={() => handleToolActivation("select")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
-                currentTool === "select"
+                activeTool?.id === "select"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
@@ -148,7 +156,7 @@ export function Sidebar() {
             <button
               onClick={() => handleToolActivation("polygon")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
-                currentTool === "polygon"
+                activeTool?.id === "polygon"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
@@ -164,7 +172,7 @@ export function Sidebar() {
             <button
               onClick={() => handleToolActivation("apple")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
-                currentTool === "apple"
+                activeTool?.id === "apple"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
@@ -180,7 +188,7 @@ export function Sidebar() {
             <button
               onClick={() => handleToolActivation("killer")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
-                currentTool === "killer"
+                activeTool?.id === "killer"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
@@ -196,7 +204,7 @@ export function Sidebar() {
             <button
               onClick={() => handleToolActivation("flower")}
               className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
-                currentTool === "flower"
+                activeTool?.id === "flower"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
               }`}
@@ -255,7 +263,7 @@ export function Sidebar() {
         {/* Built-in Levels Button */}
         <div className="p-4 border-t border-gray-700">
           <button
-            onClick={() => setIsBuiltinLevelsOpen(true)}
+            onClick={handleOpenBuiltinLevels}
             className="w-full flex items-center gap-3 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
           >
             <span className="text-lg">📚</span>
