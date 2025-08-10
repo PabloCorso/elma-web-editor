@@ -1,4 +1,4 @@
-import { useEditorStore } from "../editor/use-editor-store";
+import { useEditorStore, useEditorStoreApi } from "../editor/use-editor-store";
 import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
@@ -19,6 +19,9 @@ export function Sidebar() {
   const importLevel = useEditorStore((state) => state.importLevel);
   const triggerFitToView = useEditorStore((state) => state.triggerFitToView);
   const activateTool = useEditorStore((state) => state.activateTool);
+  const levelName = useEditorStore((state) => state.levelName);
+  const setLevelName = useEditorStore((state) => state.setLevelName);
+  const store = useEditorStoreApi();
 
   const handleToolActivation = (toolId: string) => {
     activateTool(toolId);
@@ -61,11 +64,12 @@ export function Sidebar() {
 
   const handleDownload = async () => {
     try {
-      const state = useEditorStore((state) => state);
+      const state = store.getState();
       await downloadLevel(state);
     } catch (error) {
       console.error("Failed to download level:", error);
-      alert("Failed to download level. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Failed to download level: ${errorMessage}`);
     }
   };
 
@@ -265,11 +269,20 @@ export function Sidebar() {
             Import/Export
           </h2>
           <div className="space-y-2">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Level Name</label>
+              <input
+                type="text"
+                value={levelName}
+                onChange={(e) => setLevelName(e.target.value)}
+                className="w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                placeholder="Enter level name..."
+              />
+            </div>
             <button
               onClick={handleDownload}
-              className="w-full flex disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-600 items-center gap-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-              title="Work in progress"
-              disabled
+              className="w-full flex items-center gap-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              title="Download current level as .lev file"
             >
               <span className="text-lg">⬇️</span>
               <span>Download Level</span>

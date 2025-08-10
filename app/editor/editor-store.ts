@@ -21,6 +21,7 @@ export type ToolState = {
 
 export type EditorState = {
   // Level data
+  levelName: string;
   polygons: Polygon[];
   apples: Position[];
   killers: Position[];
@@ -64,6 +65,7 @@ export type EditorState = {
   ) => void;
 
   // Object operations
+  setLevelName: (name: string) => void;
   setStart: (position: Position) => void;
   setMousePosition: (position: Position) => void;
   setCamera: (x: number, y: number) => void;
@@ -95,6 +97,7 @@ export function createEditorStore({
 }: CreateEditorStoreOptions = {}): EditorStore {
   return create<EditorState>((set, get) => ({
     // Initial state - level data will be injected via constructor
+    levelName: "Untitled",
     polygons: [],
     apples: [],
     killers: [],
@@ -150,6 +153,7 @@ export function createEditorStore({
       })),
 
     // Object operations
+    setLevelName: (name) => set({ levelName: name }),
     setStart: (position) => set({ start: position }),
     setMousePosition: (position) => set({ mousePosition: position }),
     setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
@@ -176,6 +180,7 @@ export function createEditorStore({
 
     importLevel: (levelData) =>
       set({
+        levelName: levelData.name || "Imported Level",
         polygons: levelData.polygons,
         apples: levelData.apples,
         killers: levelData.killers,

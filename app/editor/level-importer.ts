@@ -1,6 +1,7 @@
 import type { Polygon, Position } from "elmajs";
 
 export type LevelData = {
+  name?: string;
   polygons: Polygon[];
   apples: Position[];
   killers: Position[];
@@ -41,7 +42,14 @@ export class LevelImporter {
       // Check if it's a .lev file
       if (file.name.toLowerCase().endsWith(".lev")) {
         const arrayBuffer = await file.arrayBuffer();
-        return await this.parseLevFile(arrayBuffer);
+        const result = await this.parseLevFile(arrayBuffer);
+        
+        // Set the level name based on the filename if not already set
+        if (result.success && result.data && !result.data.name) {
+          result.data.name = file.name.replace('.lev', '');
+        }
+        
+        return result;
       } else {
         // Fallback to JSON parsing for other file types
         const text = await file.text();
@@ -71,7 +79,14 @@ export class LevelImporter {
       }
 
       const levData = await response.arrayBuffer();
-      return await this.parseLevFile(levData);
+      const result = await this.parseLevFile(levData);
+      
+      // Set the level name based on the filename if not already set
+      if (result.success && result.data && !result.data.name) {
+        result.data.name = filename.replace('.lev', '');
+      }
+      
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -114,6 +129,7 @@ export class LevelImporter {
       });
 
       const levelData: LevelData = {
+        name: level.name,
         polygons: level.polygons,
         apples,
         killers,

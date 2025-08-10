@@ -111,7 +111,6 @@ export class EditorEngine {
     }
     if (event.button === 0) {
       const store = this.store.getState();
-      console.log(store.zoom);
       const context = getEventContext(
         event,
         this.canvas,
