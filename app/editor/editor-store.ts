@@ -90,14 +90,16 @@ export type EditorStore = StoreApi<EditorState>;
 
 type CreateEditorStoreOptions = {
   initialToolId?: string;
+  defaultLevelTitle?: string;
 };
 
 export function createEditorStore({
   initialToolId = "select",
+  defaultLevelTitle = "Untitled",
 }: CreateEditorStoreOptions = {}): EditorStore {
   return create<EditorState>((set, get) => ({
     // Initial state - level data will be injected via constructor
-    levelName: "Untitled",
+    levelName: defaultLevelTitle,
     polygons: [],
     apples: [],
     killers: [],
@@ -180,7 +182,7 @@ export function createEditorStore({
 
     importLevel: (levelData) =>
       set({
-        levelName: levelData.name || "Imported Level",
+        levelName: levelData.name || defaultLevelTitle,
         polygons: levelData.polygons,
         apples: levelData.apples,
         killers: levelData.killers,
