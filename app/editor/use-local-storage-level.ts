@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { EditorStore } from "./editor-store";
 import type { Position, Polygon } from "elmajs";
+import { useLocalStorage } from "@mantine/hooks";
+import { initialLevelData, type LevelData } from "./level-importer";
 
 type LocalStorageLevel = {
   polygons: Polygon[];
@@ -14,7 +16,17 @@ export function useLocalStorageLevel(
   store: EditorStore | null,
   key = "elma-web-level"
 ) {
-  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] =
+    useLocalStorage<boolean>({
+      key: "elma-web-level-loaded",
+      defaultValue: false,
+      getInitialValueInEffect: true,
+    });
+  const [levelData, setLevelData] = useLocalStorage<LevelData>({
+    key: "elma-web-level",
+    defaultValue: initialLevelData,
+    getInitialValueInEffect: true,
+  });
 
   // Load from localStorage when store becomes available
   useEffect(
@@ -54,7 +66,7 @@ export function useLocalStorageLevel(
           flowers: state.flowers,
           start: state.start,
         };
-        
+
         try {
           localStorage.setItem(key, JSON.stringify(levelData));
         } catch (error) {

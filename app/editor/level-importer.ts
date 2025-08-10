@@ -43,12 +43,12 @@ export class LevelImporter {
       if (file.name.toLowerCase().endsWith(".lev")) {
         const arrayBuffer = await file.arrayBuffer();
         const result = await this.parseLevFile(arrayBuffer);
-        
+
         // Set the level name based on the filename if not already set
         if (result.success && result.data && !result.data.name) {
-          result.data.name = file.name.replace('.lev', '');
+          result.data.name = file.name.replace(".lev", "");
         }
-        
+
         return result;
       } else {
         // Fallback to JSON parsing for other file types
@@ -80,12 +80,12 @@ export class LevelImporter {
 
       const levData = await response.arrayBuffer();
       const result = await this.parseLevFile(levData);
-      
+
       // Set the level name based on the filename if not already set
       if (result.success && result.data && !result.data.name) {
-        result.data.name = filename.replace('.lev', '');
+        result.data.name = filename.replace(".lev", "");
       }
-      
+
       return result;
     } catch (error) {
       return {

@@ -13,7 +13,7 @@ export type EditorState = {
   start: Position;
 
   // Editor state
-  currentToolId: string;
+  activeToolId: string;
   mousePosition: Position;
 
   // Camera state (matching reference editor approach)
@@ -92,7 +92,7 @@ export function createEditorStore({
     start: { x: 0, y: 0 },
 
     // Editor state
-    currentToolId: initialToolId,
+    activeToolId: initialToolId,
     mousePosition: { x: 0, y: 0 },
 
     // Camera state
@@ -136,7 +136,7 @@ export function createEditorStore({
         toolsMap: prev.toolsMap.set(tool.id, tool),
       })),
     activateTool: (toolId: string) => {
-      set({ currentToolId: toolId });
+      set({ activeToolId: toolId });
       // Validate that toolId is registered
       const state = get();
       if (!state.toolsMap.has(toolId)) {
@@ -147,19 +147,19 @@ export function createEditorStore({
       }
 
       // Get current active tool from store and deactivate it
-      const currentToolId = state.currentToolId;
+      const currentToolId = state.activeToolId;
       const currentTool = state.toolsMap.get(currentToolId);
       if (currentTool && currentTool.onDeactivate) {
         currentTool.onDeactivate();
       }
 
       // Update store with new tool
-      set({ currentToolId: toolId });
+      set({ activeToolId: toolId });
       const tool = state.toolsMap.get(toolId);
       tool?.onActivate?.();
     },
     getTool: (toolId) => get().toolsMap.get(toolId),
-    getActiveTool: () => get().toolsMap.get(get().currentToolId),
+    getActiveTool: () => get().toolsMap.get(get().activeToolId),
 
     getToolState: <T extends ToolState>(toolId: string) =>
       get().toolState[toolId] as T,

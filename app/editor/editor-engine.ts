@@ -68,14 +68,15 @@ export class EditorEngine {
 
     // Use provided store or create a new one
     this.store = store || createEditorStore();
-    tools.forEach((tool) => this.store.getState().registerTool(tool));
-    this.store.getState().activateTool(initialToolId);
+    const state = this.store.getState();
+    tools.forEach((tool) => state.registerTool(tool));
+    state.activateTool(initialToolId);
 
     this.setupEventListeners();
     this.setupStoreListeners();
 
     // Initialize with level data
-    this.store.getState().importLevel(initialLevel);
+    state.importLevel(initialLevel);
     this.startRenderLoop();
     this.fitToView();
   }
@@ -127,10 +128,10 @@ export class EditorEngine {
   }
 
   private handleMouseMove = (event: MouseEvent) => {
+    const state = this.store.getState();
     if (this.isPanning) {
       const deltaX = event.clientX - this.lastPanX;
       const deltaY = event.clientY - this.lastPanY;
-      const state = this.store.getState();
       updateCamera({
         deltaX,
         deltaY,
@@ -143,7 +144,6 @@ export class EditorEngine {
       return;
     }
 
-    const state = this.store.getState();
     const context = getEventContext(
       event,
       this.canvas,
@@ -156,7 +156,7 @@ export class EditorEngine {
       if (consumed) return;
     }
 
-    this.store.getState().setMousePosition(context.worldPos);
+    state.setMousePosition(context.worldPos);
   };
 
   private handleMouseUp = (event: MouseEvent) => {
@@ -246,11 +246,11 @@ export class EditorEngine {
   private handleKeyDown = (event: KeyboardEvent) => {
     if (isUserTyping()) return;
 
-    const panAmount = 50 / this.store.getState().zoom;
+    const state = this.store.getState();
+    const panAmount = 50 / state.zoom;
     const zoomAmount = 0.1;
 
     // Let active tool handle the key first
-    const state = this.store.getState();
     const activeTool = state.getActiveTool();
     if (activeTool?.onKeyDown) {
       const context = {
@@ -390,8 +390,9 @@ export class EditorEngine {
 
   private setupStoreListeners() {
     // Subscribe directly to fitToViewTrigger changes
-    let lastFitToViewTrigger = this.store.getState().fitToViewTrigger;
-    let lastCurrentTool = this.store.getState().currentToolId;
+    const state = this.store.getState();
+    let lastFitToViewTrigger = state.fitToViewTrigger;
+    let lastCurrentTool = state.activeToolId;
 
     this.store.subscribe((state) => {
       const currentTrigger = state.fitToViewTrigger;
@@ -401,10 +402,10 @@ export class EditorEngine {
       }
 
       // Subscribe to tool changes
-      const currentTool = state.currentToolId;
+      const currentTool = state.activeToolId;
       if (currentTool !== lastCurrentTool) {
         lastCurrentTool = currentTool;
-        this.store.getState().activateTool(currentTool);
+        state.activateTool(currentTool);
       }
     });
   }

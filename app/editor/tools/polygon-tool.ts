@@ -29,7 +29,7 @@ export class PolygonTool extends Tool {
   }
 
   clear(): void {
-    const state = this.getState();
+    const state = this.store.getState();
     state.setToolState("polygon", {
       drawingPolygon: [],
       originalPolygon: undefined,
@@ -37,7 +37,7 @@ export class PolygonTool extends Tool {
   }
 
   getTemporaryPolygons(): Polygon[] {
-    const state = this.getState();
+    const state = this.store.getState();
     const toolState = state.getToolState<PolygonToolState>("polygon");
     const drawingPolygon = toolState.drawingPolygon;
 
@@ -53,7 +53,7 @@ export class PolygonTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
-    const state = this.getState();
+    const state = this.store.getState();
     const toolState = state.getToolState<PolygonToolState>("polygon");
 
     // If we're already drawing a polygon, continue with normal drawing behavior
@@ -111,7 +111,7 @@ export class PolygonTool extends Tool {
   }
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
-    const state = this.getState();
+    const state = this.store.getState();
     const toolState = state.getToolState<PolygonToolState>("polygon");
 
     if (event.key === "Escape") {
@@ -141,7 +141,7 @@ export class PolygonTool extends Tool {
   }
 
   onRightClick(_event: MouseEvent, _context: EventContext): boolean {
-    const state = this.getState();
+    const state = this.store.getState();
     const toolState = state.getToolState<PolygonToolState>("polygon");
 
     if (toolState.drawingPolygon.length >= 3) {
@@ -163,7 +163,7 @@ export class PolygonTool extends Tool {
   }
 
   onRender(ctx: CanvasRenderingContext2D): void {
-    const state = this.getState();
+    const state = this.store.getState();
     const toolState = state.getToolState<PolygonToolState>("polygon");
     if (toolState.drawingPolygon.length === 0) return;
 
@@ -189,7 +189,7 @@ export class PolygonTool extends Tool {
   }
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
-    const state = this.getState();
+    const state = this.store.getState();
     const toolState = state.getToolState<PolygonToolState>("polygon");
     if (toolState.drawingPolygon.length > 0) {
       const lastPoint =
@@ -230,7 +230,7 @@ export class PolygonTool extends Tool {
   }
 
   private addPolygon(polygon: Polygon): void {
-    const state = this.getState();
+    const state = this.store.getState();
     state.setPolygons([...state.polygons, polygon]);
   }
 
