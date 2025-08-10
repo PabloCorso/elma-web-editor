@@ -3,7 +3,9 @@ import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
 import { useState, useEffect } from "react";
-import { downloadLevel } from "~/editor/utils/download-level";
+import { downloadLevel } from "../editor/utils/download-level";
+import logo from "../assets/bear-helmet.png";
+import { cn } from "../editor/utils/misc";
 
 export function Sidebar() {
   const [isBuiltInLevelsOpen, setIsBuiltinLevelsOpen] = useState(false);
@@ -111,39 +113,27 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Built-in Levels Dialog */}
-      {isBuiltInLevelsOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <BuiltinLevels
-            onLevelSelect={handleBuiltinLevelImport}
-            onClose={() => setIsBuiltinLevelsOpen(false)}
-          />
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
       <div className="w-64 h-full bg-gray-800 text-white flex flex-col border-r border-gray-700 overflow-y-auto">
-        {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">Elma Web Editor</h1>
-            <span className="px-2 py-1 text-xs font-semibold bg-blue-500 text-white rounded-full">
+            <img src={logo} alt="Elma Web Editor" className="w-8 h-8" />
+            <h1 className="text-xl font-bold">Web Editor</h1>
+            <span className="relative -top-1 px-1.5 py-0.5 text-[10px] font-semibold bg-blue-500 text-white rounded-full">
               BETA
             </span>
           </div>
         </div>
 
-        {/* Tools Section */}
         <div className="p-4">
           <h2 className="text-sm font-semibold text-gray-300 mb-3">Tools</h2>
           <div className="space-y-2">
-            <button
+            <SidebarButton
               onClick={() => handleToolActivation("select")}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 activeTool?.id === "select"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">👆</span>
               <span>
@@ -152,14 +142,14 @@ export function Sidebar() {
                 </span>
                 elect
               </span>
-            </button>
-            <button
+            </SidebarButton>
+            <SidebarButton
               onClick={() => handleToolActivation("polygon")}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 activeTool?.id === "polygon"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">⬟</span>
               <span>
@@ -168,14 +158,14 @@ export function Sidebar() {
                 </span>
                 olygon
               </span>
-            </button>
-            <button
+            </SidebarButton>
+            <SidebarButton
               onClick={() => handleToolActivation("apple")}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 activeTool?.id === "apple"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">🍎</span>
               <span>
@@ -184,14 +174,14 @@ export function Sidebar() {
                 </span>
                 pple
               </span>
-            </button>
-            <button
+            </SidebarButton>
+            <SidebarButton
               onClick={() => handleToolActivation("killer")}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 activeTool?.id === "killer"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">💀</span>
               <span>
@@ -200,14 +190,14 @@ export function Sidebar() {
                 </span>
                 iller
               </span>
-            </button>
-            <button
+            </SidebarButton>
+            <SidebarButton
               onClick={() => handleToolActivation("flower")}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 activeTool?.id === "flower"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">🌸</span>
               <span>
@@ -216,62 +206,59 @@ export function Sidebar() {
                 </span>
                 lower
               </span>
-            </button>
+            </SidebarButton>
           </div>
         </div>
 
-        {/* View Settings Section */}
         <div className="p-4 border-t border-gray-700">
           <h2 className="text-sm font-semibold text-gray-300 mb-3">
             View Settings
           </h2>
           <div className="space-y-2">
-            <button
+            <SidebarButton
               onClick={toggleShowSprites}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 showSprites
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">{showSprites ? "🎨" : "⚫"}</span>
               <span>{showSprites ? "Sprite Mode" : "Circle Mode"}</span>
-            </button>
-            <button
+            </SidebarButton>
+            <SidebarButton
               onClick={toggleAnimateSprites}
-              className={`w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-colors ${
+              className={cn(
                 animateSprites
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              }`}
+              )}
             >
               <span className="text-lg">{animateSprites ? "🎬" : "⏸️"}</span>
               <span>
                 {animateSprites ? "Animated Sprites" : "Static Sprites"}
               </span>
-            </button>
-            <button
+            </SidebarButton>
+            <SidebarButton
               onClick={triggerFitToView}
-              className="w-full flex items-center gap-3 px-3 py-1 bg-gray-700 text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
+              className="bg-gray-700 text-gray-200 hover:bg-gray-600"
             >
               <span className="text-lg">🔍</span>
               <span>Fit to View</span>
-            </button>
+            </SidebarButton>
           </div>
         </div>
 
-        {/* Built-in Levels Button */}
         <div className="p-4 border-t border-gray-700">
-          <button
+          <SidebarButton
             onClick={handleOpenBuiltinLevels}
-            className="w-full flex items-center gap-3 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="bg-purple-600 hover:bg-purple-700"
           >
             <span className="text-lg">📚</span>
             <span>Built-in Levels</span>
-          </button>
+          </SidebarButton>
         </div>
 
-        {/* Actions Section */}
         <div className="p-4 mt-auto">
           <h2 className="text-sm font-semibold text-gray-300 mb-3">
             Import/Export
@@ -287,16 +274,19 @@ export function Sidebar() {
                 placeholder="Enter level name..."
               />
             </div>
-            <button
+            <SidebarButton
               onClick={handleDownload}
-              className="w-full flex items-center gap-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="bg-green-600 hover:bg-green-700"
               title="Download current level as .lev file"
             >
               <span className="text-lg">⬇️</span>
               <span>Download Level</span>
-            </button>
+            </SidebarButton>
 
-            <label className="w-full flex items-center gap-3 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer">
+            <SidebarButton
+              className="bg-blue-600 hover:bg-blue-700"
+              title="Import level from file"
+            >
               <span className="text-lg">📁</span>
               <span>Import Level</span>
               <input
@@ -305,10 +295,35 @@ export function Sidebar() {
                 onChange={handleFileImport}
                 className="hidden"
               />
-            </label>
+            </SidebarButton>
           </div>
         </div>
       </div>
+
+      {isBuiltInLevelsOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <BuiltinLevels
+            onLevelSelect={handleBuiltinLevelImport}
+            onClose={() => setIsBuiltinLevelsOpen(false)}
+          />
+        </div>
+      )}
     </>
+  );
+}
+
+function SidebarButton({
+  className,
+  ...props
+}: React.ComponentProps<"button">) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "w-full flex items-center gap-3 px-3 py-1 text-white cursor-pointer rounded-lg transition-colors",
+        className
+      )}
+      {...props}
+    />
   );
 }
