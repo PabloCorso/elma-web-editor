@@ -10,6 +10,11 @@ import {
 import { colors } from "../constants";
 import type { Polygon, Position } from "elmajs";
 
+export type PolygonToolState = {
+  drawingPolygon: Position[];
+  originalPolygon?: Polygon; // The polygon being edited (if any)
+};
+
 export class PolygonTool extends Tool {
   readonly id = "polygon";
   readonly name = "Polygon";
@@ -33,7 +38,7 @@ export class PolygonTool extends Tool {
 
   getTemporaryPolygons(): Polygon[] {
     const state = this.getState();
-    const toolState = state.getToolState("polygon");
+    const toolState = state.getToolState<PolygonToolState>("polygon");
     const drawingPolygon = toolState.drawingPolygon;
 
     if (drawingPolygon.length >= 3) {
@@ -49,7 +54,7 @@ export class PolygonTool extends Tool {
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
     const state = this.getState();
-    const toolState = state.getToolState("polygon");
+    const toolState = state.getToolState<PolygonToolState>("polygon");
 
     // If we're already drawing a polygon, continue with normal drawing behavior
     if (toolState.drawingPolygon.length > 0) {
@@ -107,7 +112,7 @@ export class PolygonTool extends Tool {
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
     const state = this.getState();
-    const toolState = state.getToolState("polygon");
+    const toolState = state.getToolState<PolygonToolState>("polygon");
 
     if (event.key === "Escape") {
       // If we're editing an existing polygon, restore it
@@ -137,7 +142,7 @@ export class PolygonTool extends Tool {
 
   onRightClick(_event: MouseEvent, _context: EventContext): boolean {
     const state = this.getState();
-    const toolState = state.getToolState("polygon");
+    const toolState = state.getToolState<PolygonToolState>("polygon");
 
     if (toolState.drawingPolygon.length >= 3) {
       const newPolygon = {
@@ -159,7 +164,7 @@ export class PolygonTool extends Tool {
 
   onRender(ctx: CanvasRenderingContext2D): void {
     const state = this.getState();
-    const toolState = state.getToolState("polygon");
+    const toolState = state.getToolState<PolygonToolState>("polygon");
     if (toolState.drawingPolygon.length === 0) return;
 
     ctx.strokeStyle = colors.edges;
@@ -185,7 +190,7 @@ export class PolygonTool extends Tool {
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
     const state = this.getState();
-    const toolState = state.getToolState("polygon");
+    const toolState = state.getToolState<PolygonToolState>("polygon");
     if (toolState.drawingPolygon.length > 0) {
       const lastPoint =
         toolState.drawingPolygon[toolState.drawingPolygon.length - 1];

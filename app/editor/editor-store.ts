@@ -3,22 +3,7 @@ import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 
-// Tool-specific state types
-export type PolygonToolState = {
-  drawingPolygon: Position[];
-  originalPolygon?: Polygon; // The polygon being edited (if any)
-};
-
-export type SelectionToolState = {
-  selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
-  selectedObjects: Position[];
-};
-
-export type ToolState = {
-  polygon: PolygonToolState;
-  select: SelectionToolState;
-  [toolId: string]: any; // Allow other tools to extend
-};
+type ToolState<T = unknown> = Record<string, T>;
 
 export type EditorState = {
   // Level data
@@ -75,10 +60,10 @@ export type EditorState = {
   getActiveTool: () => Tool | undefined;
   getTool: (toolId: string) => Tool | undefined;
 
-  getToolState: <K extends keyof ToolState>(toolId: K) => ToolState[K];
-  setToolState: <K extends keyof ToolState>(
-    toolId: K,
-    state: Partial<ToolState[K]>
+  getToolState: <T extends ToolState>(toolId: string) => T;
+  setToolState: <T extends ToolState>(
+    toolId: string,
+    state: Partial<T>
   ) => void;
 
   // View operations
@@ -146,10 +131,7 @@ export function createEditorStore({
 
     // Tool state
     toolsMap: new Map<string, Tool>(),
-    toolState: {
-      polygon: { drawingPolygon: [], originalPolygon: undefined },
-      select: { selectedVertices: [], selectedObjects: [] },
-    },
+    toolState: {},
 
     registerTool: (tool) =>
       set((prev) => ({
@@ -181,12 +163,13 @@ export function createEditorStore({
     getTool: (toolId) => get().toolsMap.get(toolId),
     getActiveTool: () => get().toolsMap.get(get().currentToolId),
 
-    getToolState: (toolId) => get().toolState[toolId],
-    setToolState: (toolId, state) =>
+    getToolState: <T extends ToolState>(toolId: string) =>
+      get().toolState[toolId] as T,
+    setToolState: <T extends ToolState>(toolId: string, state: Partial<T>) =>
       set((prev) => ({
         toolState: {
           ...prev.toolState,
-          [toolId]: { ...prev.toolState[toolId], ...state },
+          [toolId]: { ...(prev.toolState[toolId] as T), ...state },
         },
       })),
 
