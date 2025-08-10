@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { EditorEngine } from "../editor/editor-engine";
 import { useEditorStoreApi } from "~/editor/use-editor-store";
+import { PolygonTool } from "~/editor/tools/polygon-tool";
+import { SelectionTool } from "~/editor/tools/selection-tool";
+import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 
 export function EditorView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,7 +26,17 @@ export function EditorView() {
 
       updateCanvasSize();
 
-      engineRef.current = new EditorEngine(canvas, { store });
+      const tools = [
+        new PolygonTool(store),
+        new SelectionTool(store),
+        new AppleTool(store),
+        new KillerTool(store),
+        new FlowerTool(store),
+      ];
+      engineRef.current = new EditorEngine(canvas, {
+        store,
+        tools,
+      });
 
       // Add resize observer to handle parent size changes
       const resizeObserver = new ResizeObserver(() => {

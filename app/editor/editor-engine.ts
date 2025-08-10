@@ -16,9 +16,7 @@ import { colors } from "./constants";
 import type { Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import { ToolRegistry } from "./tool-registry";
-import { PolygonTool } from "./tools/polygon-tool";
-import { SelectionTool } from "./tools/selection-tool";
-import { AppleTool, KillerTool, FlowerTool } from "./tools/object-tools";
+import type { Tool } from "./tools/tool-interface";
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -44,11 +42,15 @@ export class EditorEngine {
     canvas: HTMLCanvasElement,
     {
       initialLevel = initialLevelData,
+      tools = [],
+      initialToolId = "select",
       minZoom = 0.1,
       maxZoom = 200,
       store,
     }: {
       initialLevel?: LevelData;
+      tools?: Tool[];
+      initialToolId?: string;
       minZoom?: number;
       maxZoom?: number;
       store?: EditorStore;
@@ -66,8 +68,9 @@ export class EditorEngine {
     // Use provided store or create a new one
     this.store = store || createEditorStore();
     this.toolRegistry = new ToolRegistry(this.store);
+    tools.forEach((tool) => this.toolRegistry.register(tool));
+    this.toolRegistry.activateTool(initialToolId);
 
-    this.setupTools();
     this.setupEventListeners();
     this.setupStoreListeners();
 
@@ -75,17 +78,6 @@ export class EditorEngine {
     this.store.getState().importLevel(initialLevel);
     this.startRenderLoop();
     this.fitToView();
-  }
-
-  private setupTools() {
-    this.toolRegistry.register(new PolygonTool(this.store));
-    this.toolRegistry.register(new SelectionTool(this.store));
-    this.toolRegistry.register(new AppleTool(this.store));
-    this.toolRegistry.register(new KillerTool(this.store));
-    this.toolRegistry.register(new FlowerTool(this.store));
-
-    // Activate selection tool by default
-    this.toolRegistry.activateTool("select");
   }
 
   // Expose store for React integration
@@ -463,7 +455,7 @@ export class EditorEngine {
 
   private drawPolygons() {
     const store = this.store.getState();
-    
+
     // Get temporary polygons from the active tool
     const activeTool = this.toolRegistry.getActiveTool();
     const temporaryPolygons = activeTool?.getTemporaryPolygons?.() || [];
@@ -482,7 +474,10 @@ export class EditorEngine {
 
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(polygon, allPolygonsForRendering);
+      const shouldBeGround = shouldPolygonBeGround(
+        polygon,
+        allPolygonsForRendering
+      );
 
       if (shouldBeGround !== isClockwise) {
         vertices.reverse();
@@ -517,7 +512,10 @@ export class EditorEngine {
 
       let vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(polygon, allPolygonsForRendering);
+      const shouldBeGround = shouldPolygonBeGround(
+        polygon,
+        allPolygonsForRendering
+      );
 
       if (shouldBeGround !== isClockwise) {
         vertices.reverse();
