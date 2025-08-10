@@ -84,6 +84,10 @@ function adjustViewportForZoom({
 export function fitToView({
   canvas,
   polygons,
+  apples,
+  killers,
+  flowers,
+  start,
   minZoom,
   maxZoom,
   setCamera,
@@ -91,29 +95,22 @@ export function fitToView({
 }: {
   canvas: HTMLCanvasElement;
   polygons: any[];
+  apples: any[];
+  killers: any[];
+  flowers: any[];
+  start: any;
   minZoom: number;
   maxZoom: number;
   setCamera: (x: number, y: number) => void;
   setZoom: (zoom: number) => void;
 }) {
-  const levelWidth = 1000;
-  const levelHeight = 600;
-
-  if (polygons.length === 0) {
-    // Center on the level bounds
-    const centerX = canvas.width / 2 - levelWidth / 2;
-    const centerY = canvas.height / 2 - levelHeight / 2;
-    setCamera(centerX, centerY);
-    setZoom(Math.max(minZoom, Math.min(maxZoom, 1)));
-    return;
-  }
-
-  // Find bounding box of all polygons
+  // Find bounding box of all polygons and objects
   let minX = Infinity,
     minY = Infinity;
   let maxX = -Infinity,
     maxY = -Infinity;
 
+  // Check polygons
   polygons.forEach((polygon) => {
     polygon.vertices.forEach((vertex: any) => {
       minX = Math.min(minX, vertex.x);
@@ -122,6 +119,25 @@ export function fitToView({
       maxY = Math.max(maxY, vertex.y);
     });
   });
+
+  // Check all objects
+  const allObjects = [...apples, ...killers, ...flowers, start];
+
+  allObjects.forEach((obj) => {
+    if (obj && typeof obj.x === "number" && typeof obj.y === "number") {
+      minX = Math.min(minX, obj.x);
+      minY = Math.min(minY, obj.y);
+      maxX = Math.max(maxX, obj.x);
+      maxY = Math.max(maxY, obj.y);
+    }
+  });
+
+  // If no polygons and no objects, center on origin
+  if (minX === Infinity || maxX === -Infinity) {
+    setCamera(canvas.width / 2, canvas.height / 2);
+    setZoom(Math.max(minZoom, Math.min(maxZoom, 1)));
+    return;
+  }
 
   // Add padding
   const padding = 2;

@@ -373,6 +373,10 @@ export class EditorEngine {
     fitToView({
       canvas: this.canvas,
       polygons: state.polygons,
+      apples: state.apples,
+      killers: state.killers,
+      flowers: state.flowers,
+      start: state.start,
       minZoom: this.minZoom,
       maxZoom: this.maxZoom,
       setCamera: state.setCamera,
