@@ -1,4 +1,4 @@
-import { createStore, type StoreApi } from "zustand/vanilla";
+import { create, type StoreApi } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 
@@ -93,7 +93,7 @@ type CreateEditorStoreOptions = {
 export function createEditorStore({
   initialToolId = "select",
 }: CreateEditorStoreOptions = {}): EditorStore {
-  return createStore<EditorState>((set, get) => ({
+  return create<EditorState>((set, get) => ({
     // Initial state - level data will be injected via constructor
     polygons: [],
     apples: [],
