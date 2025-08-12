@@ -14,7 +14,7 @@ export class AppleTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.addObject("apples", context.worldPos);
+    state.addApple({ position: context.worldPos, animation: 0, gravity: 0 });
     return true;
   }
 }
@@ -30,7 +30,7 @@ export class KillerTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.addObject("killers", context.worldPos);
+    state.addKiller(context.worldPos);
     return true;
   }
 }
@@ -46,7 +46,7 @@ export class FlowerTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.addObject("flowers", context.worldPos);
+    state.addFlower(context.worldPos);
     return true;
   }
 }

@@ -191,7 +191,12 @@ export class SelectionTool extends Tool {
   private findObjectNearPosition(pos: Position): Position | null {
     const state = this.store.getState();
 
-    const apple = findObjectNearPosition(pos, state.apples, 15, state.zoom);
+    const apple = findObjectNearPosition(
+      pos,
+      state.apples.map((a) => a.position),
+      15,
+      state.zoom
+    );
     if (apple) return apple;
 
     const killer = findObjectNearPosition(pos, state.killers, 15, state.zoom);
@@ -358,7 +363,7 @@ export class SelectionTool extends Tool {
 
     // Select objects within the marquee
     const allObjects = getAllObjects(
-      state.apples,
+      state.apples.map((a) => a.position),
       state.killers,
       state.flowers,
       state.start
@@ -454,7 +459,7 @@ export class SelectionTool extends Tool {
       const newPos = newPositions[index];
 
       // Find and update the object in the appropriate array
-      const appleIndex = state.apples.findIndex((a) => a === object);
+      const appleIndex = state.apples.findIndex((a) => a.position === object);
       if (appleIndex !== -1) {
         if (!updates.apples) updates.apples = [...state.apples];
         updates.apples[appleIndex] = newPos;
@@ -546,12 +551,13 @@ export class SelectionTool extends Tool {
 
     // Delete selected objects
     toolState.selectedObjects.forEach((object: ObjectSelection) => {
-      if (state.apples.includes(object)) {
-        state.removeObject("apples", object);
-      } else if (state.killers.includes(object)) {
-        state.removeObject("killers", object);
-      } else if (state.flowers.includes(object)) {
-        state.removeObject("flowers", object);
+      const apple = state.apples.find((a) => a.position === object);
+      if (apple) {
+        state.removeApple(apple);
+      } else if (state.killers.some((k) => k === object)) {
+        state.removeKiller(object);
+      } else if (state.flowers.some((f) => f === object)) {
+        state.removeFlower(object);
       }
     });
 

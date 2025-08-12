@@ -1,9 +1,10 @@
 import type { Polygon, Position } from "elmajs";
+import type { Apple } from "./editor.types";
 
 export type LevelData = {
   name?: string;
   polygons: Polygon[];
-  apples: Position[];
+  apples: Apple[];
   killers: Position[];
   flowers: Position[];
   start: Position;
@@ -27,7 +28,7 @@ export const initialLevelData: LevelData = {
       grass: false,
     },
   ],
-  apples: [{ x: 25, y: 25 }],
+  apples: [{ position: { x: 25, y: 25 }, animation: 0, gravity: 0 }],
   killers: [],
   flowers: [{ x: 45, y: 25 }],
   start: { x: 5, y: 25 },
@@ -104,7 +105,7 @@ export class LevelImporter {
       const level = elmajs.Level.from(data);
 
       // Convert elmajs objects array to separate arrays by type
-      const apples: Position[] = [];
+      const apples: Apple[] = [];
       const killers: Position[] = [];
       const flowers: Position[] = [];
       let start: Position = { x: 5, y: 5 }; // Default start position
@@ -117,7 +118,7 @@ export class LevelImporter {
             flowers.push(position);
             break;
           case 2: // Apple
-            apples.push(position);
+            apples.push({ position, animation: 0, gravity: 0 });
             break;
           case 3: // Killer
             killers.push(position);

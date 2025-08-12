@@ -42,9 +42,9 @@ export async function downloadLevel(state: EditorState) {
         animation: 1,
       },
       // Apples (type 2)
-      ...state.apples.map((pos) => ({
+      ...state.apples.map((apple) => ({
         type: ObjectType.Apple,
-        position: ensureFloatingPointPosition(pos),
+        position: ensureFloatingPointPosition(apple.position),
         gravity: Gravity.None,
         animation: 1,
       })),

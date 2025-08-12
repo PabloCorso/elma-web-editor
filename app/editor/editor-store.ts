@@ -2,12 +2,13 @@ import { create, type StoreApi } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 import type { Tool, ToolState } from "./tools/tool-interface";
+import type { Apple } from "./editor.types";
 
 export type EditorState = {
   // Level data
   levelName: string;
   polygons: Polygon[];
-  apples: Position[];
+  apples: Apple[];
   killers: Position[];
   flowers: Position[];
   start: Position;
@@ -27,23 +28,16 @@ export type EditorState = {
   // Fit to view trigger
   fitToViewTrigger: number;
 
-  // Generic data operations
-  addObject: <
-    K extends keyof Pick<EditorState, "apples" | "killers" | "flowers">,
-  >(
-    key: K,
-    item: Position
-  ) => void;
-  removeObject: <
-    K extends keyof Pick<EditorState, "apples" | "killers" | "flowers">,
-  >(
-    key: K,
-    item: Position
-  ) => void;
-
-  // Object operations
-  setLevelName: (name: string) => void;
+  // Level data operations
   setStart: (position: Position) => void;
+  addApple: (apple: Apple) => void;
+  removeApple: (apple: Apple) => void;
+  addKiller: (killer: Position) => void;
+  removeKiller: (killer: Position) => void;
+  addFlower: (flower: Position) => void;
+  removeFlower: (flower: Position) => void;
+
+  setLevelName: (name: string) => void;
   setMousePosition: (position: Position) => void;
   setCamera: (x: number, y: number) => void;
   setZoom: (zoom: number) => void;
@@ -106,22 +100,33 @@ export function createEditorStore({
     // Fit to view trigger
     fitToViewTrigger: 0,
 
-    // Generic data operations
-    addObject: (key, item) =>
-      set((state) => ({
-        [key]: [...state[key], item],
-      })),
-
-    removeObject: (key, item) =>
-      set((state) => ({
-        [key]: state[key].filter(
-          (existing: Position) => existing.x !== item.x || existing.y !== item.y
-        ),
-      })),
-
-    // Object operations
+    // Level data operations
     setLevelName: (name) => set({ levelName: name }),
     setStart: (position) => set({ start: position }),
+    addApple: (apple) => set({ apples: [...get().apples, apple] }),
+    removeApple: (apple) =>
+      set({
+        apples: get().apples.filter(
+          (a) =>
+            a.position.x !== apple.position.x ||
+            a.position.y !== apple.position.y
+        ),
+      }),
+    addKiller: (killer) => set({ killers: [...get().killers, killer] }),
+    removeKiller: (killer) =>
+      set({
+        killers: get().killers.filter(
+          (k) => k.x !== killer.x || k.y !== killer.y
+        ),
+      }),
+    addFlower: (flower) => set({ flowers: [...get().flowers, flower] }),
+    removeFlower: (flower) =>
+      set({
+        flowers: get().flowers.filter(
+          (f) => f.x !== flower.x || f.y !== flower.y
+        ),
+      }),
+
     setMousePosition: (position) => set({ mousePosition: position }),
     setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
     setZoom: (zoom) => set({ zoom }),

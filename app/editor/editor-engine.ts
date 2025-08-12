@@ -583,7 +583,7 @@ export class EditorEngine {
     const state = this.store.getState();
     this.objectRenderer.renderObjects(
       this.ctx,
-      state.apples,
+      state.apples.map((a) => a.position),
       ObjectRenderer.CONFIGS.apple,
       state.showSprites,
       state.animateSprites
