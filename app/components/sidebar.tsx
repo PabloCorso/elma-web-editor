@@ -286,15 +286,16 @@ export function Sidebar() {
             <SidebarButton
               className="bg-blue-600 hover:bg-blue-700"
               title="Import level from file"
+              onClick={() => {
+                const fileInput = document.createElement("input");
+                fileInput.type = "file";
+                fileInput.accept = ".lev,lev";
+                fileInput.onchange = (e) => handleFileImport(e as any);
+                fileInput.click();
+              }}
             >
               <span className="text-lg">📁</span>
               <span>Import Level</span>
-              <input
-                type="file"
-                accept=".lev,lev"
-                onChange={handleFileImport}
-                className="hidden"
-              />
             </SidebarButton>
           </div>
         </div>
