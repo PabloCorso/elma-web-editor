@@ -1,7 +1,10 @@
 import { create } from "zustand";
-import type { EditorState, EditorStore } from "./editor-state";
+import type { EditorState } from "./editor-state";
 import type { Widget } from "./widgets/widget-interface";
 import type { Tool, ToolState } from "./tools/tool-interface";
+import type { EditorStore } from "./use-editor-store";
+import { FileSession } from "~/utils/file-session";
+import { LevelFolder } from "~/utils/level-folder";
 
 type CreateEditorStoreOptions = {
   initialToolId?: string;
@@ -42,6 +45,10 @@ export function createEditorStore({
 
     // Widgets
     widgetsMap: new Map<string, Widget>(),
+
+    // File system access
+    fileSession: new FileSession(),
+    levelFolder: new LevelFolder(),
 
     actions: {
       // Level data operations
@@ -149,6 +156,10 @@ export function createEditorStore({
         widget.onDeactivate?.();
       },
 
+      // File system access
+      setFileSession: (session) => set({ fileSession: session }),
+      setLevelFolder: (folder) => set({ levelFolder: folder }),
+
       // View operations
       toggleAnimateSprites: () =>
         set((state) => ({ animateSprites: !state.animateSprites })),
@@ -156,7 +167,7 @@ export function createEditorStore({
       toggleShowSprites: () =>
         set((state) => ({ showSprites: !state.showSprites })),
 
-      importLevel: (levelData) =>
+      loadLevelData: (levelData) =>
         set({
           levelName: levelData.name || defaultLevelTitle,
           polygons: levelData.polygons,

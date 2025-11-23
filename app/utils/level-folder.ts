@@ -1,61 +1,95 @@
 const DB_NAME = "elma-level-folder";
 const STORE_NAME = "handles";
+const LEVEL_FOLDER_KEY = "level-folder";
 
-/**
- * Acquire and store:
- * const dir = await window.showDirectoryPicker();
- * const levels = new LevelFolder(dir);
- * await levels.ensureAccess(true);
- */
 export class LevelFolder {
-  constructor(private dir: FileSystemDirectoryHandle) {}
+  private handle?: FileSystemDirectoryHandle;
+  private folderName?: string;
 
-  static defaultKey = "lev-folder";
-
-  static async fromPicker(key = LevelFolder.defaultKey) {
-    const dir = await window.showDirectoryPicker();
-    await persistHandle(key, dir);
-    return new LevelFolder(dir);
+  constructor(private key = LEVEL_FOLDER_KEY) {
+    this.initFromStorage();
   }
 
-  static async fromStorage(key = LevelFolder.defaultKey) {
-    const dir = await loadHandle(key);
-    return dir ? new LevelFolder(dir) : null;
+  get name() {
+    return this.handle?.name ?? this.folderName;
   }
 
-  async persist(key = LevelFolder.defaultKey) {
-    await persistHandle(key, this.dir);
+  hasFolder() {
+    return Boolean(this.handle);
+  }
+
+  async initFromStorage() {
+    if (!isClient()) return false;
+    console.log("Initializing LevelFolder from storage...");
+    const handle = await loadHandle(this.key);
+    if (!handle) {
+      this.handle = undefined;
+      this.folderName = undefined;
+      return false;
+    }
+    this.handle = handle;
+    this.folderName = handle.name;
+    return true;
+  }
+
+  async pickFolder() {
+    try {
+      const handle = await window.showDirectoryPicker({
+        id: DB_NAME,
+        mode: "readwrite",
+      });
+      this.handle = handle;
+      this.folderName = handle.name;
+      await persistHandle(this.key, handle);
+      return true;
+    } catch (err: any) {
+      if (err?.name === "AbortError") return false;
+      throw err;
+    }
   }
 
   async ensureAccess(write = false) {
+    if (!this.handle) return false;
     const opts = write ? { mode: "readwrite" } : { mode: "read" };
-    if ((await this.dir.queryPermission(opts)) === "granted") return true;
-    return (await this.dir.requestPermission(opts)) === "granted";
+    if ((await this.handle.queryPermission(opts)) === "granted") return true;
+    return (await this.handle.requestPermission(opts)) === "granted";
   }
 
   async listLevels() {
+    if (!this.handle) return [];
     const names: string[] = [];
-    for await (const [name, entry] of this.dir.entries()) {
+    for await (const [name, entry] of this.handle.entries()) {
       if (entry.kind === "file" && name.endsWith(".lev")) names.push(name);
     }
     return names;
   }
 
   async readLevel(name: string) {
-    const handle = await this.dir.getFileHandle(name);
+    if (!this.handle) throw new Error("Level folder is not set");
+    const handle = await this.handle.getFileHandle(name);
     const file = await handle.getFile();
-    return file.arrayBuffer(); // or text()
+    return file.arrayBuffer();
   }
 
   async writeLevel(name: string, data: BlobPart) {
-    const handle = await this.dir.getFileHandle(name, { create: true });
+    if (!this.handle) throw new Error("Level folder is not set");
+    const handle = await this.handle.getFileHandle(name, { create: true });
     const writable = await handle.createWritable();
     await writable.write(data);
     await writable.close();
   }
+
+  async forget() {
+    this.handle = undefined;
+    this.folderName = undefined;
+    await deleteHandle(this.key);
+  }
 }
 
 async function openDb(): Promise<IDBDatabase> {
+  if (typeof indexedDB === "undefined") {
+    throw new Error("indexedDB is not available in this environment");
+  }
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
     request.onerror = () => reject(request.error);
@@ -90,4 +124,18 @@ async function loadHandle(
     request.onsuccess = () => resolve(request.result ?? null);
     request.onerror = () => reject(request.error);
   });
+}
+
+async function deleteHandle(key: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => resolve();
+    tx.objectStore(STORE_NAME).delete(key);
+  });
+}
+
+function isClient() {
+  return typeof window !== "undefined" && typeof indexedDB !== "undefined";
 }

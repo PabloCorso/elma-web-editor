@@ -1,59 +1,104 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "~/utils/misc";
+import { Icon } from "./icon";
 
-import { cn } from "~/utils/misc"
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+export const buttonVariants = cva(
+  [
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-bold transition-colors",
+    "focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 focus-visible:outline-none",
+    "disabled:pointer-events-none disabled:opacity-40",
+  ],
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+        primary:
+          "border-primary-600 bg-primary text-on-color hover:bg-primary-hover active:bg-primary-active",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "border border-primary bg-subtle text-primary hover:bg-subtle-hover active:bg-subtle-active",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-transparent text-primary hover:bg-subtle-hover active:bg-subtle-active",
+        danger:
+          "bg-error text-on-color hover:bg-error-hover active:bg-error-active",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
+        sm: "h-8 px-3 py-2 text-xs",
+        md: "h-10 px-4 py-2.5 text-sm",
+        lg: "h-12 px-5 py-3 text-base",
       },
+      iconOnly: { true: "px-0", false: "" },
     },
+    compoundVariants: [
+      { iconOnly: true, size: "sm", className: "w-8" },
+      { iconOnly: true, size: "md", className: "w-10" },
+      { iconOnly: true, size: "lg", className: "w-12" },
+    ],
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "primary",
+      size: "md",
+      iconOnly: false,
     },
   }
-)
+);
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
+export type ButtonProps<T extends React.ElementType = "button"> = Omit<
+  React.ComponentProps<T>,
+  keyof VariantProps<typeof buttonVariants> | "as"
+> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : "button"
+    as?: T;
+    iconBefore?: React.ReactNode;
+    iconAfter?: React.ReactNode;
+  };
+
+export function Button<T extends React.ElementType = "button">({
+  as,
+  variant,
+  size = "md",
+  iconBefore,
+  iconAfter,
+  children,
+  className,
+  iconOnly: iconOnlyProp,
+  ...props
+}: ButtonProps<T>) {
+  const Comp = as ?? "button";
+
+  const hasSingleIcon =
+    !children && (iconBefore ? !iconAfter : Boolean(iconAfter));
+  const iconOnly = iconOnlyProp ?? hasSingleIcon;
 
   return (
     <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, iconOnly, className }))}
       {...props}
-    />
-  )
+    >
+      {iconBefore && (
+        <Icon size={size} className="shrink-0">
+          {iconBefore}
+        </Icon>
+      )}
+      {children}
+      {iconAfter && (
+        <Icon size={size} className="shrink-0">
+          {iconAfter}
+        </Icon>
+      )}
+    </Comp>
+  );
 }
 
-export { Button, buttonVariants }
+export type IconButtonProps<T extends React.ElementType = "button"> = Omit<
+  React.ComponentProps<T>,
+  keyof VariantProps<typeof buttonVariants> | "as"
+> &
+  Omit<VariantProps<typeof buttonVariants>, "iconOnly"> & {
+    as?: T;
+  };
+
+export function IconButton<T extends React.ElementType = "button">({
+  as,
+  children,
+  ...props
+}: IconButtonProps<T>) {
+  return <Button as={as as any} iconBefore={children} iconOnly {...props} />;
+}

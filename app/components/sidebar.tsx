@@ -15,7 +15,7 @@ export function Sidebar() {
 
   const {
     toggleShowSprites,
-    importLevel,
+    loadLevelData: importLevel,
     triggerFitToView,
     toggleAnimateSprites,
   } = useEditorActions();

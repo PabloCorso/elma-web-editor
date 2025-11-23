@@ -1,9 +1,12 @@
-import { create, type StoreApi } from "zustand";
 import type { Polygon, Position } from "elmajs";
 import type { LevelData } from "./level-importer";
 import type { Tool, ToolState } from "./tools/tool-interface";
 import type { Apple } from "./editor.types";
 import type { Widget } from "./widgets/widget-interface";
+import { FileSession } from "../utils/file-session";
+import { LevelFolder } from "../utils/level-folder";
+
+type FolderPermissionState = PermissionState | "unknown";
 
 export type EditorState = {
   // Level data
@@ -35,6 +38,10 @@ export type EditorState = {
 
   // Widgets
   widgetsMap: Map<string, Widget>;
+
+  // File system access
+  fileSession: FileSession;
+  levelFolder: LevelFolder;
 
   actions: {
     // Level data operations
@@ -69,12 +76,14 @@ export type EditorState = {
     activateWidget: (widgetId: string) => void;
     deactivateWidget: (widgetId: string) => void;
 
+    // File system access
+    setFileSession: (session?: FileSession) => void;
+    setLevelFolder: (folder?: LevelFolder) => void;
+
     // View operations
     toggleAnimateSprites: () => void;
     toggleShowSprites: () => void;
-    importLevel: (levelData: LevelData) => void;
+    loadLevelData: (levelData: LevelData) => void;
     triggerFitToView: () => void;
   };
 };
-
-export type EditorStore = StoreApi<EditorState>;

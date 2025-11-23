@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import type { EditorState, EditorStore } from "./editor-state";
+import type { EditorState } from "./editor-state";
+import type { EditorStore } from "./use-editor-store";
 
 type LocalStorageLevel = Pick<
   EditorState,
@@ -33,7 +34,7 @@ export function useLocalStorageSync(
 
         // Import the level data into the store
         const state = store.getState();
-        state.actions.importLevel({
+        state.actions.loadLevelData({
           name: savedData.levelName,
           polygons: savedData.polygons,
           apples: savedData.apples,

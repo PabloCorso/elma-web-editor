@@ -1,4 +1,4 @@
-import { type EditorState, type EditorStore } from "./editor-state";
+import { type EditorState } from "./editor-state";
 import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
@@ -14,6 +14,7 @@ import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore } from "./editor-store";
+import type { EditorStore } from "./use-editor-store";
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -78,7 +79,7 @@ export class EditorEngine {
     this.setupStoreListeners();
 
     // Initialize with level data
-    state.actions.importLevel(initialLevel);
+    state.actions.loadLevelData(initialLevel);
     this.startRenderLoop();
     this.fitToView();
   }

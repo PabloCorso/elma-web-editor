@@ -1,31 +1,29 @@
 export async function getFileHandle() {
   if (!("showOpenFilePicker" in window)) return;
-
   return window.showOpenFilePicker().then((handles) => handles[0]);
 }
 
 export async function getNewFileHandle() {
   if (!("showSaveFilePicker" in window)) return;
-
   const opts = {
     types: [
       {
-        description: "Text file",
-        accept: { "text/plain": [".txt"] },
+        description: "Elasto Mania level",
+        accept: { "application/octet-stream": [".lev"] },
       },
     ],
   };
-
   return window.showSaveFilePicker(opts);
 }
 
-export async function readFile(file: File): Promise<string> {
-  return file.text();
+export async function readFile(file: File): Promise<ArrayBuffer> {
+  // Use ArrayBuffer so we preserve binary .lev contents
+  return file.arrayBuffer();
 }
 
 export async function writeFile(
   fileHandle: FileSystemFileHandle,
-  contents: string
+  contents: BlobPart
 ) {
   const writable = await fileHandle.createWritable();
   await writable.write(contents);
