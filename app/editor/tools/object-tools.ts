@@ -1,7 +1,7 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { StoreApi } from "zustand/vanilla";
-import type { EditorState } from "../editor-store";
+import type { EditorState } from "../editor-state";
 
 export class AppleTool extends Tool {
   readonly id = "apple";
@@ -14,7 +14,11 @@ export class AppleTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.addApple({ position: context.worldPos, animation: 0, gravity: 0 });
+    state.actions.addApple({
+      position: context.worldPos,
+      animation: 0,
+      gravity: 0,
+    });
     return true;
   }
 }
@@ -30,7 +34,7 @@ export class KillerTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.addKiller(context.worldPos);
+    state.actions.addKiller(context.worldPos);
     return true;
   }
 }
@@ -46,7 +50,7 @@ export class FlowerTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.addFlower(context.worldPos);
+    state.actions.addFlower(context.worldPos);
     return true;
   }
 }

@@ -1,6 +1,6 @@
 import type { EventContext } from "../utils/event-handler";
 import type { StoreApi } from "zustand/vanilla";
-import type { EditorState } from "../editor-store";
+import type { EditorState } from "../editor-state";
 import type { Polygon } from "elmajs";
 
 export type ToolState<T = unknown> = Record<string, T>;

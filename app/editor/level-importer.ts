@@ -110,7 +110,7 @@ export class LevelImporter {
       const flowers: Position[] = [];
       let start: Position = { x: 5, y: 5 }; // Default start position
 
-      level.objects.forEach((obj: any) => {
+      level.objects.forEach((obj) => {
         const position = { x: obj.position.x, y: obj.position.y };
 
         switch (obj.type) {

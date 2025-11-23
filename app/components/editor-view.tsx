@@ -1,14 +1,16 @@
 import { useEffect, useRef } from "react";
 import { EditorEngine } from "../editor/editor-engine";
-import { useEditorStoreApi } from "~/editor/use-editor-store";
+import { useEditorStoreInstance } from "~/editor/use-editor-store";
 import { PolygonTool } from "~/editor/tools/polygon-tool";
-import { SelectionTool } from "~/editor/tools/selection-tool";
+import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
+import { AIWidget } from "~/editor/widgets/ai-widget";
+import type { Tool } from "~/editor/tools/tool-interface";
 
-export function EditorView() {
+export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
-  const store = useEditorStoreApi();
+  const store = useEditorStoreInstance();
 
   useEffect(
     function initializeEditorEngine() {
@@ -26,14 +28,20 @@ export function EditorView() {
 
       updateCanvasSize();
 
-      const tools = [
+      const tools: Tool[] = [
         new PolygonTool(store),
-        new SelectionTool(store),
+        new SelectTool(store),
         new AppleTool(store),
         new KillerTool(store),
         new FlowerTool(store),
       ];
-      engineRef.current = new EditorEngine(canvas, { store, tools });
+
+      const widgets = [];
+      if (isOpenAIEnabled) {
+        widgets.push(new AIWidget(store));
+      }
+
+      engineRef.current = new EditorEngine(canvas, { store, tools, widgets });
 
       // Add resize observer to handle parent size changes
       const resizeObserver = new ResizeObserver(() => {

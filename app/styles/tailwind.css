@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin '@tailwindcss/typography';
+
+@source "../node_modules/streamdown/dist/index.js";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer theme {
+  @theme {
+    --font-sans: InterVariable, sans-serif;
+    --font-sans--font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  @theme inline {
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+  }
+}

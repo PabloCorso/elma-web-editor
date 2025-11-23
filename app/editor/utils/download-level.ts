@@ -1,5 +1,5 @@
 import { ObjectType, Gravity } from "elmajs";
-import type { EditorState } from "../editor-store";
+import type { EditorState } from "../editor-state";
 
 export async function downloadLevel(state: EditorState) {
   try {
@@ -68,9 +68,10 @@ export async function downloadLevel(state: EditorState) {
     level.integrity = level.calculateIntegrity();
 
     const buffer = level.toBuffer();
+    const uint8Array = new Uint8Array(buffer);
 
     // Create a blob and download it
-    const blob = new Blob([buffer as any], {
+    const blob = new Blob([uint8Array], {
       type: "application/octet-stream",
     });
     const url = URL.createObjectURL(blob);

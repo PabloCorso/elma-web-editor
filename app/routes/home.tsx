@@ -1,7 +1,9 @@
 import type { Route } from "./+types/home";
 import { EditorView } from "../components/editor-view";
-import { Sidebar } from "../components/sidebar";
 import { EditorStoreProvider } from "../editor/use-editor-store";
+import { ControlToolbar } from "~/components/control-toolbar";
+import { HeaderToolbar } from "~/components/header-toolbar";
+import { CanvasToolbar } from "~/components/canvas-toolbar";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -10,13 +12,24 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function Home() {
+export function loader() {
+  return {
+    isOpenAIEnabled: !!process.env.OPENAI_API_KEY,
+  };
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
+  const { isOpenAIEnabled } = loaderData;
+
   return (
     <EditorStoreProvider>
       <div className="flex h-screen">
-        <Sidebar />
+        {/* <Sidebar isOpenAIEnabled={isOpenAIEnabled} /> */}
+        <HeaderToolbar />
+        <ControlToolbar isOpenAIEnabled={isOpenAIEnabled} />
+        <CanvasToolbar />
         <div className="flex-1">
-          <EditorView />
+          <EditorView isOpenAIEnabled={isOpenAIEnabled} />
         </div>
       </div>
     </EditorStoreProvider>

@@ -1,8 +1,4 @@
-import {
-  createEditorStore,
-  type EditorState,
-  type EditorStore,
-} from "./editor-store";
+import { type EditorState, type EditorStore } from "./editor-state";
 import { SpriteManager } from "./sprite-manager";
 import { ObjectRenderer } from "./utils/object-renderer";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
@@ -16,6 +12,8 @@ import { colors } from "./constants";
 import type { Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
+import type { Widget } from "./widgets/widget-interface";
+import { createEditorStore } from "./editor-store";
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -41,6 +39,7 @@ export class EditorEngine {
     {
       initialLevel = initialLevelData,
       tools = [],
+      widgets = [],
       initialToolId = "select",
       minZoom = 0.2,
       maxZoom = 10000,
@@ -49,6 +48,7 @@ export class EditorEngine {
     }: {
       initialLevel?: LevelData;
       tools?: Tool[];
+      widgets?: Widget[];
       initialToolId?: string;
       minZoom?: number;
       maxZoom?: number;
@@ -69,14 +69,16 @@ export class EditorEngine {
     // Use provided store or create a new one
     this.store = store || createEditorStore();
     const state = this.store.getState();
-    tools.forEach((tool) => state.registerTool(tool));
-    state.activateTool(initialToolId);
+    tools.forEach((tool) => state.actions.registerTool(tool));
+    state.actions.activateTool(initialToolId);
+
+    widgets.forEach((widget) => state.actions.registerWidget(widget));
 
     this.setupEventListeners();
     this.setupStoreListeners();
 
     // Initialize with level data
-    state.importLevel(initialLevel);
+    state.actions.importLevel(initialLevel);
     this.startRenderLoop();
     this.fitToView();
   }
@@ -110,7 +112,7 @@ export class EditorEngine {
         state.viewPortOffset,
         state.zoom
       );
-      const activeTool = state.getActiveTool();
+      const activeTool = state.actions.getActiveTool();
       if (activeTool?.onPointerDown) {
         const consumed = activeTool.onPointerDown(
           event as PointerEvent,
@@ -136,7 +138,7 @@ export class EditorEngine {
         deltaX,
         deltaY,
         currentOffset: state.viewPortOffset,
-        setCamera: state.setCamera,
+        setCamera: state.actions.setCamera,
         panSpeed: this.panSpeed,
       });
       this.lastPanX = event.clientX;
@@ -150,13 +152,13 @@ export class EditorEngine {
       state.viewPortOffset,
       state.zoom
     );
-    const activeTool = state.getActiveTool();
+    const activeTool = state.actions.getActiveTool();
     if (activeTool?.onPointerMove) {
       const consumed = activeTool.onPointerMove(event as PointerEvent, context);
       if (consumed) return;
     }
 
-    state.setMousePosition(context.worldPos);
+    state.actions.setMousePosition(context.worldPos);
   };
 
   private handleMouseUp = (event: MouseEvent) => {
@@ -167,7 +169,7 @@ export class EditorEngine {
     if (event.button === 0) {
       const state = this.store.getState();
 
-      const activeTool = state.getActiveTool();
+      const activeTool = state.actions.getActiveTool();
       if (activeTool?.onPointerUp) {
         const context = getEventContext(
           event,
@@ -184,7 +186,7 @@ export class EditorEngine {
     event.preventDefault();
     const state = this.store.getState();
 
-    const activeTool = state.getActiveTool();
+    const activeTool = state.actions.getActiveTool();
     if (activeTool?.onRightClick) {
       const context = getEventContext(
         event,
@@ -212,10 +214,10 @@ export class EditorEngine {
         minZoom: this.minZoom,
         maxZoom: this.maxZoom,
         currentZoom: state.zoom,
-        setZoom: state.setZoom,
+        setZoom: state.actions.setZoom,
         mousePosition: { x: mouseX, y: mouseY },
         currentOffset: state.viewPortOffset,
-        setCamera: state.setCamera,
+        setCamera: state.actions.setCamera,
       });
       return;
     }
@@ -227,7 +229,7 @@ export class EditorEngine {
         deltaX: panAmount,
         deltaY: 0,
         currentOffset: state.viewPortOffset,
-        setCamera: state.setCamera,
+        setCamera: state.actions.setCamera,
         panSpeed: this.panSpeed,
       });
       return;
@@ -238,7 +240,7 @@ export class EditorEngine {
       deltaX: 0,
       deltaY: panAmount,
       currentOffset: state.viewPortOffset,
-      setCamera: state.setCamera,
+      setCamera: state.actions.setCamera,
       panSpeed: this.panSpeed,
     });
   };
@@ -251,7 +253,7 @@ export class EditorEngine {
     const zoomAmount = 0.1;
 
     // Let active tool handle the key first
-    const activeTool = state.getActiveTool();
+    const activeTool = state.actions.getActiveTool();
     if (activeTool?.onKeyDown) {
       const context = {
         worldPos: { x: 0, y: 0 },
@@ -269,7 +271,7 @@ export class EditorEngine {
           deltaX: panAmount,
           deltaY: 0,
           currentOffset: state.viewPortOffset,
-          setCamera: state.setCamera,
+          setCamera: state.actions.setCamera,
           panSpeed: this.panSpeed,
         });
         break;
@@ -280,7 +282,7 @@ export class EditorEngine {
           deltaX: -panAmount,
           deltaY: 0,
           currentOffset: state.viewPortOffset,
-          setCamera: state.setCamera,
+          setCamera: state.actions.setCamera,
           panSpeed: this.panSpeed,
         });
         break;
@@ -291,7 +293,7 @@ export class EditorEngine {
           deltaX: 0,
           deltaY: panAmount,
           currentOffset: state.viewPortOffset,
-          setCamera: state.setCamera,
+          setCamera: state.actions.setCamera,
           panSpeed: this.panSpeed,
         });
         break;
@@ -302,7 +304,7 @@ export class EditorEngine {
           deltaX: 0,
           deltaY: -panAmount,
           currentOffset: state.viewPortOffset,
-          setCamera: state.setCamera,
+          setCamera: state.actions.setCamera,
           panSpeed: this.panSpeed,
         });
         break;
@@ -316,7 +318,7 @@ export class EditorEngine {
           minZoom: this.minZoom,
           maxZoom: this.maxZoom,
           currentZoom: state.zoom,
-          setZoom: state.setZoom,
+          setZoom: state.actions.setZoom,
         });
         break;
 
@@ -329,7 +331,7 @@ export class EditorEngine {
           minZoom: this.minZoom,
           maxZoom: this.maxZoom,
           currentZoom: state.zoom,
-          setZoom: state.setZoom,
+          setZoom: state.actions.setZoom,
         });
         break;
 
@@ -365,8 +367,8 @@ export class EditorEngine {
       start: state.start,
       minZoom: this.minZoom,
       maxZoom: this.maxZoom,
-      setCamera: state.setCamera,
-      setZoom: state.setZoom,
+      setCamera: state.actions.setCamera,
+      setZoom: state.actions.setZoom,
     });
   }
 
@@ -405,7 +407,7 @@ export class EditorEngine {
       const currentTool = state.activeToolId;
       if (currentTool !== lastCurrentTool) {
         lastCurrentTool = currentTool;
-        state.activateTool(currentTool);
+        state.actions.activateTool(currentTool);
       }
     });
   }
@@ -418,7 +420,7 @@ export class EditorEngine {
     this.drawObjects();
 
     // Let active tool render
-    const activeTool = state.getActiveTool();
+    const activeTool = state.actions.getActiveTool();
     if (activeTool?.onRender) {
       activeTool.onRender(this.ctx);
     }
@@ -451,7 +453,7 @@ export class EditorEngine {
     const state = this.store.getState();
 
     // Get temporary polygons from the active tool
-    const activeTool = state.getActiveTool();
+    const activeTool = state.actions.getActiveTool();
     const temporaryPolygons = activeTool?.getTemporaryPolygons?.() || [];
 
     // Include temporary polygons in the list for rendering calculations

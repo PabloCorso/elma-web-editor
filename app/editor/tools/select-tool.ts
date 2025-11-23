@@ -2,7 +2,7 @@ import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { Position, Polygon } from "elmajs";
 import type { StoreApi } from "zustand/vanilla";
-import type { EditorState } from "../editor-store";
+import type { EditorState } from "../editor-state";
 import {
   findVertexNearPosition,
   findObjectNearPosition,
@@ -14,6 +14,7 @@ import {
   getSelectionBounds,
 } from "../utils/selection-utils";
 import { colors } from "../constants";
+import type { Apple } from "../editor.types";
 
 export type SelectionToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -23,7 +24,7 @@ export type SelectionToolState = {
 type VertexSelection = { polygon: Polygon; vertex: Position };
 type ObjectSelection = Position;
 
-export class SelectionTool extends Tool {
+export class SelectTool extends Tool {
   readonly id = "select";
   readonly name = "Select";
   readonly shortcut = "S";
@@ -34,7 +35,7 @@ export class SelectionTool extends Tool {
 
   private isDragging = false;
   private dragStartPos = { x: 0, y: 0 };
-  private originalPositions: Position[] = [];
+  private dragOriginPositions: Position[] = [];
   private isMarqueeSelecting = false;
   private marqueeStartPos = { x: 0, y: 0 };
   private marqueeEndPos = { x: 0, y: 0 };
@@ -45,13 +46,13 @@ export class SelectionTool extends Tool {
 
   clear(): void {
     const state = this.store.getState();
-    state.setToolState("select", {
+    state.actions.setToolState("select", {
       selectedVertices: [],
       selectedObjects: [],
     });
     this.isDragging = false;
     this.isMarqueeSelecting = false;
-    this.originalPositions = [];
+    this.dragOriginPositions = [];
   }
 
   onPointerDown(event: PointerEvent, context: EventContext): boolean {
@@ -82,10 +83,10 @@ export class SelectionTool extends Tool {
       this.handlePolygonSelection(polygonEdge, event.ctrlKey);
       this.startDragging(context.worldPos);
       return true;
-    } else {
-      this.startMarqueeSelection(context.worldPos, event.ctrlKey);
-      return true;
     }
+
+    this.startMarqueeSelection(context.worldPos, event.ctrlKey);
+    return true;
   }
 
   onPointerMove(_event: PointerEvent, context: EventContext): boolean {
@@ -134,7 +135,7 @@ export class SelectionTool extends Tool {
     // Draw selection handles in screen coordinates
     ctx.fillStyle = colors.selection;
     const handleSize = 3; // Fixed size in screen pixels
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
 
     toolState.selectedVertices.forEach(({ vertex }: VertexSelection) => {
       // Convert world coordinates to screen coordinates
@@ -229,7 +230,7 @@ export class SelectionTool extends Tool {
     isCtrlKey: boolean
   ): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
     const isSelected = isVertexSelected(vertex, toolState.selectedVertices);
 
     if (!isCtrlKey && !isSelected) {
@@ -246,7 +247,7 @@ export class SelectionTool extends Tool {
     isCtrlKey: boolean
   ): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
     const isSelected = isObjectSelected(object, toolState.selectedObjects);
 
     if (!isCtrlKey && !isSelected) {
@@ -260,7 +261,7 @@ export class SelectionTool extends Tool {
 
   private handlePolygonSelection(polygon: Polygon, isCtrlKey: boolean): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
     const isSelected = toolState.selectedVertices.some(
       (sv: VertexSelection) => sv.polygon === polygon
     );
@@ -276,13 +277,13 @@ export class SelectionTool extends Tool {
 
   private startDragging(worldPos: Position): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
 
     this.isDragging = true;
     this.dragStartPos = worldPos;
 
-    // Store original positions of selected items
-    this.originalPositions = [
+    // Store original positions of selected items for delta calculations
+    this.dragOriginPositions = [
       ...toolState.selectedVertices.map((sv: VertexSelection) => ({
         ...sv.vertex,
       })),
@@ -301,14 +302,14 @@ export class SelectionTool extends Tool {
 
   private handleDragging(worldPos: Position): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
     const totalDeltaX = worldPos.x - this.dragStartPos.x;
     const totalDeltaY = worldPos.y - this.dragStartPos.y;
 
     if (toolState.selectedVertices.length > 0) {
       const newVertexPositions = toolState.selectedVertices.map(
         (sv: VertexSelection, index: number) => {
-          const originalPos = this.originalPositions[index];
+          const originalPos = this.dragOriginPositions[index];
           return {
             x: originalPos.x + totalDeltaX,
             y: originalPos.y + totalDeltaY,
@@ -322,10 +323,10 @@ export class SelectionTool extends Tool {
       const vertexCount = toolState.selectedVertices.length;
       const newObjectPositions = toolState.selectedObjects.map(
         (obj: ObjectSelection, index: number) => {
-          const originalPos = this.originalPositions[vertexCount + index];
+          const originPos = this.dragOriginPositions[vertexCount + index];
           return {
-            x: originalPos.x + totalDeltaX,
-            y: originalPos.y + totalDeltaY,
+            x: originPos.x + totalDeltaX,
+            y: originPos.y + totalDeltaY,
           };
         }
       );
@@ -335,7 +336,7 @@ export class SelectionTool extends Tool {
 
   private finalizeMarqueeSelection(): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
     const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
 
     // Select vertices within the marquee
@@ -382,23 +383,23 @@ export class SelectionTool extends Tool {
 
   private selectVertex(polygon: Polygon, vertex: Position): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
-    state.setToolState("select", {
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
+    state.actions.setToolState("select", {
       selectedVertices: [...toolState.selectedVertices, { polygon, vertex }],
     });
   }
 
   private selectObject(object: ObjectSelection): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
-    state.setToolState("select", {
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
+    state.actions.setToolState("select", {
       selectedObjects: [...toolState.selectedObjects, object],
     });
   }
 
   private selectPolygon(polygon: Polygon): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
 
     // Filter out vertices that are already selected
     const existingSelectedVertices = toolState.selectedVertices.filter(
@@ -409,14 +410,14 @@ export class SelectionTool extends Tool {
       polygon,
       vertex,
     }));
-    state.setToolState("select", {
+    state.actions.setToolState("select", {
       selectedVertices: [...existingSelectedVertices, ...polygonVertices],
     });
   }
 
   private updateSelectedVertices(newPositions: Position[]): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
     const updatedPolygons = [...state.polygons];
     const updatedSelectedVertices = [...toolState.selectedVertices];
 
@@ -440,18 +441,23 @@ export class SelectionTool extends Tool {
       }
     });
 
-    state.setToolState("select", {
+    state.actions.setToolState("select", {
       selectedVertices: updatedSelectedVertices,
     });
 
     // Update polygons in store
-    state.setPolygons(updatedPolygons);
+    state.actions.setPolygons(updatedPolygons);
   }
 
   private updateSelectedObjects(newPositions: Position[]): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
-    const updates: any = {};
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
+    const updates: {
+      apples?: Apple[];
+      killers?: Position[];
+      flowers?: Position[];
+      start?: Position;
+    } = {};
     const updatedSelectedObjects = [...toolState.selectedObjects];
 
     // Update each selected object with its new position
@@ -462,7 +468,11 @@ export class SelectionTool extends Tool {
       const appleIndex = state.apples.findIndex((a) => a.position === object);
       if (appleIndex !== -1) {
         if (!updates.apples) updates.apples = [...state.apples];
-        updates.apples[appleIndex] = newPos;
+        updates.apples[appleIndex] = {
+          position: newPos,
+          animation: 0,
+          gravity: 0,
+        };
         updatedSelectedObjects[index] = newPos;
       }
 
@@ -490,26 +500,26 @@ export class SelectionTool extends Tool {
     // Apply updates to store
     Object.assign(state, updates);
 
-    state.setToolState("select", {
+    state.actions.setToolState("select", {
       selectedObjects: updatedSelectedObjects,
     });
   }
 
   private updatePolygon(index: number, polygon: Polygon): void {
     const state = this.store.getState();
-    state.setPolygons(
+    state.actions.setPolygons(
       state.polygons.map((p, i) => (i === index ? polygon : p))
     );
   }
 
   private removePolygon(index: number): void {
     const state = this.store.getState();
-    state.setPolygons(state.polygons.filter((_, i) => i !== index));
+    state.actions.setPolygons(state.polygons.filter((_, i) => i !== index));
   }
 
   private deleteSelection(): void {
     const state = this.store.getState();
-    const toolState = state.getToolState<SelectionToolState>("select");
+    const toolState = state.actions.getToolState<SelectionToolState>("select");
 
     // Group selected vertices by polygon index
     const verticesByPolygonIndex = new Map<number, Position[]>();
@@ -553,11 +563,11 @@ export class SelectionTool extends Tool {
     toolState.selectedObjects.forEach((object: ObjectSelection) => {
       const apple = state.apples.find((a) => a.position === object);
       if (apple) {
-        state.removeApple(apple);
+        state.actions.removeApple(apple);
       } else if (state.killers.some((k) => k === object)) {
-        state.removeKiller(object);
+        state.actions.removeKiller(object);
       } else if (state.flowers.some((f) => f === object)) {
-        state.removeFlower(object);
+        state.actions.removeFlower(object);
       }
     });
 
