@@ -7,3 +7,9 @@
 
 # Local Netlify folder
 .netlify
+
+# Environment variables
+.env
+
+*storybook.log
+storybook-static

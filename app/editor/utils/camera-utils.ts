@@ -1,3 +1,6 @@
+import type { Polygon, Position } from "elmajs";
+import type { Apple } from "../editor.types";
+
 export function updateCamera({
   deltaX,
   deltaY,
@@ -94,11 +97,11 @@ export function fitToView({
   setZoom,
 }: {
   canvas: HTMLCanvasElement;
-  polygons: any[];
-  apples: any[];
-  killers: any[];
-  flowers: any[];
-  start: any;
+  polygons: Polygon[];
+  apples: Apple[];
+  killers: Position[];
+  flowers: Position[];
+  start: Position;
   minZoom: number;
   maxZoom: number;
   setCamera: (x: number, y: number) => void;
@@ -112,7 +115,7 @@ export function fitToView({
 
   // Check polygons
   polygons.forEach((polygon) => {
-    polygon.vertices.forEach((vertex: any) => {
+    polygon.vertices.forEach((vertex) => {
       minX = Math.min(minX, vertex.x);
       minY = Math.min(minY, vertex.y);
       maxX = Math.max(maxX, vertex.x);
@@ -121,7 +124,12 @@ export function fitToView({
   });
 
   // Check all objects
-  const allObjects = [...apples, ...killers, ...flowers, start];
+  const allObjects = [
+    ...apples.map((apple) => apple.position),
+    ...killers,
+    ...flowers,
+    start,
+  ];
 
   allObjects.forEach((obj) => {
     if (obj && typeof obj.x === "number" && typeof obj.y === "number") {

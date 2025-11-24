@@ -1,0 +1,8 @@
+{
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(((?:[^()]|\\([^()]*\\))*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(((?:[^()]|\\([^()]*\\))*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+  "tailwindCSS.codeLens": true,
+  "tailwindCSS.experimental.configFile": "app/styles/tailwind.css"
+}

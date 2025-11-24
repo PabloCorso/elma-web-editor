@@ -1,71 +1,10 @@
-import { create, type StoreApi } from "zustand";
-import type { Polygon, Position } from "elmajs";
-import type { LevelData } from "./level-importer";
+import { create } from "zustand";
+import type { EditorState } from "./editor-state";
+import type { Widget } from "./widgets/widget-interface";
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { Apple } from "./editor.types";
-
-export type EditorState = {
-  // Level data
-  levelName: string;
-  polygons: Polygon[];
-  apples: Apple[];
-  killers: Position[];
-  flowers: Position[];
-  start: Position;
-
-  // Editor state
-  activeToolId: string;
-  mousePosition: Position;
-
-  // Camera state (matching reference editor approach)
-  viewPortOffset: { x: number; y: number };
-  zoom: number;
-
-  // View settings
-  animateSprites: boolean;
-  showSprites: boolean;
-
-  // Fit to view trigger
-  fitToViewTrigger: number;
-
-  // Level data operations
-  setStart: (position: Position) => void;
-  addApple: (apple: Apple) => void;
-  removeApple: (apple: Apple) => void;
-  addKiller: (killer: Position) => void;
-  removeKiller: (killer: Position) => void;
-  addFlower: (flower: Position) => void;
-  removeFlower: (flower: Position) => void;
-
-  setLevelName: (name: string) => void;
-  setMousePosition: (position: Position) => void;
-  setCamera: (x: number, y: number) => void;
-  setZoom: (zoom: number) => void;
-  setPolygons: (polygons: Polygon[]) => void;
-
-  // Tools
-  toolsMap: Map<string, Tool>;
-  toolState: ToolState;
-
-  registerTool: (tool: Tool) => void;
-  activateTool: (toolId: string) => void;
-  getActiveTool: () => Tool | undefined;
-  getTool: (toolId: string) => Tool | undefined;
-
-  getToolState: <T extends ToolState>(toolId: string) => T;
-  setToolState: <T extends ToolState>(
-    toolId: string,
-    state: Partial<T>
-  ) => void;
-
-  // View operations
-  toggleAnimateSprites: () => void;
-  toggleShowSprites: () => void;
-  importLevel: (levelData: LevelData) => void;
-  triggerFitToView: () => void;
-};
-
-export type EditorStore = StoreApi<EditorState>;
+import type { EditorStore } from "./use-editor-store";
+import { FileSession } from "~/utils/file-session";
+import { LevelFolder } from "~/utils/level-folder";
 
 type CreateEditorStoreOptions = {
   initialToolId?: string;
@@ -100,100 +39,145 @@ export function createEditorStore({
     // Fit to view trigger
     fitToViewTrigger: 0,
 
-    // Level data operations
-    setLevelName: (name) => set({ levelName: name }),
-    setStart: (position) => set({ start: position }),
-    addApple: (apple) => set({ apples: [...get().apples, apple] }),
-    removeApple: (apple) =>
-      set({
-        apples: get().apples.filter(
-          (a) =>
-            a.position.x !== apple.position.x ||
-            a.position.y !== apple.position.y
-        ),
-      }),
-    addKiller: (killer) => set({ killers: [...get().killers, killer] }),
-    removeKiller: (killer) =>
-      set({
-        killers: get().killers.filter(
-          (k) => k.x !== killer.x || k.y !== killer.y
-        ),
-      }),
-    addFlower: (flower) => set({ flowers: [...get().flowers, flower] }),
-    removeFlower: (flower) =>
-      set({
-        flowers: get().flowers.filter(
-          (f) => f.x !== flower.x || f.y !== flower.y
-        ),
-      }),
-
-    setMousePosition: (position) => set({ mousePosition: position }),
-    setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
-    setZoom: (zoom) => set({ zoom }),
-    setPolygons: (polygons) => set({ polygons }),
-
     // Tool state
     toolsMap: new Map<string, Tool>(),
     toolState: {},
 
-    registerTool: (tool) =>
-      set((prev) => ({
-        toolsMap: prev.toolsMap.set(tool.id, tool),
-      })),
-    activateTool: (toolId: string) => {
-      set({ activeToolId: toolId });
-      // Validate that toolId is registered
-      const state = get();
-      if (!state.toolsMap.has(toolId)) {
-        console.warn(
-          `Tool '${toolId}' is not registered. Available tools: ${Array.from(state.toolsMap.keys()).join(", ")}`
-        );
-        return;
-      }
+    // Widgets
+    widgetsMap: new Map<string, Widget>(),
 
-      // Get current active tool from store and deactivate it
-      const currentToolId = state.activeToolId;
-      const currentTool = state.toolsMap.get(currentToolId);
-      if (currentTool && currentTool.onDeactivate) {
-        currentTool.onDeactivate();
-      }
+    // File system access
+    fileSession: new FileSession(),
+    levelFolder: new LevelFolder(),
 
-      // Update store with new tool
-      set({ activeToolId: toolId });
-      const tool = state.toolsMap.get(toolId);
-      tool?.onActivate?.();
+    actions: {
+      // Level data operations
+      setLevelName: (name) => set({ levelName: name }),
+      setStart: (position) => set({ start: position }),
+      addApple: (apple) => set({ apples: [...get().apples, apple] }),
+      removeApple: (apple) =>
+        set({
+          apples: get().apples.filter(
+            (a) =>
+              a.position.x !== apple.position.x ||
+              a.position.y !== apple.position.y
+          ),
+        }),
+      addKiller: (killer) => set({ killers: [...get().killers, killer] }),
+      removeKiller: (killer) =>
+        set({
+          killers: get().killers.filter(
+            (k) => k.x !== killer.x || k.y !== killer.y
+          ),
+        }),
+      addFlower: (flower) => set({ flowers: [...get().flowers, flower] }),
+      removeFlower: (flower) =>
+        set({
+          flowers: get().flowers.filter(
+            (f) => f.x !== flower.x || f.y !== flower.y
+          ),
+        }),
+
+      setMousePosition: (position) => set({ mousePosition: position }),
+      setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
+      setZoom: (zoom) => set({ zoom }),
+      setPolygons: (polygons) => set({ polygons }),
+
+      // Tools
+      registerTool: (tool) =>
+        set((prev) => {
+          const toolsMap = new Map(prev.toolsMap);
+          toolsMap.set(tool.id, tool);
+          return { toolsMap };
+        }),
+      activateTool: (toolId: string) => {
+        // Validate that toolId is registered
+        const state = get();
+        if (!state.toolsMap.has(toolId)) {
+          console.warn(
+            `Tool '${toolId}' is not registered. Available tools: ${Array.from(state.toolsMap.keys()).join(", ")}`
+          );
+          return;
+        }
+
+        // Get current active tool from store and deactivate it
+        const currentToolId = state.activeToolId;
+        const currentTool = state.toolsMap.get(currentToolId);
+        if (currentTool && currentTool.onDeactivate) {
+          currentTool.onDeactivate();
+        }
+
+        // Update store with new tool
+        set({ activeToolId: toolId });
+        const tool = state.toolsMap.get(toolId);
+        tool?.onActivate?.();
+      },
+      getTool: (toolId) => get().toolsMap.get(toolId),
+      getActiveTool: () => get().toolsMap.get(get().activeToolId),
+
+      getToolState: <T extends ToolState>(toolId: string) =>
+        get().toolState[toolId] as T,
+      setToolState: <T extends ToolState>(toolId: string, state: Partial<T>) =>
+        set((prev) => ({
+          toolState: {
+            ...prev.toolState,
+            [toolId]: { ...(prev.toolState[toolId] as T), ...state },
+          },
+        })),
+
+      // Widgets
+      registerWidget: (widget: Widget) =>
+        set((prev) => {
+          const widgetsMap = new Map(prev.widgetsMap);
+          widgetsMap.set(widget.id, widget);
+          return { widgetsMap };
+        }),
+      activateWidget: (widgetId: string) => {
+        const state = get();
+        const widget = state.widgetsMap.get(widgetId);
+        if (!widget) {
+          console.warn(
+            `Widget '${widgetId}' is not registered. Available widgets: ${Array.from(state.widgetsMap.keys()).join(", ")}`
+          );
+          return;
+        }
+        widget.onActivate?.();
+      },
+      deactivateWidget: (widgetId: string) => {
+        const state = get();
+        const widget = state.widgetsMap.get(widgetId);
+        if (!widget) {
+          console.warn(
+            `Widget '${widgetId}' is not registered. Available widgets: ${Array.from(state.widgetsMap.keys()).join(", ")}`
+          );
+          return;
+        }
+        widget.onDeactivate?.();
+      },
+
+      // File system access
+      setFileSession: (session) => set({ fileSession: session }),
+      setLevelFolder: (folder) => set({ levelFolder: folder }),
+
+      // View operations
+      toggleAnimateSprites: () =>
+        set((state) => ({ animateSprites: !state.animateSprites })),
+
+      toggleShowSprites: () =>
+        set((state) => ({ showSprites: !state.showSprites })),
+
+      loadLevelData: (levelData) =>
+        set({
+          levelName: levelData.name || defaultLevelTitle,
+          polygons: levelData.polygons,
+          apples: levelData.apples,
+          killers: levelData.killers,
+          flowers: levelData.flowers,
+          start: levelData.start,
+        }),
+
+      triggerFitToView: () =>
+        set((state) => ({ fitToViewTrigger: state.fitToViewTrigger + 1 })),
     },
-    getTool: (toolId) => get().toolsMap.get(toolId),
-    getActiveTool: () => get().toolsMap.get(get().activeToolId),
-
-    getToolState: <T extends ToolState>(toolId: string) =>
-      get().toolState[toolId] as T,
-    setToolState: <T extends ToolState>(toolId: string, state: Partial<T>) =>
-      set((prev) => ({
-        toolState: {
-          ...prev.toolState,
-          [toolId]: { ...(prev.toolState[toolId] as T), ...state },
-        },
-      })),
-
-    // View operations
-    toggleAnimateSprites: () =>
-      set((state) => ({ animateSprites: !state.animateSprites })),
-
-    toggleShowSprites: () =>
-      set((state) => ({ showSprites: !state.showSprites })),
-
-    importLevel: (levelData) =>
-      set({
-        levelName: levelData.name || defaultLevelTitle,
-        polygons: levelData.polygons,
-        apples: levelData.apples,
-        killers: levelData.killers,
-        flowers: levelData.flowers,
-        start: levelData.start,
-      }),
-
-    triggerFitToView: () =>
-      set((state) => ({ fitToViewTrigger: state.fitToViewTrigger + 1 })),
   }));
 }
