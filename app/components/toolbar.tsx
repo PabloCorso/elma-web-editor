@@ -58,6 +58,7 @@ type ToolActionButtonProps = ToolButtonProps & {
 export function ToolControlButton({
   id,
   name,
+  shortcut,
   className,
   children,
   ...props
@@ -70,7 +71,7 @@ export function ToolControlButton({
     <ToolButton
       type="button"
       className={cn({ "bg-white/20": activeTool?.id === id }, className)}
-      title={`${name}${props.shortcut ? ` (${props.shortcut})` : ""}`}
+      title={`${name}${shortcut ? ` (${shortcut})` : ""}`}
       aria-label={name}
       onClick={() => {
         id && activateTool(id);

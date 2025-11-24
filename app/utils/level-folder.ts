@@ -6,8 +6,15 @@ export class LevelFolder {
   private handle?: FileSystemDirectoryHandle;
   private folderName?: string;
 
-  constructor(private key = LEVEL_FOLDER_KEY) {
-    this.initFromStorage();
+  // Prefer static async initialization when possible
+  constructor() {
+    void this.initFromStorage();
+  }
+
+  static async initialize() {
+    const levelFolder = new LevelFolder();
+    await levelFolder.initFromStorage();
+    return levelFolder;
   }
 
   get name() {
@@ -21,7 +28,7 @@ export class LevelFolder {
   async initFromStorage() {
     if (!isClient()) return false;
     console.log("Initializing LevelFolder from storage...");
-    const handle = await loadHandle(this.key);
+    const handle = await loadHandle(LEVEL_FOLDER_KEY);
     if (!handle) {
       this.handle = undefined;
       this.folderName = undefined;
@@ -40,7 +47,7 @@ export class LevelFolder {
       });
       this.handle = handle;
       this.folderName = handle.name;
-      await persistHandle(this.key, handle);
+      await persistHandle(LEVEL_FOLDER_KEY, handle);
       return true;
     } catch (err: any) {
       if (err?.name === "AbortError") return false;
@@ -82,7 +89,7 @@ export class LevelFolder {
   async forget() {
     this.handle = undefined;
     this.folderName = undefined;
-    await deleteHandle(this.key);
+    await deleteHandle(LEVEL_FOLDER_KEY);
   }
 }
 

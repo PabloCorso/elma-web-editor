@@ -91,7 +91,6 @@ export function createEditorStore({
           return { toolsMap };
         }),
       activateTool: (toolId: string) => {
-        set({ activeToolId: toolId });
         // Validate that toolId is registered
         const state = get();
         if (!state.toolsMap.has(toolId)) {

@@ -134,7 +134,7 @@ export const PromptInputButton = ({
         newSize === "default" && "px-3",
         className
       )}
-      size={newSize}
+      iconOnly={newSize === "icon"}
       type="button"
       variant={variant}
       {...props}
@@ -148,8 +148,7 @@ export type PromptInputSubmitProps = ComponentProps<typeof Button> & {
 
 export const PromptInputSubmit = ({
   className,
-  variant = "default",
-  size = "icon",
+  iconOnly = true,
   status,
   children,
   ...props
@@ -167,9 +166,8 @@ export const PromptInputSubmit = ({
   return (
     <Button
       className={cn("gap-1.5 rounded-lg", className)}
-      size={size}
       type="submit"
-      variant={variant}
+      iconOnly={iconOnly}
       {...props}
     >
       {children ?? Icon}

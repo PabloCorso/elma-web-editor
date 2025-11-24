@@ -61,7 +61,7 @@ export function ControlToolbar({
         <SpriteIcon src={flowerImgUrl} />
       </ToolControlButton>
       {isOpenAIEnabled && (
-        <ToolControlButton id="ai-chat" name="AI Assistant" shortcut="S">
+        <ToolControlButton id="ai-chat" name="AI Assistant" shortcut="I">
           <SparkleIcon weight="fill" />
         </ToolControlButton>
       )}

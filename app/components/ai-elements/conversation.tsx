@@ -1,4 +1,4 @@
-import { Button } from "../ui/button";
+import { Button, IconButton } from "../ui/button";
 import { cn } from "~/utils/misc";
 import type { ComponentProps } from "react";
 import { useCallback } from "react";
@@ -47,18 +47,17 @@ export const ConversationScrollButton = ({
 
   return (
     !isAtBottom && (
-      <Button
+      <IconButton
         className={cn(
           "absolute bottom-4 left-[50%] translate-x-[-50%] shadow-lg border border-gray-700 rounded-full",
           className
         )}
         onClick={handleScrollToBottom}
-        size="icon"
         type="button"
         {...props}
       >
         <ArrowDownIcon className="size-4" />
-      </Button>
+      </IconButton>
     )
   );
 };

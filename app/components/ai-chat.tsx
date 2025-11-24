@@ -170,7 +170,7 @@ export function AIChat() {
           <PromptInputToolbar>
             <PromptInputTools>
               <PromptInputButton
-                variant={webSearch ? "default" : "ghost"}
+                // variant={webSearch ? "default" : "ghost"}
                 onClick={() => setWebSearch(!webSearch)}
               >
                 <GlobeIcon size={16} />
