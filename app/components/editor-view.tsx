@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EditorEngine } from "../editor/editor-engine";
-import { useEditorStoreInstance } from "~/editor/use-editor-store";
+import { useEditorStore } from "~/editor/use-editor-store";
 import { PolygonTool } from "~/editor/tools/polygon-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
@@ -10,7 +10,7 @@ import type { Tool } from "~/editor/tools/tool-interface";
 export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
-  const store = useEditorStoreInstance();
+  const store = useEditorStore();
 
   useEffect(
     function initializeEditorEngine() {

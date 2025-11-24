@@ -1,14 +1,12 @@
 import { createContext, useContext, useRef } from "react";
-import { useStore as useZustand, type StoreApi } from "zustand";
+import { useStore as useZustand } from "zustand";
 import { type EditorState } from "./editor-state";
-import { createEditorStore } from "./editor-store";
+import { createEditorStore, type EditorStore } from "./editor-store";
 import type { ToolState } from "./tools/tool-interface";
 
-const EditorStoreContext = createContext<EditorStore | null>(null);
+const EditorContext = createContext<EditorStore | null>(null);
 
-export type EditorStore = StoreApi<EditorState>;
-
-export const EditorStoreProvider = ({
+export const EditorProvider = ({
   initialToolId = "select",
   children,
 }: {
@@ -21,60 +19,56 @@ export const EditorStoreProvider = ({
   }
 
   return (
-    <EditorStoreContext.Provider value={storeRef.current!}>
+    <EditorContext.Provider value={storeRef.current!}>
       {children}
-    </EditorStoreContext.Provider>
+    </EditorContext.Provider>
   );
 };
 
-export function useEditorStoreInstance() {
-  const store = useContext(EditorStoreContext);
+export function useEditorStore() {
+  const store = useContext(EditorContext);
   if (!store) {
-    throw new Error(
-      "useEditorStoreInstance must be used within a StoreProvider"
-    );
+    throw new Error("useEditorStore must be used within a <EditorProvider />");
   }
   return store;
 }
 
-export function useEditorStore<T>(selector: (s: EditorState) => T) {
-  const store = useContext(EditorStoreContext);
+export function useEditor<T>(selector: (s: EditorState) => T) {
+  const store = useContext(EditorContext);
   if (!store) {
-    throw new Error("useEditorStore must be used within a StoreProvider");
+    throw new Error("useEditor must be used within a <EditorProvider />");
   }
   return useZustand(store, selector);
 }
 
 export function useLevelName() {
-  return useEditorStore((state) => state.levelName);
+  return useEditor((state) => state.levelName);
 }
 
 export function useZoom() {
-  return useEditorStore((state) => state.zoom);
+  return useEditor((state) => state.zoom);
 }
 
 export function useEditorActions() {
-  return useEditorStore((state) => state.actions);
+  return useEditor((state) => state.actions);
 }
 
 export function useEditorActiveTool() {
-  return useEditorStore((state) => state.actions.getActiveTool());
+  return useEditor((state) => state.actions.getActiveTool());
 }
 
 export function useEditorToolState<T extends ToolState>(
   toolId: string
 ): T | undefined {
-  return useEditorStore((state) => state.actions.getToolState<T>(toolId));
+  return useEditor((state) => state.actions.getToolState<T>(toolId));
 }
 
 export function useEditorWidget<T>(widgetId: string): T | undefined {
-  return useEditorStore(
-    (state) => state.widgetsMap.get(widgetId) as T | undefined
-  );
+  return useEditor((state) => state.widgetsMap.get(widgetId) as T | undefined);
 }
 
 export function useEditorLevelFolderName() {
-  return useEditorStore((state) =>
+  return useEditor((state) =>
     state.levelFolder?.hasFolder() ? state.levelFolder.name : null
   );
 }

@@ -1,7 +1,7 @@
 import {
   useEditorActions,
   useEditorActiveTool,
-  useEditorStore,
+  useEditor,
 } from "../editor/use-editor-store";
 import { LevelImporter } from "../editor/level-importer";
 import { type BuiltinLevel } from "../editor/builtin-levels";
@@ -20,8 +20,8 @@ export function Sidebar() {
     toggleAnimateSprites,
   } = useEditorActions();
   const activeTool = useEditorActiveTool();
-  const animateSprites = useEditorStore((state) => state.animateSprites);
-  const showSprites = useEditorStore((state) => state.showSprites);
+  const animateSprites = useEditor((state) => state.animateSprites);
+  const showSprites = useEditor((state) => state.showSprites);
 
   const handleBuiltinLevelImport = async (level: BuiltinLevel) => {
     const result = await LevelImporter.importBuiltinLevel(level.filename);

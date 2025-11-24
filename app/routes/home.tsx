@@ -1,6 +1,6 @@
 import type { Route } from "./+types/home";
 import { EditorView } from "../components/editor-view";
-import { EditorStoreProvider } from "../editor/use-editor-store";
+import { EditorProvider } from "../editor/use-editor-store";
 import { ControlToolbar } from "~/components/control-toolbar";
 import { HeaderToolbar } from "~/components/header-toolbar";
 import { CanvasToolbar } from "~/components/canvas-toolbar";
@@ -22,7 +22,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const { isOpenAIEnabled } = loaderData;
 
   return (
-    <EditorStoreProvider>
+    <EditorProvider>
       <div className="flex h-screen">
         {/* <Sidebar isOpenAIEnabled={isOpenAIEnabled} /> */}
         <HeaderToolbar />
@@ -32,6 +32,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <EditorView isOpenAIEnabled={isOpenAIEnabled} />
         </div>
       </div>
-    </EditorStoreProvider>
+    </EditorProvider>
   );
 }

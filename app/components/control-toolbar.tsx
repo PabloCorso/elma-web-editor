@@ -1,6 +1,6 @@
 import {
   useEditorActions,
-  useEditorStoreInstance,
+  useEditorStore,
 } from "~/editor/use-editor-store";
 import appleImgUrl from "~/assets/elma/qfood1.png?url";
 import killerImgUrl from "~/assets/elma/QKILLER.png?url";
@@ -20,7 +20,7 @@ export function ControlToolbar({
   isOpenAIEnabled?: boolean;
 }) {
   const { activateTool } = useEditorActions();
-  const store = useEditorStoreInstance();
+  const store = useEditorStore();
 
   useEffect(function setupKeyboardShortcuts() {
     const onKeyboardShortcut = (e: KeyboardEvent) => {

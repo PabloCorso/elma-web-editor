@@ -1,8 +1,7 @@
-import { create } from "zustand";
+import { create, type StoreApi } from "zustand";
 import type { EditorState } from "./editor-state";
 import type { Widget } from "./widgets/widget-interface";
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { EditorStore } from "./use-editor-store";
 import { FileSession } from "~/utils/file-session";
 import { LevelFolder } from "~/utils/level-folder";
 
@@ -10,6 +9,8 @@ type CreateEditorStoreOptions = {
   initialToolId?: string;
   defaultLevelTitle?: string;
 };
+
+export type EditorStore = StoreApi<EditorState>;
 
 export function createEditorStore({
   initialToolId = "select",

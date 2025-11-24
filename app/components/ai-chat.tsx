@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import {
+  useEditor,
   useEditorStore,
-  useEditorStoreInstance,
   useEditorToolState,
   useEditorWidget,
 } from "../editor/use-editor-store";
@@ -44,7 +44,7 @@ export function AIChat() {
   const [input, setInput] = useState("");
   const [webSearch, setWebSearch] = useState(false);
 
-  const store = useEditorStoreInstance();
+  const store = useEditorStore();
   const aiToolState = useEditorToolState<AIToolState>("ai");
   const aiWidget = useEditorWidget<AIWidget>("ai");
 

@@ -2,8 +2,8 @@ import {
   useEditorActions,
   useEditorActiveTool,
   useEditorLevelFolderName,
+  useEditor,
   useEditorStore,
-  useEditorStoreInstance,
   useLevelName,
 } from "~/editor/use-editor-store";
 import logo from "../assets/bear-helmet.png";
@@ -40,11 +40,11 @@ import { useState } from "react";
 export function HeaderToolbar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { setLevelName, loadLevelData, triggerFitToView } = useEditorActions();
-  const store = useEditorStoreInstance();
+  const store = useEditorStore();
   const activeTool = useEditorActiveTool();
   const levelName = useLevelName();
-  const filename = useEditorStore((state) => state.fileSession.fileName);
-  const isModified = useEditorStore((state) => state.fileSession.isModified);
+  const filename = useEditor((state) => state.fileSession.fileName);
+  const isModified = useEditor((state) => state.fileSession.isModified);
 
   const handleOpenFile = async () => {
     const fileSession = store.getState().fileSession;
@@ -162,7 +162,7 @@ export function HeaderToolbar() {
 }
 
 function SettingsDialog(props: DialogProps) {
-  const store = useEditorStoreInstance();
+  const store = useEditorStore();
   const levelFolderName = useEditorLevelFolderName();
   const [_, forceUpdate] = useState(0);
   return (
