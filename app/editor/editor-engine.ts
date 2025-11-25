@@ -13,8 +13,7 @@ import type { Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
-import { createEditorStore } from "./editor-store";
-import type { EditorStore } from "./use-editor-store";
+import { createEditorStore, type EditorStore } from "./editor-store";
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;

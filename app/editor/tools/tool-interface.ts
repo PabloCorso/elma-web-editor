@@ -1,7 +1,6 @@
 import type { EventContext } from "../utils/event-handler";
-import type { StoreApi } from "zustand/vanilla";
-import type { EditorState } from "../editor-state";
 import type { Polygon } from "elmajs";
+import type { EditorStore } from "../editor-store";
 
 export type ToolState<T = unknown> = Record<string, T>;
 
@@ -10,7 +9,7 @@ export abstract class Tool {
   abstract readonly name: string;
   abstract readonly shortcut?: string;
 
-  constructor(protected store: StoreApi<EditorState>) {}
+  constructor(protected store: EditorStore) {}
 
   // Event handling - return true if event was consumed
   onPointerDown?(event: PointerEvent, context: EventContext): boolean;

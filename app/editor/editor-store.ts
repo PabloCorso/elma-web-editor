@@ -16,7 +16,7 @@ export function createEditorStore({
   initialToolId = "select",
   defaultLevelTitle = "Untitled",
 }: CreateEditorStoreOptions = {}): EditorStore {
-  return create<EditorState>((set, get) => ({
+  return create<EditorState>((set, get, store) => ({
     // Initial state - level data will be injected via constructor
     levelName: defaultLevelTitle,
     polygons: [],
@@ -48,8 +48,8 @@ export function createEditorStore({
     widgetsMap: new Map<string, Widget>(),
 
     // File system access
-    fileSession: new FileSession(),
-    levelFolder: new LevelFolder(),
+    fileSession: new FileSession(store),
+    levelFolder: new LevelFolder(store),
 
     actions: {
       // Level data operations

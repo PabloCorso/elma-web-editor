@@ -1,14 +1,13 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
-import type { StoreApi } from "zustand/vanilla";
-import type { EditorState } from "../editor-state";
+import type { EditorStore } from "../editor-store";
 
 export class AppleTool extends Tool {
   readonly id = "apple";
   readonly name = "Apple";
   readonly shortcut = "A";
 
-  constructor(store: StoreApi<EditorState>) {
+  constructor(store: EditorStore) {
     super(store);
   }
 
@@ -28,7 +27,7 @@ export class KillerTool extends Tool {
   readonly name = "Killer";
   readonly shortcut = "K";
 
-  constructor(store: StoreApi<EditorState>) {
+  constructor(store: EditorStore) {
     super(store);
   }
 
@@ -44,7 +43,7 @@ export class FlowerTool extends Tool {
   readonly name = "Flower";
   readonly shortcut = "F";
 
-  constructor(store: StoreApi<EditorState>) {
+  constructor(store: EditorStore) {
     super(store);
   }
 

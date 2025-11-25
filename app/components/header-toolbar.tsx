@@ -19,13 +19,10 @@ import {
   FilePlusIcon,
   FloppyDiskIcon,
   FolderOpenIcon,
+  GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { LevelImporter } from "~/editor/level-importer";
-import {
-  downloadLevel,
-  getLevelFromState,
-  levelToBlob,
-} from "~/editor/utils/download-level";
+import { getLevelFromState } from "~/editor/utils/download-level";
 import {
   Dialog,
   DialogBody,
@@ -81,7 +78,7 @@ export function HeaderToolbar() {
   const handleSaveAs = async () => {
     const state = store.getState();
     const fileSession = state.fileSession;
-    const level = await getLevelFromState(state);
+    const level = getLevelFromState(state);
     await fileSession.saveAs(level);
   };
 
@@ -134,7 +131,10 @@ export function HeaderToolbar() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+              <DropdownMenuItem
+                iconBefore={<GearIcon />}
+                onClick={() => setSettingsOpen(true)}
+              >
                 Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>

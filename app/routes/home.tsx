@@ -23,7 +23,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <EditorProvider>
-      <div className="flex h-screen">
+      <div className="flex h-[100dvh]">
         {/* <Sidebar isOpenAIEnabled={isOpenAIEnabled} /> */}
         <HeaderToolbar />
         <ControlToolbar isOpenAIEnabled={isOpenAIEnabled} />

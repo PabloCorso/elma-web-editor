@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { EditorState } from "./editor-state";
-import type { EditorStore } from "./use-editor-store";
+import { useEditorStore } from "./use-editor-store";
 
 type LocalStorageLevel = Pick<
   EditorState,
@@ -17,11 +17,9 @@ type LocalStorageLevel = Pick<
   | "zoom"
 >;
 
-export function useLocalStorageSync(
-  store: EditorStore,
-  key = "elma-web-store"
-) {
+export function useLocalStorageSync(key = "elma-web-store") {
   const isInitializedRef = useRef(false);
+  const store = useEditorStore();
 
   // Load from localStorage on mount (only once)
   useEffect(() => {

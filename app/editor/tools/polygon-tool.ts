@@ -1,6 +1,5 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
-import type { StoreApi } from "zustand/vanilla";
 import type { EditorState } from "../editor-state";
 import { isWithinThreshold } from "../utils/coordinate-utils";
 import {
@@ -8,7 +7,9 @@ import {
   findPolygonVertexForEditing,
 } from "../utils/selection-utils";
 import { colors } from "../constants";
+import { isPolygonClockwise, shouldPolygonBeGround } from "../helpers";
 import type { Polygon, Position } from "elmajs";
+import type { EditorStore } from "../editor-store";
 
 export type PolygonToolState = {
   drawingPolygon: Position[];
@@ -20,7 +21,7 @@ export class PolygonTool extends Tool {
   readonly name = "Polygon";
   readonly shortcut = "P";
 
-  constructor(store: StoreApi<EditorState>) {
+  constructor(store: EditorStore) {
     super(store);
   }
 

@@ -1,8 +1,6 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { Position, Polygon } from "elmajs";
-import type { StoreApi } from "zustand/vanilla";
-import type { EditorState } from "../editor-state";
 import {
   findVertexNearPosition,
   findObjectNearPosition,
@@ -15,6 +13,7 @@ import {
 } from "../utils/selection-utils";
 import { colors } from "../constants";
 import type { Apple } from "../editor.types";
+import type { EditorStore } from "../editor-store";
 
 export type SelectionToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -29,7 +28,7 @@ export class SelectTool extends Tool {
   readonly name = "Select";
   readonly shortcut = "S";
 
-  constructor(store: StoreApi<EditorState>) {
+  constructor(store: EditorStore) {
     super(store);
   }
 

@@ -6,13 +6,22 @@ import {
   verifyPermission,
   writeFile,
 } from "./file-system-access";
-import { levelToBlob } from "~/editor/utils/download-level";
+import {
+  downloadLevel,
+  getLevelFromState,
+  levelToBlob,
+} from "~/editor/utils/download-level";
+import type { EditorStore } from "~/editor/editor-store";
 
 export class FileSession {
-  private contents: BlobPart | null = null;
+  private store: EditorStore;
   private handle?: FileSystemFileHandle;
   private name?: string;
   private modified = false;
+
+  constructor(store: EditorStore) {
+    this.store = store;
+  }
 
   get fileName() {
     return this.name;
@@ -26,78 +35,74 @@ export class FileSession {
     return this.modified;
   }
 
-  get content() {
-    return this.contents;
-  }
-
-  setContent(content: BlobPart) {
-    this.contents = content;
-    this.modified = true;
-  }
-
   /**
    * Open a file via picker (or provided handle) and keep the handle for later saves.
    */
-  async open(handle?: FileSystemFileHandle) {
-    if (!isClient() || !hasFilePickers()) return false;
+  async open(handle?: FileSystemFileHandle): Promise<ArrayBuffer | false> {
+    if (!isClient()) return false;
+    if (!supportsFilePickers()) return false;
+
     const fileHandle = handle ?? (await getFileHandle());
     if (!fileHandle) return false;
-    if (!(await verifyPermission(fileHandle))) return false;
+
+    const hasPermission = await verifyPermission(fileHandle);
+    if (!hasPermission) return false;
+
     const file = await fileHandle.getFile();
-    // Prefer ArrayBuffer to keep binary (.lev) intact
-    this.contents = await readFile(file);
+    const contents = await file.arrayBuffer();
+
     this.handle = fileHandle;
     this.name = file.name;
     this.modified = false;
-    return this.content;
+
+    return contents;
   }
 
-  /**
-   * Save to the current handle.
-   */
   async save() {
-    if (!isClient() || !hasFilePickers()) return false;
-    if (!this.handle) return null;
-    if (this.contents == null) return false;
-    if (!(await verifyPermission(this.handle, { withWrite: true }))) {
+    if (!isClient()) return false;
+
+    const level = getLevelFromState(this.store.getState());
+    if (!supportsFilePickers()) {
+      downloadLevel(level);
+      return true;
+    }
+
+    if (!this.handle) return false;
+
+    const canWrite = await verifyPermission(this.handle, { withWrite: true });
+    if (!canWrite) {
+      downloadLevel(level);
       return false;
     }
-    await writeFile(this.handle, this.contents);
-    this.modified = false;
+
+    await writeFile(this.handle, levelToBlob(level));
+    // this.modified handling can be added when implemented.
     return true;
   }
 
-  /**
-   * Prompt for a target and save there, capturing the new handle/name.
-   */
-  async saveAs(level: Level) {
-    if (!isClient() || !hasFilePickers()) return false;
+  async saveAs(level: Level): Promise<boolean> {
+    if (!isClient()) return false;
+
+    // No picker support: download instead.
+    if (!supportsFilePickers()) {
+      downloadLevel(level);
+      return true;
+    }
 
     const fileHandle = await getNewFileHandle();
     if (!fileHandle) return false;
 
-    if (!(await verifyPermission(fileHandle, { withWrite: true }))) {
+    const canWrite = await verifyPermission(fileHandle, { withWrite: true });
+    if (!canWrite) {
+      downloadLevel(level);
       return false;
     }
 
-    this.setContent(levelToBlob(level));
-    if (this.contents == null) return false;
-
-    await writeFile(fileHandle, this.contents);
+    const blob = levelToBlob(level);
+    await writeFile(fileHandle, blob);
     this.handle = fileHandle;
     this.name = fileHandle.name;
-    this.modified = false;
     return true;
-  }
-
-  /**
-   * Drop any current handle and reset state.
-   */
-  reset() {
-    this.handle = undefined;
-    this.name = undefined;
-    this.contents = null;
-    this.modified = false;
   }
 }
 
@@ -105,7 +110,7 @@ function isClient() {
   return typeof window !== "undefined";
 }
 
-function hasFilePickers() {
+function supportsFilePickers() {
   return (
     typeof window !== "undefined" &&
     "showOpenFilePicker" in window &&

@@ -1,20 +1,17 @@
+import type { EditorStore } from "~/editor/editor-store";
+
 const DB_NAME = "elma-level-folder";
 const STORE_NAME = "handles";
 const LEVEL_FOLDER_KEY = "level-folder";
 
 export class LevelFolder {
+  private store: EditorStore;
   private handle?: FileSystemDirectoryHandle;
   private folderName?: string;
 
-  // Prefer static async initialization when possible
-  constructor() {
-    void this.initFromStorage();
-  }
-
-  static async initialize() {
-    const levelFolder = new LevelFolder();
-    await levelFolder.initFromStorage();
-    return levelFolder;
+  constructor(store: EditorStore) {
+    this.store = store;
+    void this.loadFromStorage();
   }
 
   get name() {
@@ -25,7 +22,7 @@ export class LevelFolder {
     return Boolean(this.handle);
   }
 
-  async initFromStorage() {
+  async loadFromStorage() {
     if (!isClient()) return false;
     console.log("Initializing LevelFolder from storage...");
     const handle = await loadHandle(LEVEL_FOLDER_KEY);

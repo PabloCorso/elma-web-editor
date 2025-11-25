@@ -10,6 +10,11 @@ import type { Tool } from "~/editor/tools/tool-interface";
 export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
+  const resizeFrameRef = useRef<number | null>(null);
+  const lastSizeRef = useRef<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
   const store = useEditorStore();
 
   useEffect(
@@ -20,13 +25,51 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
       const parent = canvas.parentElement;
       if (!parent) return;
 
-      const updateCanvasSize = () => {
+      const applyResize = () => {
         const rect = parent.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        const width = Math.floor(rect.width);
+        const height = Math.floor(rect.height);
+
+        if (
+          lastSizeRef.current.width === width &&
+          lastSizeRef.current.height === height
+        ) {
+          return;
+        }
+
+        const context = canvas.getContext("2d");
+        if (!context) return;
+
+        // Preserve existing bitmap to avoid flicker when canvas is resized.
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempContext = tempCanvas.getContext("2d");
+        tempContext?.drawImage(canvas, 0, 0);
+
+        canvas.width = width;
+        canvas.height = height;
+
+        if (tempContext) {
+          context.drawImage(tempCanvas, 0, 0);
+        }
+
+        lastSizeRef.current = { width, height };
+
+        if (engineRef.current) {
+          engineRef.current.fitToView();
+        }
       };
 
-      updateCanvasSize();
+      const scheduleResize = () => {
+        if (resizeFrameRef.current !== null) return;
+        resizeFrameRef.current = requestAnimationFrame(() => {
+          resizeFrameRef.current = null;
+          applyResize();
+        });
+      };
+
+      applyResize();
 
       const tools: Tool[] = [
         new PolygonTool(store),
@@ -43,16 +86,17 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
 
       engineRef.current = new EditorEngine(canvas, { store, tools, widgets });
 
-      // Add resize observer to handle parent size changes
+      // Add resize observer to handle parent size changes (batched to avoid flicker)
       const resizeObserver = new ResizeObserver(() => {
-        updateCanvasSize();
-        if (engineRef.current) {
-          engineRef.current.fitToView();
-        }
+        scheduleResize();
       });
       resizeObserver.observe(parent);
 
       return () => {
+        if (resizeFrameRef.current !== null) {
+          cancelAnimationFrame(resizeFrameRef.current);
+          resizeFrameRef.current = null;
+        }
         resizeObserver.disconnect();
         if (engineRef.current) {
           engineRef.current.destroy();
@@ -60,7 +104,7 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
         }
       };
     },
-    [store]
+    [store, isOpenAIEnabled]
   );
 
   return (

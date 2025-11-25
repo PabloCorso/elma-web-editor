@@ -6,6 +6,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --border-default: var(--color-slate-800);
+  --background-screen: var(--color-slate-900);
+  --background-primary: var(--color-slate-900);
+  --background-primary-hover: var(--color-slate-500);
+  --background-primary-active: var(--color-slate-400);
+}
+
 @layer theme {
   @theme {
     --font-sans: InterVariable, sans-serif;
@@ -15,5 +23,11 @@
   @theme inline {
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
+
+    --background-color-screen: var(--background-screen);
+    --background-color-primary: var(--background-primary);
+    --background-color-primary-hover: var(--background-primary-hover);
+    --background-color-primary-active: var(--background-primary-active);
+    --border-color-default: var(--border-default);
   }
 }

@@ -1,10 +1,11 @@
 import * as elmajs from "elmajs";
 import type { EditorState } from "../editor-state";
 import type { Level as LevelType } from "elmajs";
+import { isPolygonClockwise, shouldPolygonBeGround } from "../helpers";
 
 const { Level, ObjectType, Gravity } = elmajs;
 
-export async function getLevelFromState(state: EditorState) {
+export function getLevelFromState(state: EditorState) {
   // Validate that we have at least some level data
   if (!state.polygons || state.polygons.length === 0) {
     throw new Error(
@@ -23,13 +24,25 @@ export async function getLevelFromState(state: EditorState) {
   const level = new Level();
   level.name = state.levelName || "Untitled";
 
+  // Normalize polygon winding based on nesting (ground vs sky) before export
+  const normalizedPolygons = state.polygons.map((polygon) => {
+    const shouldBeGround = shouldPolygonBeGround(polygon, state.polygons);
+    // Export expects opposite ground/sky orientation than the canvas winding check
+    const shouldBeGroundForExport = !shouldBeGround;
+    const isClockwise = isPolygonClockwise(polygon.vertices);
+    const vertices =
+      shouldBeGroundForExport === isClockwise
+        ? polygon.vertices
+        : [...polygon.vertices].reverse();
+
+    return {
+      ...polygon,
+      vertices: vertices.map((vertex) => ensureFloatingPointPosition(vertex)),
+    };
+  });
+
   // Process polygons with floating point coordinates
-  level.polygons = state.polygons.map((polygon) => ({
-    ...polygon,
-    vertices: polygon.vertices.map((vertex) =>
-      ensureFloatingPointPosition(vertex)
-    ),
-  }));
+  level.polygons = normalizedPolygons;
 
   // Convert separate object arrays to elmajs objects array format
   const objects = [
@@ -68,14 +81,14 @@ export async function getLevelFromState(state: EditorState) {
 
   return level;
 }
+
 export function levelToBlob(level: LevelType): Blob {
   const buffer = level.toBuffer();
   const uint8Array = new Uint8Array(buffer);
   return new Blob([uint8Array], { type: "application/octet-stream" });
 }
 
-export async function downloadLevel(state: EditorState) {
-  const level = await getLevelFromState(state);
+export function downloadLevel(level: elmajs.Level) {
   const blob = levelToBlob(level);
   const url = URL.createObjectURL(blob);
 

@@ -13,7 +13,7 @@ export function Toolbar({
   return (
     <div
       className={cn(
-        "absolute inline-flex items-center rounded-[8px] border border-white/10 bg-slate-950/80 p-1.5 gap-1 shadow-sm",
+        "absolute inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ export function ToolButton({
     <button
       type="button"
       className={cn(
-        "rounded-[4px] shrink-0 hover:bg-white/20 active:bg-white/25 inline-flex items-center justify-center w-10 h-10",
+        "rounded-[4px] shrink-0 hover:bg-primary-hover/80 active:bg-primary-active/80 inline-flex items-center justify-center w-10 h-10",
         className
       )}
       title={name}
@@ -70,7 +70,10 @@ export function ToolControlButton({
     // <TooltipTrigger>
     <ToolButton
       type="button"
-      className={cn({ "bg-white/20": activeTool?.id === id }, className)}
+      className={cn(
+        { "bg-primary-hover/80": activeTool?.id === id },
+        className
+      )}
       title={`${name}${shortcut ? ` (${shortcut})` : ""}`}
       aria-label={name}
       onClick={() => {
