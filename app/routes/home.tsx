@@ -13,9 +13,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export function loader() {
-  return {
-    isOpenAIEnabled: !!process.env.OPENAI_API_KEY,
-  };
+  return { isOpenAIEnabled: !!process.env.OPENAI_API_KEY };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -26,10 +24,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <div className="flex h-[100dvh]">
         {/* <Sidebar isOpenAIEnabled={isOpenAIEnabled} /> */}
         <HeaderToolbar />
-        <ControlToolbar isOpenAIEnabled={isOpenAIEnabled} />
+        <ControlToolbar />
         <CanvasToolbar />
         <div className="flex-1">
-          <EditorView isOpenAIEnabled={isOpenAIEnabled} />
+          <EditorView />
         </div>
       </div>
     </EditorProvider>

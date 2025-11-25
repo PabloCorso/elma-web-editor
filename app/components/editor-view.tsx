@@ -7,7 +7,7 @@ import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
 import type { Tool } from "~/editor/tools/tool-interface";
 
-export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled: boolean }) {
+export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
   const resizeFrameRef = useRef<number | null>(null);

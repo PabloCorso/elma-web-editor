@@ -1,7 +1,4 @@
-import {
-  useEditorActions,
-  useEditorStore,
-} from "~/editor/use-editor-store";
+import { useEditorActions, useEditorStore } from "~/editor/use-editor-store";
 import appleImgUrl from "~/assets/elma/qfood1.png?url";
 import killerImgUrl from "~/assets/elma/QKILLER.png?url";
 import flowerImgUrl from "~/assets/elma/QEXIT.png?url";
