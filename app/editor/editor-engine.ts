@@ -433,8 +433,7 @@ export class EditorEngine {
     }
 
     if (this.debugMode) {
-      this.drawDebugInfoPanel();
-      this.drawMousePositionDebug(state);
+      this.drawDebugInfoPanel(state);
     }
   }
 
@@ -548,22 +547,12 @@ export class EditorEngine {
     const state = this.store.getState();
     const debug = debugPolygonOrientation(polygon, allPolygons);
 
-    debug.samplePoints.forEach((point, index) => {
-      const result = debug.containmentResults[index];
-      const pointColor = result.isGround ? "#00ff00" : "#ff0000";
-      this.ctx.fillStyle = pointColor;
-
-      this.ctx.beginPath();
-      this.ctx.arc(point.x, point.y, 3 / state.zoom, 0, 2 * Math.PI);
-      this.ctx.fill();
-
+    // Label each vertex with its coordinates
+    polygon.vertices.forEach((v) => {
       this.ctx.fillStyle = "#ffffff";
       this.ctx.font = `${12 / state.zoom}px Arial`;
-      this.ctx.fillText(
-        `${result.containmentCount}`,
-        point.x + 5 / state.zoom,
-        point.y - 5 / state.zoom
-      );
+      const label = `${v.x}, ${v.y}`;
+      this.ctx.fillText(label, v.x + 8 / state.zoom, v.y - 16 / state.zoom);
     });
 
     const center = debug.samplePoints[0];
@@ -575,7 +564,7 @@ export class EditorEngine {
     this.ctx.fillStyle = "#ffffff";
     this.ctx.font = `${14 / state.zoom}px Arial`;
     this.ctx.fillText(
-      `${shouldBeGround ? "G" : "S"}${isClockwise ? "CW" : "CCW"}`,
+      `${shouldBeGround ? "ground" : "sky"}-${isClockwise ? "clockwise" : "counter-clockwise"}`,
       center.x + 8 / state.zoom,
       center.y + 5 / state.zoom
     );
@@ -635,36 +624,27 @@ export class EditorEngine {
     console.debug("Debug mode:", this.debugMode ? "ON" : "OFF");
   }
 
-  private drawMousePositionDebug(state: EditorState) {
-    this.ctx.font = "12px 'Courier New', monospace";
-    this.ctx.fillStyle = "#ffffff";
-    this.ctx.textAlign = "left";
-    this.ctx.textBaseline = "top";
-
-    const text = `Mouse: (${state.mousePosition.x.toFixed(1)}, ${state.mousePosition.y.toFixed(1)})`;
-    this.ctx.fillText(text, 10, 30);
-
-    const cameraText = `Camera: (${state.viewPortOffset.x.toFixed(1)}, ${state.viewPortOffset.y.toFixed(1)})`;
-    this.ctx.fillText(cameraText, 10, 50);
-
-    const zoomText = `Zoom: ${state.zoom.toFixed(2)}`;
-    this.ctx.fillText(zoomText, 10, 70);
-  }
-
-  private drawDebugInfoPanel() {
+  private drawDebugInfoPanel(state: EditorState) {
     this.ctx.font = "14px 'Courier New', monospace";
     this.ctx.textAlign = "left";
     this.ctx.textBaseline = "top";
 
-    const line1 = "Debug Mode: ON";
-    const line2 = "Press 'D' to exit debug mode";
+    const lines = [
+      "Debug Mode: ON",
+      "Press 'D' to exit debug mode",
+      `Mouse: (${state.mousePosition.x.toFixed(1)}, ${state.mousePosition.y.toFixed(1)})`,
+      `Camera: (${state.viewPortOffset.x.toFixed(1)}, ${state.viewPortOffset.y.toFixed(1)})`,
+      `Zoom: ${state.zoom.toFixed(2)}`,
+    ];
 
-    const line1Width = this.ctx.measureText(line1).width;
-    const line2Width = this.ctx.measureText(line2).width;
-    const maxTextWidth = Math.max(line1Width, line2Width);
+    const padding = 10;
+    const lineHeight = 20;
+    const maxTextWidth = Math.max(
+      ...lines.map((line) => this.ctx.measureText(line).width)
+    );
 
-    const panelWidth = maxTextWidth + 20;
-    const panelHeight = 60;
+    const panelWidth = maxTextWidth + padding * 2;
+    const panelHeight = lines.length * lineHeight + padding * 2;
     const panelX = this.canvas.width - panelWidth - 10;
     const panelY = 10;
 
@@ -672,7 +652,12 @@ export class EditorEngine {
     this.ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
 
     this.ctx.fillStyle = "#ffffff";
-    this.ctx.fillText(line1, panelX + 10, panelY + 10);
-    this.ctx.fillText(line2, panelX + 10, panelY + 35);
+    lines.forEach((line, index) => {
+      this.ctx.fillText(
+        line,
+        panelX + padding,
+        panelY + padding + index * lineHeight
+      );
+    });
   }
 }

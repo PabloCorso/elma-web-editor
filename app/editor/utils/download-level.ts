@@ -1,6 +1,5 @@
 import * as elmajs from "elmajs";
 import type { EditorState } from "../editor-state";
-import type { Level as LevelType } from "elmajs";
 import { isPolygonClockwise, shouldPolygonBeGround } from "../helpers";
 
 const { Level, ObjectType, Gravity } = elmajs;
@@ -11,14 +10,6 @@ export function getLevelFromState(state: EditorState) {
     throw new Error(
       "No polygons found in level. Please add some geometry before downloading."
     );
-  }
-
-  // Ensure coordinates are floating point (not integers)
-  function ensureFloatingPointPosition(pos: { x: number; y: number }) {
-    return {
-      x: Math.round(pos.x * 10) / 10,
-      y: Math.round(pos.y * 10) / 10,
-    };
   }
 
   const level = new Level();
@@ -82,7 +73,15 @@ export function getLevelFromState(state: EditorState) {
   return level;
 }
 
-export function levelToBlob(level: LevelType): Blob {
+// Ensure coordinates are floating point (not integers)
+function ensureFloatingPointPosition(pos: elmajs.Position) {
+  return {
+    x: Number.isInteger(pos.x) ? parseFloat(pos.x.toFixed(1)) : pos.x,
+    y: Number.isInteger(pos.y) ? parseFloat(pos.y.toFixed(1)) : pos.y,
+  };
+}
+
+export function levelToBlob(level: elmajs.Level): Blob {
   const buffer = level.toBuffer();
   const uint8Array = new Uint8Array(buffer);
   return new Blob([uint8Array], { type: "application/octet-stream" });
