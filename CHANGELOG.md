@@ -14,6 +14,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+## 2025-11-27
+
+## Fixed
+
+- Fixed vertex being truncated on download, making close vertices end up with the same coordinates causing internal errors.
+
+Thanks to `@Markku` for identifying and reporting this issue.
+
 ## 2025-11-26
 
 ### Added
