@@ -39,13 +39,70 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 ## Planned features
 
-- AI Assistant
-  // TODO: update with in-game editor pics folder
 - Match features set of in-game editor:
-  - Pictures:
-    - Normal Picture (with distance)
-    - Texture (with mask and distance)
   - General help dialog
+  - Apple properties:
+    - Normal Food
+    - Gravity Up
+    - Gravity Down
+    - Gravity Left
+    - Gravity Right
+    - Food anim number (1-9)
+    - In-game set right clicking apple with move tool
+  - Pictures:
+    - Right click to select picture or mask with texture and left click to place.
+    - Right click the picture or texture to set properties.
+    - Normal picture
+      - barrel 380 S
+      - bridge 400 U
+      - bush1 550 S
+      - bush2 550 S
+      - bush3 440 S
+      - cliff 400 S
+      - edge 440 U
+      - flag 450 S
+      - hang 434 S
+      - log1 420 S
+      - log1 420 S
+      - log2 420 S
+      - mushroom 430 S
+      - plantain 450 U
+      - secret 550 S
+      - sedge 430 S
+      - st3top 740 S
+      - supphred 380 S
+      - support1 380 U
+      - support2 380 U
+      - support2 380 U
+      - support3 380 U
+      - suppvred 380 S
+      - susp 380 U
+      - suspdown 380 U
+      - suspup 380 U
+      - tree1 550 S
+      - tree2 540 S
+      - tree3 560 S
+      - tree4 600 S
+      - tree4 600 S
+      - tree5 600 S
+      - OTHER: 999 G
+    - Mask with texture
+      - Masks: maskbig, maskhor, masklitt, masktop
+      - brick 750 G
+      - ground 800 G
+      - sky 800 S
+      - stone1 750 G
+      - stone2 750 G
+      - stone3 750 S
+    - Picture properties info:
+      - Default: Distance Clipping
+      - Current: (1-999) (U, S, G)
+      - S = Sky: only those parts of the picture are drawn that are in the sky.
+      - G = Ground: only those parts of the picture are drawn that are in the ground.
+      - U = Unclipped.
+  - Polygon properties:
+    - Grass
+    - A grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
   - Level properties:
     - Foreground (with distance?)
     - Background (with distance?)
@@ -56,12 +113,21 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - View Grass
     - View Pictures
   - Check Topology
-  - Zoom level info (match in-game zoom levels)
+    - Error: Two lines are intersecting each others!
+      After this dialog you will see the intersection.
+      Use Zoomout to see where it is located!
+    - Everything seems to be all right.
+  - Zoom level info.
+  - Delete tool
+    - Cannot delete Start object or last Exit object.
 
-## Future ideas
+- AI Assistant
 
 - Mobile support:
   - Touch gestures for pan/zoom
-  - Mobile toolbar updates?
-  - Erase tool?
+  - Erase tool
+  - Mobile toolbar
+
+## Other ideas
+
 - Export to SVG

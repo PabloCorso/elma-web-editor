@@ -7,7 +7,6 @@ import {
   findPolygonVertexForEditing,
 } from "../utils/selection-utils";
 import { colors } from "../constants";
-import { isPolygonClockwise, shouldPolygonBeGround } from "../helpers";
 import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
 
