@@ -33,6 +33,7 @@ import {
   type DialogProps,
 } from "./ui/dialog";
 import { useState } from "react";
+import { supportsFilePickers } from "~/utils/file-session";
 
 export function HeaderToolbar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -122,12 +123,14 @@ export function HeaderToolbar() {
               >
                 Save
               </DropdownMenuItem>
-              <DropdownMenuItem
-                iconBefore={<FilePlusIcon />}
-                onClick={handleSaveAs}
-              >
-                Save as
-              </DropdownMenuItem>
+              {supportsFilePickers() && (
+                <DropdownMenuItem
+                  iconBefore={<FilePlusIcon />}
+                  onClick={handleSaveAs}
+                >
+                  Save as
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -177,47 +180,49 @@ function SettingsDialog(props: DialogProps) {
         <DialogBody>
           <p>Elma Web Editor (beta) by Pab [dat]</p>
 
-          <div className="mt-4 border border-gray-800 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span>
-                  Level folder{" "}
-                  {levelFolderName ? (
-                    <>
-                      set:{" "}
-                      <span className="font-semibold text-white">
-                        {levelFolderName}
-                      </span>
-                    </>
-                  ) : (
-                    "not set"
+          {supportsFilePickers() && (
+            <div className="mt-4 border border-gray-800 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span>
+                    Level folder{" "}
+                    {levelFolderName ? (
+                      <>
+                        set:{" "}
+                        <span className="font-semibold text-white">
+                          {levelFolderName}
+                        </span>
+                      </>
+                    ) : (
+                      "not set"
+                    )}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  {levelFolderName && (
+                    <button
+                      className="text-sm text-red-300 underline"
+                      onClick={async () => {
+                        await store.getState().levelFolder?.forget();
+                        forceUpdate((x) => x + 1);
+                      }}
+                    >
+                      Forget
+                    </button>
                   )}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                {levelFolderName && (
                   <button
-                    className="text-sm text-red-300 underline"
+                    className="text-sm text-blue-300 underline"
                     onClick={async () => {
-                      await store.getState().levelFolder?.forget();
+                      await store.getState().levelFolder?.pickFolder();
                       forceUpdate((x) => x + 1);
                     }}
                   >
-                    Forget
+                    {levelFolderName ? "Change" : "Set"}
                   </button>
-                )}
-                <button
-                  className="text-sm text-blue-300 underline"
-                  onClick={async () => {
-                    await store.getState().levelFolder?.pickFolder();
-                    forceUpdate((x) => x + 1);
-                  }}
-                >
-                  {levelFolderName ? "Change" : "Set"}
-                </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </DialogBody>
       </DialogContent>
     </Dialog>

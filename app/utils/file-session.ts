@@ -110,7 +110,7 @@ function isClient() {
   return typeof window !== "undefined";
 }
 
-function supportsFilePickers() {
+export function supportsFilePickers() {
   return (
     typeof window !== "undefined" &&
     "showOpenFilePicker" in window &&
