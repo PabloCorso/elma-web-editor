@@ -29,6 +29,7 @@ type EditorEngineOptions = {
   minZoom?: number;
   maxZoom?: number;
   panSpeed?: number;
+  zoomStep?: number;
   store?: EditorStore;
 };
 
@@ -46,6 +47,7 @@ export class EditorEngine {
   private minZoom;
   private maxZoom;
   private panSpeed;
+  private zoomStep;
 
   // Navigation state
   private isPanning = false;
@@ -62,6 +64,7 @@ export class EditorEngine {
       minZoom = 0.2,
       maxZoom = 10000,
       panSpeed = 1.0,
+      zoomStep = 5,
       store,
       initialLgr,
     }: EditorEngineOptions = {}
@@ -75,6 +78,7 @@ export class EditorEngine {
     this.minZoom = minZoom;
     this.maxZoom = maxZoom;
     this.panSpeed = panSpeed;
+    this.zoomStep = zoomStep;
     this.lgr = initialLgr || new elmajs.LGR();
 
     this.loadLgrPictures().catch((err) =>
@@ -282,7 +286,6 @@ export class EditorEngine {
 
     const state = this.store.getState();
     const panAmount = 50 / state.zoom;
-    const zoomAmount = 0.1;
 
     // Let active tool handle the key first
     const activeTool = state.actions.getActiveTool();
@@ -344,27 +347,13 @@ export class EditorEngine {
       case "+":
       case "=":
         event.preventDefault();
-        const currentZoom = state.zoom;
-        updateZoom({
-          newZoom: currentZoom + zoomAmount,
-          minZoom: this.minZoom,
-          maxZoom: this.maxZoom,
-          currentZoom: state.zoom,
-          setZoom: state.actions.setZoom,
-        });
+        this.zoomInOut(this.zoomStep);
         break;
 
       case "-":
       case "_":
         event.preventDefault();
-        const currentZoom2 = state.zoom;
-        updateZoom({
-          newZoom: currentZoom2 - zoomAmount,
-          minZoom: this.minZoom,
-          maxZoom: this.maxZoom,
-          currentZoom: state.zoom,
-          setZoom: state.actions.setZoom,
-        });
+        this.zoomInOut(-this.zoomStep);
         break;
 
       case "1":
@@ -379,6 +368,29 @@ export class EditorEngine {
         break;
     }
   };
+
+  private zoomInOut(value: number) {
+    const state = this.store.getState();
+    const anchor = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
+    updateZoom({
+      newZoom: state.zoom + value,
+      minZoom: this.minZoom,
+      maxZoom: this.maxZoom,
+      currentZoom: state.zoom,
+      setZoom: state.actions.setZoom,
+      mousePosition: anchor,
+      currentOffset: state.viewPortOffset,
+      setCamera: anchor ? state.actions.setCamera : undefined,
+    });
+  }
+
+  public zoomIn(zoom = this.zoomStep) {
+    this.zoomInOut(zoom);
+  }
+
+  public zoomOut(zoom = this.zoomStep) {
+    this.zoomInOut(-zoom);
+  }
 
   private handleResize = () => {
     const rect = this.canvas.parentElement?.getBoundingClientRect();

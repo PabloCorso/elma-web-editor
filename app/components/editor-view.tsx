@@ -13,7 +13,30 @@ async function loadLgrFromUrl(url: string = defaultLgr) {
   return elmajs.LGR.from(new Uint8Array(buf));
 }
 
-export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
+export function EditorView({
+  canvasRef,
+}: {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+}) {
+  return (
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full cursor-crosshair select-none"
+      style={{
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
+      }}
+    />
+  );
+}
+
+export function useEditorView({
+  isOpenAIEnabled,
+}: {
+  isOpenAIEnabled?: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
   const resizeFrameRef = useRef<number | null>(null);
@@ -124,16 +147,5 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
     [store, initialLgr, isOpenAIEnabled]
   );
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-full cursor-crosshair select-none"
-      style={{
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MozUserSelect: "none",
-        msUserSelect: "none",
-      }}
-    />
-  );
+  return { canvasRef, engineRef };
 }

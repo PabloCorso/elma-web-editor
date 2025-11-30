@@ -6,8 +6,6 @@ import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "../utils/file-session";
 import { LevelFolder } from "../utils/level-folder";
 
-type FolderPermissionState = PermissionState | "unknown";
-
 export type EditorState = {
   // Level data
   levelName: string;
@@ -21,7 +19,7 @@ export type EditorState = {
   activeToolId: string;
   mousePosition: Position;
 
-  // Camera state (matching reference editor approach)
+  // Camera state
   viewPortOffset: { x: number; y: number };
   zoom: number;
 
