@@ -25,10 +25,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 ## Feedback
 
-- Instead of canceling add polygon on changing tool, add it.
-- Save and Save as do same thing for me (just download lev)
-- can't set lev folder (nothing happens)
-- im on Firefox
 - zoom steps are too close for my liking (too many klicks required to zoom in/out)
 - edit: just realised ctr+mwheel zooms 👌
 - hotkeys would be nice

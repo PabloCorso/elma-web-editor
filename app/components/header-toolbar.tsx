@@ -1,7 +1,6 @@
 import {
   useEditorActions,
   useEditorActiveTool,
-  useEditorLevelFolderName,
   useEditor,
   useEditorStore,
   useLevelName,
@@ -23,17 +22,9 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { LevelImporter } from "~/editor/level-importer";
 import { getLevelFromState } from "~/editor/utils/download-level";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  type DialogProps,
-} from "./ui/dialog";
 import { useState } from "react";
 import { supportsFilePickers } from "~/utils/file-session";
+import { SettingsDialog } from "./settings";
 
 export function HeaderToolbar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -161,70 +152,5 @@ export function HeaderToolbar() {
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
-  );
-}
-
-function SettingsDialog(props: DialogProps) {
-  const store = useEditorStore();
-  const levelFolderName = useEditorLevelFolderName();
-  const [_, forceUpdate] = useState(0);
-  return (
-    <Dialog {...props}>
-      <DialogContent>
-        <DialogHeader showCloseButton>
-          <DialogTitle>Settings</DialogTitle>
-        </DialogHeader>
-        <DialogDescription className="sr-only">
-          Application settings
-        </DialogDescription>
-        <DialogBody>
-          <p>Elma Web Editor (beta) by Pab [dat]</p>
-
-          {supportsFilePickers() && (
-            <div className="mt-4 border border-gray-800 rounded-lg p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span>
-                    Level folder{" "}
-                    {levelFolderName ? (
-                      <>
-                        set:{" "}
-                        <span className="font-semibold text-white">
-                          {levelFolderName}
-                        </span>
-                      </>
-                    ) : (
-                      "not set"
-                    )}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  {levelFolderName && (
-                    <button
-                      className="text-sm text-red-300 underline"
-                      onClick={async () => {
-                        await store.getState().levelFolder?.forget();
-                        forceUpdate((x) => x + 1);
-                      }}
-                    >
-                      Forget
-                    </button>
-                  )}
-                  <button
-                    className="text-sm text-blue-300 underline"
-                    onClick={async () => {
-                      await store.getState().levelFolder?.pickFolder();
-                      forceUpdate((x) => x + 1);
-                    }}
-                  >
-                    {levelFolderName ? "Change" : "Set"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogBody>
-      </DialogContent>
-    </Dialog>
   );
 }

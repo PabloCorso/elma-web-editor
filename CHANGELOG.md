@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Updated on feedback from `@insguy`:
+  - Instead of canceling add polygon on changing tool, add it.
+  - Not clear save and save as do same thing for me (just download lev) - clarified in UI (Chrome only supports file pickers).
+- Add default LGR support for current kuski, apples, killers and exit objects drawings.
+
 ## 2025-11-27
 
 - First Battle by `@insguy` using the level editor: https://elma.online/battles/209393
