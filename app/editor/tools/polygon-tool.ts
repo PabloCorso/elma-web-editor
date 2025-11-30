@@ -36,19 +36,21 @@ export class PolygonTool extends Tool {
     });
   }
 
-  getTemporaryPolygons(): Polygon[] {
+  getDrafts() {
     const state = this.store.getState();
     const toolState = state.actions.getToolState<PolygonToolState>("polygon");
     const drawingPolygon = toolState.drawingPolygon;
 
     if (drawingPolygon.length >= 3) {
       // Create a temporary polygon that includes the current mouse position
-      return [
-        { vertices: [...drawingPolygon, state.mousePosition], grass: false },
-      ];
+      return {
+        polygons: [
+          { vertices: [...drawingPolygon, state.mousePosition], grass: false },
+        ],
+      };
     }
 
-    return [];
+    return { polygons: [] };
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {

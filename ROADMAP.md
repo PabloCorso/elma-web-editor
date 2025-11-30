@@ -128,6 +128,8 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Erase tool
   - Mobile toolbar
 
+- LGR support
+
 ## Other ideas
 
 - Export to SVG

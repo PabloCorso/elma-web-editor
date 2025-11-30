@@ -1,11 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorEngine } from "../editor/editor-engine";
 import { useEditorStore } from "~/editor/use-editor-store";
 import { PolygonTool } from "~/editor/tools/polygon-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
-import type { Tool } from "~/editor/tools/tool-interface";
+import * as elmajs from "elmajs";
+import defaultLgr from "../assets/lgr/Default.lgr?url";
+
+async function loadLgrFromUrl(url: string = defaultLgr) {
+  const buf = await fetch(url).then((r) => r.arrayBuffer());
+  return elmajs.LGR.from(new Uint8Array(buf));
+}
 
 export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,10 +23,16 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
   });
   const store = useEditorStore();
 
+  const [initialLgr, setInitialLgr] = useState<elmajs.LGR | null>(null);
+
+  useEffect(function loadDefaultLgr() {
+    loadLgrFromUrl().then(setInitialLgr);
+  }, []);
+
   useEffect(
     function initializeEditorEngine() {
       const canvas = canvasRef.current;
-      if (!canvas || engineRef.current) return;
+      if (!canvas || engineRef.current || !initialLgr) return;
 
       const parent = canvas.parentElement;
       if (!parent) return;
@@ -71,20 +83,25 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
 
       applyResize();
 
-      const tools: Tool[] = [
-        new PolygonTool(store),
-        new SelectTool(store),
-        new AppleTool(store),
-        new KillerTool(store),
-        new FlowerTool(store),
+      const tools = [
+        PolygonTool,
+        SelectTool,
+        AppleTool,
+        KillerTool,
+        FlowerTool,
       ];
 
       const widgets = [];
       if (isOpenAIEnabled) {
-        widgets.push(new AIWidget(store));
+        widgets.push(AIWidget);
       }
 
-      engineRef.current = new EditorEngine(canvas, { store, tools, widgets });
+      engineRef.current = new EditorEngine(canvas, {
+        store,
+        tools,
+        widgets,
+        initialLgr,
+      });
 
       // Add resize observer to handle parent size changes (batched to avoid flicker)
       const resizeObserver = new ResizeObserver(() => {
@@ -104,7 +121,7 @@ export function EditorView({ isOpenAIEnabled }: { isOpenAIEnabled?: boolean }) {
         }
       };
     },
-    [store, isOpenAIEnabled]
+    [store, initialLgr, isOpenAIEnabled]
   );
 
   return (

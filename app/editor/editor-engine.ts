@@ -1,6 +1,4 @@
 import { type EditorState } from "./editor-state";
-import { SpriteManager } from "./sprite-manager";
-import { ObjectRenderer } from "./utils/object-renderer";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
 import {
@@ -9,20 +7,40 @@ import {
   debugPolygonOrientation,
 } from "./helpers";
 import { colors } from "./constants";
-import type { Polygon } from "elmajs";
+import { type Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
+import * as elmajs from "elmajs";
+import { decodeLgrPictureBitmap } from "./utils/pcx-loader";
+import { OBJECT_DIAMETER } from "elmajs";
+import { bikeRender } from "./bike-render";
+
+const OBJECT_FRAME_PX = 40; // width of a single frame in object sprite sheet
+const OBJECT_FPS = 30; // animation speed for object sprites
+
+type EditorEngineOptions = {
+  initialLevel?: LevelData;
+  initialLgr?: elmajs.LGR;
+  tools?: Array<new (store: EditorStore) => Tool>;
+  widgets?: Array<new (store: EditorStore) => Widget>;
+  initialToolId?: string;
+  minZoom?: number;
+  maxZoom?: number;
+  panSpeed?: number;
+  store?: EditorStore;
+};
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private animationId: number | null = null;
-  private spriteManager: SpriteManager;
-  private objectRenderer: ObjectRenderer;
   private debugMode = false;
   private store: EditorStore;
+  private lgr: elmajs.LGR;
+  private lgrSprites: Record<string, ImageBitmap> = {};
+  private lgrLoaded = false;
 
   // Camera system
   private minZoom;
@@ -45,34 +63,34 @@ export class EditorEngine {
       maxZoom = 10000,
       panSpeed = 1.0,
       store,
-    }: {
-      initialLevel?: LevelData;
-      tools?: Tool[];
-      widgets?: Widget[];
-      initialToolId?: string;
-      minZoom?: number;
-      maxZoom?: number;
-      panSpeed?: number;
-      store?: EditorStore;
-    } = {}
+      initialLgr,
+    }: EditorEngineOptions = {}
   ) {
-    this.canvas = canvas;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas context missing");
+
+    this.canvas = canvas;
     this.ctx = ctx;
-    this.spriteManager = new SpriteManager();
-    this.objectRenderer = new ObjectRenderer(this.spriteManager);
+
     this.minZoom = minZoom;
     this.maxZoom = maxZoom;
     this.panSpeed = panSpeed;
+    this.lgr = initialLgr || new elmajs.LGR();
+
+    this.loadLgrPictures().catch((err) =>
+      console.error("Failed to load LGR pictures", err)
+    );
 
     // Use provided store or create a new one
     this.store = store || createEditorStore();
     const state = this.store.getState();
-    tools.forEach((tool) => state.actions.registerTool(tool));
+
+    tools.forEach((tool) => state.actions.registerTool(new tool(this.store)));
     state.actions.activateTool(initialToolId);
 
-    widgets.forEach((widget) => state.actions.registerWidget(widget));
+    widgets.forEach((widget) =>
+      state.actions.registerWidget(new widget(this.store))
+    );
 
     this.setupEventListeners();
     this.setupStoreListeners();
@@ -86,6 +104,20 @@ export class EditorEngine {
   // Expose store for React integration
   getStore(): EditorStore {
     return this.store;
+  }
+
+  private async loadLgrPictures() {
+    for (const picture of this.lgr.pictureData) {
+      const name = picture.name
+        .trim()
+        .toLowerCase()
+        .replace(/\.pcx$/, "");
+      const bmp = await decodeLgrPictureBitmap(picture);
+      if (bmp) this.lgrSprites[name] = bmp;
+      else console.warn(`${picture.name} sprite not found in LGR`);
+    }
+
+    this.lgrLoaded = true;
   }
 
   private setupEventListeners() {
@@ -453,7 +485,7 @@ export class EditorEngine {
 
     // Get temporary polygons from the active tool
     const activeTool = state.actions.getActiveTool();
-    const temporaryPolygons = activeTool?.getTemporaryPolygons?.() || [];
+    const temporaryPolygons = activeTool?.getDrafts?.()?.polygons || [];
 
     // Include temporary polygons in the list for rendering calculations
     const allPolygonsForRendering = [...state.polygons, ...temporaryPolygons];
@@ -571,38 +603,84 @@ export class EditorEngine {
   }
 
   private drawObjects() {
+    if (!this.lgrLoaded) return;
+
     const state = this.store.getState();
-    this.objectRenderer.renderObjects(
-      this.ctx,
-      state.apples.map((a) => a.position),
-      ObjectRenderer.CONFIGS.apple,
-      state.showSprites,
-      state.animateSprites
-    );
 
-    this.objectRenderer.renderObjects(
-      this.ctx,
-      state.killers,
-      ObjectRenderer.CONFIGS.killer,
-      state.showSprites,
-      state.animateSprites
-    );
+    const activeTool = state.actions.getActiveTool();
+    const drafts = activeTool?.getDrafts?.() || {};
 
-    this.objectRenderer.renderObjects(
-      this.ctx,
-      state.flowers,
-      ObjectRenderer.CONFIGS.flower,
-      state.showSprites,
-      state.animateSprites
-    );
+    bikeRender({
+      ctx: this.ctx,
+      lgrSprites: this.lgrSprites,
+      startX: state.start.x,
+      startY: state.start.y,
+    });
 
-    this.objectRenderer.renderObject(
-      this.ctx,
-      state.start,
-      ObjectRenderer.CONFIGS.start,
-      state.showSprites,
-      false
-    );
+    const appleSprite = this.lgrSprites["qfood1"];
+    if (appleSprite) {
+      this.drawObjectSprite(
+        appleSprite,
+        state.apples.map(({ position }) => position),
+        state.animateSprites
+      );
+
+      // // Draw draft apples from the active tool
+      // if (drafts.apples) {
+      //   this.drawObjectSprite(
+      //     appleSprite,
+      //     drafts.apples.map(({ position }) => position),
+      //     state.animateSprites,
+      //     0.5
+      //   );
+      // }
+    }
+
+    const killerSprite = this.lgrSprites["qkiller"];
+    if (killerSprite) {
+      this.drawObjectSprite(killerSprite, state.killers, state.animateSprites);
+    }
+
+    const exitSprite = this.lgrSprites["qexit"];
+    if (exitSprite) {
+      this.drawObjectSprite(exitSprite, state.flowers, state.animateSprites);
+    }
+  }
+
+  private drawObjectSprite(
+    sprite: ImageBitmap,
+    positions: Array<{ x: number; y: number }>,
+    animate = false,
+    opacity = 1
+  ) {
+    const frameWidth = OBJECT_FRAME_PX;
+    const frameHeight = Math.min(OBJECT_FRAME_PX, sprite.height);
+    const frames = Math.max(1, Math.floor(sprite.width / frameWidth));
+    const frameIndex = animate
+      ? Math.floor((performance.now() / 1000) * OBJECT_FPS) % frames
+      : 0;
+    const sx = frameIndex * frameWidth;
+    const sy = 0;
+
+    const targetHeight = OBJECT_DIAMETER;
+    const targetWidth = (frameWidth / frameHeight) * targetHeight;
+
+    this.ctx.save();
+    this.ctx.globalAlpha = opacity;
+    positions.forEach((position) => {
+      this.ctx.drawImage(
+        sprite,
+        sx,
+        sy,
+        frameWidth,
+        frameHeight,
+        position.x - targetWidth / 2,
+        position.y - targetHeight / 2,
+        targetWidth,
+        targetHeight
+      );
+    });
+    this.ctx.restore();
   }
 
   public destroy() {
