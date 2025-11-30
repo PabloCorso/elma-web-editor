@@ -1,8 +1,6 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { EditorStore } from "../editor-store";
-import type { Polygon, Position } from "elmajs";
-import type { Apple } from "../editor.types";
 
 export class AppleTool extends Tool {
   readonly id = "apple";
@@ -22,16 +20,6 @@ export class AppleTool extends Tool {
     });
     return true;
   }
-
-  // getDrafts() {
-  //   const state = this.store.getState();
-  //   const draftApple: Apple = {
-  //     position: state.mousePosition,
-  //     animation: 0,
-  //     gravity: 0,
-  //   };
-  //   return { apples: [draftApple] };
-  // }
 }
 
 export class KillerTool extends Tool {

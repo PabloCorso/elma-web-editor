@@ -607,9 +607,6 @@ export class EditorEngine {
 
     const state = this.store.getState();
 
-    const activeTool = state.actions.getActiveTool();
-    const drafts = activeTool?.getDrafts?.() || {};
-
     bikeRender({
       ctx: this.ctx,
       lgrSprites: this.lgrSprites,
@@ -624,16 +621,6 @@ export class EditorEngine {
         state.apples.map(({ position }) => position),
         state.animateSprites
       );
-
-      // // Draw draft apples from the active tool
-      // if (drafts.apples) {
-      //   this.drawObjectSprite(
-      //     appleSprite,
-      //     drafts.apples.map(({ position }) => position),
-      //     state.animateSprites,
-      //     0.5
-      //   );
-      // }
     }
 
     const killerSprite = this.lgrSprites["qkiller"];
