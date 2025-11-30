@@ -25,7 +25,10 @@ export class PolygonTool extends Tool {
   }
 
   onDeactivate(): void {
-    this.clear();
+    const finalized = this.finalizeDrawingOrRestore();
+    if (!finalized) {
+      this.clear();
+    }
   }
 
   clear(): void {
@@ -131,6 +134,10 @@ export class PolygonTool extends Tool {
       return true;
     }
 
+    if (event.key === "Enter") {
+      return this.finalizeDrawingOrRestore();
+    }
+
     if (event.key === " " || event.key === "Space") {
       // Reverse the direction of the polygon by reversing the vertices array
       if (toolState.drawingPolygon.length > 1) {
@@ -146,27 +153,7 @@ export class PolygonTool extends Tool {
   }
 
   onRightClick(_event: MouseEvent, _context: EventContext): boolean {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
-
-    if (toolState.drawingPolygon.length >= 3) {
-      const newPolygon = {
-        vertices: [...toolState.drawingPolygon],
-        grass: false,
-      };
-      this.addPolygon(newPolygon);
-      this.clear();
-    } else if (toolState.drawingPolygon.length > 0) {
-      // If we're editing an existing polygon, restore it
-      if (toolState.originalPolygon) {
-        state.actions.setPolygons([
-          ...state.polygons,
-          toolState.originalPolygon,
-        ]);
-      }
-
-      this.clear();
-    }
+    this.finalizeDrawingOrRestore();
     return true;
   }
 
@@ -240,6 +227,34 @@ export class PolygonTool extends Tool {
   private addPolygon(polygon: Polygon): void {
     const state = this.store.getState();
     state.actions.setPolygons([...state.polygons, polygon]);
+  }
+
+  private finalizeDrawingOrRestore(): boolean {
+    const state = this.store.getState();
+    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    if (!toolState) return false;
+
+    if (toolState.drawingPolygon.length >= 3) {
+      this.addPolygon({
+        vertices: [...toolState.drawingPolygon],
+        grass: false,
+      });
+      this.clear();
+      return true;
+    }
+
+    if (toolState.drawingPolygon.length > 0) {
+      if (toolState.originalPolygon) {
+        state.actions.setPolygons([
+          ...state.polygons,
+          toolState.originalPolygon,
+        ]);
+      }
+      this.clear();
+      return true;
+    }
+
+    return false;
   }
 
   private startEditingFromVertex(
