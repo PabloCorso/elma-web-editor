@@ -8,6 +8,7 @@ Topology validity
 
 - Ensure vertices aren’t overlapping or too close.
 - Detect duplicate vertices.
+- Make sure that level width and height are <= 188
 
 originally both vertices were at (16.4, 7.2), editor moved the other one to (16.400202, 7.2002801666666665)
 looks like there's some rng, in insguy's fixed version it moved to (16.400261666666665, 7.200239666666667)
