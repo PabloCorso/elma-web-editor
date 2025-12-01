@@ -6,7 +6,7 @@ import {
   useLevelName,
 } from "~/editor/use-editor-store";
 import logo from "../assets/bear-helmet.png";
-import { Toolbar, ToolButton } from "./toolbar";
+import { Toolbar, ToolbarButton } from "./toolbar";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -81,12 +81,12 @@ export function HeaderToolbar() {
           <DropdownMenuTrigger>
             <div className="relative">
               <h1 className="sr-only">Elma Web Editor</h1>
-              <ToolButton name="Elma Web Editor">
+              <ToolbarButton aria-label="Elma Web Editor">
                 <span className="absolute -top-0 -right-2 px-1 text-[8px] font-semibold bg-blue-500 opacity-75 text-white rounded-full">
                   BETA
                 </span>
                 <img src={logo} className="w-8 h-8 isolate" />
-              </ToolButton>
+              </ToolbarButton>
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>

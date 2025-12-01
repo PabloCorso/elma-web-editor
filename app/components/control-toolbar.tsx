@@ -9,8 +9,9 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { SpriteIcon } from "./sprite-icon";
 import { useEffect } from "react";
-import { Toolbar, ToolControlButton } from "./toolbar";
+import { ToolControlButton } from "./tool-button";
 import { defaultTools } from "~/editor/tools/default-tools";
+import { Toolbar } from "./toolbar";
 
 export function ControlToolbar({
   isOpenAIEnabled,

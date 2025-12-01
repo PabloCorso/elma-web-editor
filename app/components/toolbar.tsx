@@ -4,6 +4,12 @@ import {
 } from "~/editor/use-editor-store";
 import { cn } from "~/utils/misc";
 import { Icon } from "./ui/icon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  type TooltipContentProps,
+} from "./ui/tooltip";
 
 export function Toolbar({
   className,
@@ -23,16 +29,13 @@ export function Toolbar({
   );
 }
 
-type ToolButtonProps = React.ComponentPropsWithRef<"button"> & {
-  name?: string;
-};
+type ToolbarButtonProps = React.ComponentPropsWithRef<"button">;
 
-export function ToolButton({
-  name,
+export function ToolbarButton({
   className,
   children,
   ...props
-}: ToolButtonProps) {
+}: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -40,70 +43,9 @@ export function ToolButton({
         "rounded-[4px] shrink-0 hover:bg-primary-hover/80 active:bg-primary-active/80 inline-flex items-center justify-center w-10 h-10",
         className
       )}
-      title={name}
-      aria-label={name}
       {...props}
     >
       <Icon size="lg">{children}</Icon>
     </button>
   );
 }
-
-type ToolActionButtonProps = ToolButtonProps & {
-  id?: string;
-  name?: string;
-  shortcut?: string;
-};
-
-export function ToolControlButton({
-  id,
-  name,
-  shortcut,
-  className,
-  children,
-  ...props
-}: ToolActionButtonProps) {
-  const activeTool = useEditorActiveTool();
-  const { activateTool } = useEditorActions();
-  return (
-    // <Tooltip>
-    // <TooltipTrigger>
-    <ToolButton
-      type="button"
-      className={cn(
-        { "bg-primary-hover/80": activeTool?.meta.id === id },
-        className
-      )}
-      title={`${name}${shortcut ? ` (${shortcut})` : ""}`}
-      aria-label={name}
-      onClick={() => {
-        id && activateTool(id);
-      }}
-      {...props}
-    >
-      {children}
-    </ToolButton>
-    // </TooltipTrigger>
-    // <TooltipContent className="text-xs">{label}</TooltipContent>
-    // </Tooltip>
-  );
-}
-
-// export function ToolbarButtonMenu({ children, ...props }: DropdownMenuProps) {
-//   return (
-//     <DropdownMenu {...props}>
-//       <DropdownMenuTrigger>
-//         <IconButton size="sm" variant="ghost" className="w-4 rounded-md">
-//           <CaretDownIcon className="h-3 w-3" />
-//         </IconButton>
-//       </DropdownMenuTrigger>
-//       <DropdownMenuContent
-//         align="start"
-//         side="top"
-//         className="flex min-w-0 flex-col-reverse border-0"
-//       >
-//         {children}
-//       </DropdownMenuContent>
-//     </DropdownMenu>
-//   );
-// }

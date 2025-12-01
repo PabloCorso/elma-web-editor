@@ -1,11 +1,12 @@
-import { useEditorActions, useZoom } from "~/editor/use-editor-store";
-import { Toolbar, ToolButton } from "./toolbar";
+import { useEditorActions } from "~/editor/use-editor-store";
+import { Toolbar } from "./toolbar";
 import {
   CornersOutIcon,
   MinusIcon,
   PlusIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import type { EditorEngine } from "~/editor/editor-engine";
+import { ToolButton } from "./tool-button";
 
 export function CanvasToolbar({
   engineRef,
@@ -15,10 +16,18 @@ export function CanvasToolbar({
   const { triggerFitToView } = useEditorActions();
   return (
     <Toolbar className="right-4 bottom-4">
-      <ToolButton name="Zoom In" onClick={() => engineRef.current?.zoomIn()}>
+      <ToolButton
+        name="Zoom In"
+        shortcut="+"
+        onClick={() => engineRef.current?.zoomIn()}
+      >
         <PlusIcon />
       </ToolButton>
-      <ToolButton name="Zoom Out" onClick={() => engineRef.current?.zoomOut()}>
+      <ToolButton
+        name="Zoom Out"
+        shortcut="-"
+        onClick={() => engineRef.current?.zoomOut()}
+      >
         <MinusIcon />
       </ToolButton>
       <ToolButton name="Fit to view" onClick={triggerFitToView}>
