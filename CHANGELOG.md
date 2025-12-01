@@ -2,11 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## 2025-12-01
 
 - Updated on feedback from `@insguy`:
   - Instead of canceling add polygon on changing tool, add it.
   - Not clear save and save as do same thing for me (just download lev) - clarified in UI (Chrome only supports file pickers).
+  - Increased zoom out/in steps to reduce number of clicks.
+  - Changed P (Polygon) to V (Vertex) V is more intuitive and easier to reach.
 - Add default LGR support for current kuski, apples, killers and exit objects drawings.
 
 ## 2025-11-27

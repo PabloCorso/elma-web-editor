@@ -43,7 +43,7 @@ export function useLocalStorageSync(key = "elma-web-store") {
 
         // Restore other state
         store.setState({
-          activeToolId: savedData.activeToolId || "polygon",
+          activeToolId: savedData.activeToolId,
           animateSprites: savedData.animateSprites ?? true,
           showSprites: savedData.showSprites ?? true,
           viewPortOffset: savedData.viewPortOffset || { x: 0, y: 0 },

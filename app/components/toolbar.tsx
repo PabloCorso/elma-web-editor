@@ -71,7 +71,7 @@ export function ToolControlButton({
     <ToolButton
       type="button"
       className={cn(
-        { "bg-primary-hover/80": activeTool?.id === id },
+        { "bg-primary-hover/80": activeTool?.meta.id === id },
         className
       )}
       title={`${name}${shortcut ? ` (${shortcut})` : ""}`}

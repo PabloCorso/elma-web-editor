@@ -10,6 +10,7 @@ import {
 import { SpriteIcon } from "./sprite-icon";
 import { useEffect } from "react";
 import { Toolbar, ToolControlButton } from "./toolbar";
+import { defaultTools } from "~/editor/tools/default-tools";
 
 export function ControlToolbar({
   isOpenAIEnabled,
@@ -26,11 +27,11 @@ export function ControlToolbar({
       const key = e.key.toUpperCase();
       const state = store.getState();
       const tool = Array.from(state.toolsMap.values()).find(
-        (tool) => tool.shortcut?.toUpperCase() === key
+        (tool) => tool.meta.shortcut?.toUpperCase() === key
       );
       if (tool) {
         e.preventDefault();
-        activateTool(tool.id);
+        activateTool(tool.meta.id);
       }
     };
 
@@ -42,19 +43,19 @@ export function ControlToolbar({
 
   return (
     <Toolbar className="flex-col h-fit inset-y-0 m-auto left-4">
-      <ToolControlButton id="select" name="Select" shortcut="S">
+      <ToolControlButton {...defaultTools.select}>
         <CursorIcon weight="fill" />
       </ToolControlButton>
-      <ToolControlButton id="polygon" name="Polygon" shortcut="P">
+      <ToolControlButton {...defaultTools.vertex}>
         <LineSegmentsIcon weight="fill" />
       </ToolControlButton>
-      <ToolControlButton id="apple" name="Apple" shortcut="A">
+      <ToolControlButton {...defaultTools.apple}>
         <SpriteIcon src={appleImgUrl} />
       </ToolControlButton>
-      <ToolControlButton id="killer" name="Killer" shortcut="K">
+      <ToolControlButton {...defaultTools.killer}>
         <SpriteIcon src={killerImgUrl} />
       </ToolControlButton>
-      <ToolControlButton id="flower" name="Flower" shortcut="F">
+      <ToolControlButton {...defaultTools.flower}>
         <SpriteIcon src={flowerImgUrl} />
       </ToolControlButton>
       {isOpenAIEnabled && (

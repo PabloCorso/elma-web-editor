@@ -1,11 +1,10 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { EditorStore } from "../editor-store";
+import { defaultTools } from "./default-tools";
 
 export class AppleTool extends Tool {
-  readonly id = "apple";
-  readonly name = "Apple";
-  readonly shortcut = "A";
+  readonly meta = defaultTools.apple;
 
   constructor(store: EditorStore) {
     super(store);
@@ -23,9 +22,7 @@ export class AppleTool extends Tool {
 }
 
 export class KillerTool extends Tool {
-  readonly id = "killer";
-  readonly name = "Killer";
-  readonly shortcut = "K";
+  readonly meta = defaultTools.killer;
 
   constructor(store: EditorStore) {
     super(store);
@@ -39,9 +36,7 @@ export class KillerTool extends Tool {
 }
 
 export class FlowerTool extends Tool {
-  readonly id = "flower";
-  readonly name = "Flower";
-  readonly shortcut = "F";
+  readonly meta = defaultTools.flower;
 
   constructor(store: EditorStore) {
     super(store);

@@ -9,16 +9,15 @@ import {
 import { colors } from "../constants";
 import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
+import { defaultTools } from "./default-tools";
 
-export type PolygonToolState = {
+export type VertexToolState = {
   drawingPolygon: Position[];
   originalPolygon?: Polygon; // The polygon being edited (if any)
 };
 
-export class PolygonTool extends Tool {
-  readonly id = "polygon";
-  readonly name = "Polygon";
-  readonly shortcut = "P";
+export class VertexTool extends Tool {
+  readonly meta = defaultTools.vertex;
 
   constructor(store: EditorStore) {
     super(store);
@@ -33,7 +32,7 @@ export class PolygonTool extends Tool {
 
   clear(): void {
     const state = this.store.getState();
-    state.actions.setToolState("polygon", {
+    state.actions.setToolState(defaultTools.vertex.id, {
       drawingPolygon: [],
       originalPolygon: undefined,
     });
@@ -41,7 +40,7 @@ export class PolygonTool extends Tool {
 
   getDrafts() {
     const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
     const drawingPolygon = toolState.drawingPolygon;
 
     if (drawingPolygon.length >= 3) {
@@ -59,7 +58,7 @@ export class PolygonTool extends Tool {
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
     const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
 
     // If we're already drawing a polygon, continue with normal drawing behavior
     if (toolState.drawingPolygon.length > 0) {
@@ -79,7 +78,7 @@ export class PolygonTool extends Tool {
 
       // Continue drawing the current polygon
       const newVertices = [...toolState.drawingPolygon, worldPos];
-      state.actions.setToolState("polygon", { drawingPolygon: newVertices });
+      state.actions.setToolState(this.meta.id, { drawingPolygon: newVertices });
       return true;
     }
 
@@ -111,13 +110,13 @@ export class PolygonTool extends Tool {
 
     // Start a new polygon
     const newVertices = [worldPos];
-    state.actions.setToolState("polygon", { drawingPolygon: newVertices });
+    state.actions.setToolState(this.meta.id, { drawingPolygon: newVertices });
     return true;
   }
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
     const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
 
     if (event.key === "Escape") {
       // If we're editing an existing polygon, restore it
@@ -129,7 +128,7 @@ export class PolygonTool extends Tool {
         this.clear();
       } else {
         // If we're creating a new polygon, just clear the drawing
-        state.actions.setToolState("polygon", { drawingPolygon: [] });
+        state.actions.setToolState(this.meta.id, { drawingPolygon: [] });
       }
       return true;
     }
@@ -142,7 +141,7 @@ export class PolygonTool extends Tool {
       // Reverse the direction of the polygon by reversing the vertices array
       if (toolState.drawingPolygon.length > 1) {
         const reversedVertices = [...toolState.drawingPolygon].reverse();
-        state.actions.setToolState("polygon", {
+        state.actions.setToolState(this.meta.id, {
           drawingPolygon: reversedVertices,
         });
       }
@@ -159,7 +158,7 @@ export class PolygonTool extends Tool {
 
   onRender(ctx: CanvasRenderingContext2D): void {
     const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
     if (toolState.drawingPolygon.length === 0) return;
 
     ctx.strokeStyle = colors.edges;
@@ -185,7 +184,7 @@ export class PolygonTool extends Tool {
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
     const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
     if (toolState.drawingPolygon.length > 0) {
       const lastPoint =
         toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
@@ -231,7 +230,7 @@ export class PolygonTool extends Tool {
 
   private finalizeDrawingOrRestore(): boolean {
     const state = this.store.getState();
-    const toolState = state.actions.getToolState<PolygonToolState>("polygon");
+    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
     if (!toolState) return false;
 
     if (toolState.drawingPolygon.length >= 3) {
@@ -282,7 +281,7 @@ export class PolygonTool extends Tool {
     ];
 
     // Set this as the current drawing polygon and store the original
-    state.actions.setToolState("polygon", {
+    state.actions.setToolState(this.meta.id, {
       drawingPolygon: drawingVertices,
       originalPolygon: originalPolygon,
     });
@@ -314,7 +313,7 @@ export class PolygonTool extends Tool {
     ];
 
     // Set this as the current drawing polygon and store the original
-    state.actions.setToolState("polygon", {
+    state.actions.setToolState(this.meta.id, {
       drawingPolygon: drawingVertices,
       originalPolygon: originalPolygon,
     });

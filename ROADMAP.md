@@ -23,16 +23,6 @@ vertex1.y += 0.0002 + 0.0002 _ rand(1000)/1200.0
 
 Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
-## Feedback
-
-- zoom steps are too close for my liking (too many klicks required to zoom in/out)
-- edit: just realised ctr+mwheel zooms 👌
-- hotkeys would be nice
-- edit: just realised there are hotkeys already
-- petition to change P (Polygon) to V (Vertex) because P is very far away and V is hardwired into my hand
-- after selecting a poly or vertex
-- https://elma.online/levels/606953 this crashes because there's two vertices too close to each other (in this case at the exact same spot, since the vertices seem to snap to the closest .1), and there's no topology checking
-
 ## Planned features
 
 - Match features set of in-game editor:
@@ -118,6 +108,8 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - Cannot delete Start object or last Exit object.
 
 - AI Assistant
+
+- Help section / keyboard shortcuts reference
 
 - Mobile support:
   - Touch gestures for pan/zoom

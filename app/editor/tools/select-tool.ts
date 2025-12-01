@@ -14,6 +14,7 @@ import {
 import { colors } from "../constants";
 import type { Apple } from "../editor.types";
 import type { EditorStore } from "../editor-store";
+import { defaultTools } from "./default-tools";
 
 export type SelectionToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -24,9 +25,7 @@ type VertexSelection = { polygon: Polygon; vertex: Position };
 type ObjectSelection = Position;
 
 export class SelectTool extends Tool {
-  readonly id = "select";
-  readonly name = "Select";
-  readonly shortcut = "S";
+  readonly meta = defaultTools.select;
 
   constructor(store: EditorStore) {
     super(store);

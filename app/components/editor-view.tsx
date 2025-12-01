@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EditorEngine } from "../editor/editor-engine";
 import { useEditorStore } from "~/editor/use-editor-store";
-import { PolygonTool } from "~/editor/tools/polygon-tool";
+import { VertexTool } from "~/editor/tools/vertex-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
@@ -107,7 +107,7 @@ export function useEditorView({
       applyResize();
 
       const tools = [
-        PolygonTool,
+        VertexTool,
         SelectTool,
         AppleTool,
         KillerTool,

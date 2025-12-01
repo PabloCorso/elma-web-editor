@@ -4,9 +4,10 @@ import type { Widget } from "./widgets/widget-interface";
 import type { Tool, ToolState } from "./tools/tool-interface";
 import { FileSession } from "~/utils/file-session";
 import { LevelFolder } from "~/utils/level-folder";
+import type { DefaultToolId } from "./tools/default-tools";
 
 type CreateEditorStoreOptions = {
-  initialToolId?: string;
+  initialToolId?: DefaultToolId | string;
   defaultLevelTitle?: string;
 };
 
@@ -88,7 +89,7 @@ export function createEditorStore({
       registerTool: (tool) =>
         set((prev) => {
           const toolsMap = new Map(prev.toolsMap);
-          toolsMap.set(tool.id, tool);
+          toolsMap.set(tool.meta.id, tool);
           return { toolsMap };
         }),
       activateTool: (toolId: string) => {

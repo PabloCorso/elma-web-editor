@@ -2,13 +2,12 @@ import type { EventContext } from "../utils/event-handler";
 import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
 import type { Apple } from "../editor.types";
+import type { DefaultToolMeta } from "./default-tools";
 
 export type ToolState<T = unknown> = Record<string, T>;
 
 export abstract class Tool {
-  abstract readonly id: string;
-  abstract readonly name: string;
-  abstract readonly shortcut?: string;
+  abstract readonly meta: DefaultToolMeta;
 
   constructor(protected store: EditorStore) {}
 
