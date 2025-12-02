@@ -7,7 +7,7 @@ import {
   debugPolygonOrientation,
 } from "./helpers";
 import { colors } from "./constants";
-import { type Polygon } from "elmajs";
+import { type Position, type Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
@@ -21,15 +21,15 @@ const OBJECT_FPS = 30; // animation speed for object sprites
 
 type EditorEngineOptions = {
   initialLevel?: LevelData;
-  lgrAssets?: LgrAssets;
+  initialToolId?: string;
   tools?: Array<new (store: EditorStore) => Tool>;
   widgets?: Array<new (store: EditorStore) => Widget>;
-  initialToolId?: string;
   minZoom?: number;
   maxZoom?: number;
   panSpeed?: number;
   zoomStep?: number;
   store?: EditorStore;
+  lgrAssets?: LgrAssets;
 };
 
 export class EditorEngine {
@@ -55,9 +55,9 @@ export class EditorEngine {
     canvas: HTMLCanvasElement,
     {
       initialLevel = initialLevelData,
+      initialToolId = "select",
       tools = [],
       widgets = [],
-      initialToolId = "select",
       minZoom = 0.2,
       maxZoom = 10000,
       panSpeed = 1.0,
@@ -76,12 +76,12 @@ export class EditorEngine {
     this.maxZoom = maxZoom;
     this.panSpeed = panSpeed;
     this.zoomStep = zoomStep;
+
     this.lgrAssets = lgrAssets || new LgrAssets();
     if (!this.lgrAssets.isReady()) {
       void this.lgrAssets.load();
     }
 
-    // Use provided store or create a new one
     this.store = store || createEditorStore();
     const state = this.store.getState();
 
@@ -608,29 +608,33 @@ export class EditorEngine {
       startY: state.start.y,
     });
 
-    const appleSprite = this.lgrAssets.getSprite("qfood1");
-    if (appleSprite) {
-      this.drawObjectSprite(
-        appleSprite,
-        state.apples.map(({ position }) => position),
-        state.animateSprites
-      );
-    }
+    const apple1Sprite = this.lgrAssets.getSprite("qfood1");
+    const apple2Sprite = this.lgrAssets.getSprite("qfood2");
+    state.apples.forEach((apple) => {
+      const sprite = apple.animation > 1 ? apple2Sprite : apple1Sprite;
+      if (sprite) {
+        this.drawObjectSprite(sprite, apple.position, state.animateSprites);
+      }
+    });
 
     const killerSprite = this.lgrAssets.getSprite("qkiller");
-    if (killerSprite) {
-      this.drawObjectSprite(killerSprite, state.killers, state.animateSprites);
-    }
+    state.killers.forEach((killer) => {
+      if (killerSprite) {
+        this.drawObjectSprite(killerSprite, killer, state.animateSprites);
+      }
+    });
 
     const exitSprite = this.lgrAssets.getSprite("qexit");
-    if (exitSprite) {
-      this.drawObjectSprite(exitSprite, state.flowers, state.animateSprites);
-    }
+    state.flowers.forEach((flower) => {
+      if (exitSprite) {
+        this.drawObjectSprite(exitSprite, flower, state.animateSprites);
+      }
+    });
   }
 
   private drawObjectSprite(
     sprite: ImageBitmap,
-    positions: Array<{ x: number; y: number }>,
+    position: Position,
     animate = false,
     opacity = 1
   ) {
@@ -648,19 +652,17 @@ export class EditorEngine {
 
     this.ctx.save();
     this.ctx.globalAlpha = opacity;
-    positions.forEach((position) => {
-      this.ctx.drawImage(
-        sprite,
-        sx,
-        sy,
-        frameWidth,
-        frameHeight,
-        position.x - targetWidth / 2,
-        position.y - targetHeight / 2,
-        targetWidth,
-        targetHeight
-      );
-    });
+    this.ctx.drawImage(
+      sprite,
+      sx,
+      sy,
+      frameWidth,
+      frameHeight,
+      position.x - targetWidth / 2,
+      position.y - targetHeight / 2,
+      targetWidth,
+      targetHeight
+    );
     this.ctx.restore();
   }
 

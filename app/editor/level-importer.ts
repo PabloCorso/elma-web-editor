@@ -1,4 +1,4 @@
-import type { Polygon, Position } from "elmajs";
+import { Gravity, type Polygon, type Position } from "elmajs";
 import type { Apple } from "./editor.types";
 
 export type LevelData = {
@@ -28,7 +28,7 @@ export const initialLevelData: LevelData = {
       grass: false,
     },
   ],
-  apples: [{ position: { x: 25, y: 25 }, animation: 0, gravity: 0 }],
+  apples: [{ position: { x: 25, y: 25 }, animation: 1, gravity: Gravity.None }],
   killers: [],
   flowers: [{ x: 45, y: 25 }],
   start: { x: 5, y: 25 },

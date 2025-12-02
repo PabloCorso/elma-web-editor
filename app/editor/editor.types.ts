@@ -1,4 +1,4 @@
-import { Gravity, Position } from "elmajs";
+import type { Gravity, Position } from "elmajs";
 
 export type Apple = {
   position: Position;
