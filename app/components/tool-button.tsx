@@ -67,22 +67,3 @@ export function ToolControlButton({
     </ToolButton>
   );
 }
-
-// export function ToolbarButtonMenu({ children, ...props }: DropdownMenuProps) {
-//   return (
-//     <DropdownMenu {...props}>
-//       <DropdownMenuTrigger>
-//         <IconButton size="sm" variant="ghost" className="w-4 rounded-md">
-//           <CaretDownIcon className="h-3 w-3" />
-//         </IconButton>
-//       </DropdownMenuTrigger>
-//       <DropdownMenuContent
-//         align="start"
-//         side="top"
-//         className="flex min-w-0 flex-col-reverse border-0"
-//       >
-//         {children}
-//       </DropdownMenuContent>
-//     </DropdownMenu>
-//   );
-// }

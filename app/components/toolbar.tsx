@@ -1,15 +1,5 @@
-import {
-  useEditorActiveTool,
-  useEditorActions,
-} from "~/editor/use-editor-store";
 import { cn } from "~/utils/misc";
 import { Icon } from "./ui/icon";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  type TooltipContentProps,
-} from "./ui/tooltip";
 
 export function Toolbar({
   className,
