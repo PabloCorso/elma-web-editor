@@ -10,7 +10,6 @@ import {
   TooltipTrigger,
   type TooltipContentProps,
 } from "./ui/tooltip";
-import { Icon } from "./ui/icon";
 
 type ToolButtonProps = React.ComponentPropsWithRef<"button"> & {
   name?: string;
@@ -22,7 +21,6 @@ export function ToolButton({
   name,
   shortcut,
   tooltipSide,
-  className,
   children,
   ...props
 }: ToolButtonProps) {
@@ -30,7 +28,7 @@ export function ToolButton({
     <Tooltip>
       <TooltipTrigger>
         <ToolbarButton aria-label={`${name}${shortcut}`} {...props}>
-          <Icon size="lg">{children}</Icon>
+          {children}
         </ToolbarButton>
       </TooltipTrigger>
       <TooltipContent
@@ -54,12 +52,10 @@ export function ToolControlButton({
 }: ToolControlButtonProps) {
   const activeTool = useEditorActiveTool();
   const { activateTool } = useEditorActions();
+  const isActive = id ? activeTool?.meta.id === id : false;
   return (
     <ToolButton
-      className={cn(
-        { "bg-primary-hover/80": activeTool?.meta.id === id },
-        className
-      )}
+      className={cn({ "bg-primary-hover/50": isActive }, className)}
       onClick={() => {
         id && activateTool(id);
       }}

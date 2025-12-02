@@ -12,12 +12,9 @@ import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
-import { OBJECT_DIAMETER } from "elmajs";
-import { bikeRender } from "./bike-render";
+import { drawKuski } from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
-
-const OBJECT_FRAME_PX = 40; // width of a single frame in object sprite sheet
-const OBJECT_FPS = 30; // animation speed for object sprites
+import { drawObject } from "./draw-object";
 
 type EditorEngineOptions = {
   initialLevel?: LevelData;
@@ -39,6 +36,7 @@ export class EditorEngine {
   private debugMode = false;
   private store: EditorStore;
   private lgrAssets: LgrAssets;
+  private mouseOnCanvas = false;
 
   // Camera system
   private minZoom;
@@ -110,6 +108,7 @@ export class EditorEngine {
     this.canvas.addEventListener("mousedown", this.handleMouseDown);
     this.canvas.addEventListener("mousemove", this.handleMouseMove);
     this.canvas.addEventListener("mouseup", this.handleMouseUp);
+    this.canvas.addEventListener("mouseleave", this.handleMouseLeave);
     this.canvas.addEventListener("contextmenu", this.handleRightClick);
     this.canvas.addEventListener("wheel", this.handleWheel);
     document.addEventListener("keydown", this.handleKeyDown);
@@ -177,6 +176,7 @@ export class EditorEngine {
     }
 
     state.actions.setMousePosition(context.worldPos);
+    this.mouseOnCanvas = true;
   };
 
   private handleMouseUp = (event: MouseEvent) => {
@@ -198,6 +198,10 @@ export class EditorEngine {
         activeTool.onPointerUp(event as PointerEvent, context);
       }
     }
+  };
+
+  private handleMouseLeave = () => {
+    this.mouseOnCanvas = false;
   };
 
   private handleRightClick = (event: MouseEvent) => {
@@ -601,69 +605,86 @@ export class EditorEngine {
 
     const state = this.store.getState();
 
-    bikeRender({
+    drawKuski({
       ctx: this.ctx,
       lgrSprites: this.lgrAssets.getSprites(),
       startX: state.start.x,
       startY: state.start.y,
     });
 
+    const animate = state.animateSprites;
+    const drafts = this.mouseOnCanvas
+      ? state.actions.getActiveTool()?.getDrafts?.() || {}
+      : {};
+
     const apple1Sprite = this.lgrAssets.getSprite("qfood1");
     const apple2Sprite = this.lgrAssets.getSprite("qfood2");
+    const appleSprite = (animation: number) =>
+      animation > 1 ? apple2Sprite : apple1Sprite;
     state.apples.forEach((apple) => {
-      const sprite = apple.animation > 1 ? apple2Sprite : apple1Sprite;
+      const sprite = appleSprite(apple.animation);
       if (sprite) {
-        this.drawObjectSprite(sprite, apple.position, state.animateSprites);
+        drawObject({
+          ctx: this.ctx,
+          sprite,
+          position: apple.position,
+          animate,
+        });
       }
     });
+
+    if (drafts.apples) {
+      drafts.apples.forEach((apple) => {
+        const sprite = appleSprite(apple.animation);
+        if (sprite) {
+          this.drawDraftObjectSprite(sprite, apple.position);
+        }
+      });
+    }
 
     const killerSprite = this.lgrAssets.getSprite("qkiller");
     state.killers.forEach((killer) => {
       if (killerSprite) {
-        this.drawObjectSprite(killerSprite, killer, state.animateSprites);
+        drawObject({
+          ctx: this.ctx,
+          sprite: killerSprite,
+          position: killer,
+          animate,
+        });
       }
     });
+
+    if (drafts.killers) {
+      drafts.killers.forEach((killer) => {
+        if (killerSprite) {
+          this.drawDraftObjectSprite(killerSprite, killer);
+        }
+      });
+    }
 
     const exitSprite = this.lgrAssets.getSprite("qexit");
     state.flowers.forEach((flower) => {
       if (exitSprite) {
-        this.drawObjectSprite(exitSprite, flower, state.animateSprites);
+        drawObject({
+          ctx: this.ctx,
+          sprite: exitSprite,
+          position: flower,
+          animate,
+        });
       }
     });
+
+    if (drafts.flowers) {
+      drafts.flowers.forEach((flower) => {
+        if (exitSprite) {
+          this.drawDraftObjectSprite(exitSprite, flower);
+        }
+      });
+    }
   }
 
-  private drawObjectSprite(
-    sprite: ImageBitmap,
-    position: Position,
-    animate = false,
-    opacity = 1
-  ) {
-    const frameWidth = OBJECT_FRAME_PX;
-    const frameHeight = Math.min(OBJECT_FRAME_PX, sprite.height);
-    const frames = Math.max(1, Math.floor(sprite.width / frameWidth));
-    const frameIndex = animate
-      ? Math.floor((performance.now() / 1000) * OBJECT_FPS) % frames
-      : 0;
-    const sx = frameIndex * frameWidth;
-    const sy = 0;
-
-    const targetHeight = OBJECT_DIAMETER;
-    const targetWidth = (frameWidth / frameHeight) * targetHeight;
-
-    this.ctx.save();
-    this.ctx.globalAlpha = opacity;
-    this.ctx.drawImage(
-      sprite,
-      sx,
-      sy,
-      frameWidth,
-      frameHeight,
-      position.x - targetWidth / 2,
-      position.y - targetHeight / 2,
-      targetWidth,
-      targetHeight
-    );
-    this.ctx.restore();
+  private drawDraftObjectSprite(sprite: ImageBitmap, position: Position) {
+    drawObject({ ctx: this.ctx, sprite, position, opacity: 0.5 });
   }
 
   public destroy() {

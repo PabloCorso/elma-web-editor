@@ -178,7 +178,7 @@ type BikeRenderArgs = {
   coords?: typeof defaultBikeCoords;
 };
 
-export function bikeRender({
+export function drawKuski({
   ctx,
   lgrSprites,
   shirt,
