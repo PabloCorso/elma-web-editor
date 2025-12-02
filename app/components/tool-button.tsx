@@ -26,16 +26,19 @@ export function ToolButton({
   children,
   ...props
 }: ToolButtonProps) {
-  const label = `${name}${shortcut ? ` (${shortcut})` : ""}`;
   return (
     <Tooltip>
       <TooltipTrigger>
-        <ToolbarButton aria-label={name} {...props}>
+        <ToolbarButton aria-label={`${name}${shortcut}`} {...props}>
           <Icon size="lg">{children}</Icon>
         </ToolbarButton>
       </TooltipTrigger>
-      <TooltipContent side={tooltipSide} className="text-xs">
-        {label}
+      <TooltipContent
+        side={tooltipSide}
+        className="text-xs flex items-center gap-2"
+      >
+        {name}
+        {shortcut && <span className="text-slate-400">{shortcut}</span>}
       </TooltipContent>
     </Tooltip>
   );
@@ -53,7 +56,6 @@ export function ToolControlButton({
   const { activateTool } = useEditorActions();
   return (
     <ToolButton
-      tooltipSide="right"
       className={cn(
         { "bg-primary-hover/80": activeTool?.meta.id === id },
         className

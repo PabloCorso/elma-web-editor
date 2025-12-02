@@ -5,13 +5,7 @@ import { VertexTool } from "~/editor/tools/vertex-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
-import * as elmajs from "elmajs";
-import defaultLgr from "../assets/lgr/Default.lgr?url";
-
-async function loadLgrFromUrl(url: string = defaultLgr) {
-  const buf = await fetch(url).then((r) => r.arrayBuffer());
-  return elmajs.LGR.from(new Uint8Array(buf));
-}
+import { useLgrAssets } from "./use-lgr-assets";
 
 export function EditorView({
   canvasRef,
@@ -45,17 +39,12 @@ export function useEditorView({
     height: 0,
   });
   const store = useEditorStore();
-
-  const [initialLgr, setInitialLgr] = useState<elmajs.LGR | null>(null);
-
-  useEffect(function loadDefaultLgr() {
-    loadLgrFromUrl().then(setInitialLgr);
-  }, []);
+  const lgrAssets = useLgrAssets();
 
   useEffect(
     function initializeEditorEngine() {
       const canvas = canvasRef.current;
-      if (!canvas || engineRef.current || !initialLgr) return;
+      if (!canvas || engineRef.current) return;
 
       const parent = canvas.parentElement;
       if (!parent) return;
@@ -106,13 +95,7 @@ export function useEditorView({
 
       applyResize();
 
-      const tools = [
-        VertexTool,
-        SelectTool,
-        AppleTool,
-        KillerTool,
-        FlowerTool,
-      ];
+      const tools = [VertexTool, SelectTool, AppleTool, KillerTool, FlowerTool];
 
       const widgets = [];
       if (isOpenAIEnabled) {
@@ -123,7 +106,7 @@ export function useEditorView({
         store,
         tools,
         widgets,
-        initialLgr,
+        lgrAssets,
       });
 
       // Add resize observer to handle parent size changes (batched to avoid flicker)
@@ -144,7 +127,7 @@ export function useEditorView({
         }
       };
     },
-    [store, initialLgr, isOpenAIEnabled]
+    [store, isOpenAIEnabled]
   );
 
   return { canvasRef, engineRef };

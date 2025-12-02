@@ -8,27 +8,27 @@ export type DefaultToolMeta = {
 export const defaultTools: Record<DefaultToolId, DefaultToolMeta> = {
   select: {
     id: "select",
-    name: "Select Tool",
+    name: "Select tool",
     shortcut: "S",
   },
   vertex: {
     id: "vertex",
-    name: "Vertex Tool",
+    name: "Vertex tool",
     shortcut: "V",
   },
   apple: {
     id: "apple",
-    name: "Apple Tool",
+    name: "Apple",
     shortcut: "A",
   },
   killer: {
     id: "killer",
-    name: "Killer Tool",
+    name: "Killer",
     shortcut: "K",
   },
   flower: {
     id: "flower",
-    name: "Flower Tool",
+    name: "Flower",
     shortcut: "F",
   },
 } as const;

@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { ToolControlButton } from "./tool-button";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { Toolbar } from "./toolbar";
+import { useLgrSprite } from "./use-lgr-assets";
 
 export function ControlToolbar({
   isOpenAIEnabled,
@@ -20,6 +21,10 @@ export function ControlToolbar({
 }) {
   const { activateTool } = useEditorActions();
   const store = useEditorStore();
+
+  const appleUrl = useLgrSprite("qfood1");
+  const killerUrl = useLgrSprite("qkiller");
+  const flowerUrl = useLgrSprite("qexit");
 
   useEffect(function setupKeyboardShortcuts() {
     const onKeyboardShortcut = (e: KeyboardEvent) => {
@@ -43,7 +48,7 @@ export function ControlToolbar({
   }, []);
 
   return (
-    <Toolbar className="flex-col h-fit inset-y-0 m-auto left-4">
+    <Toolbar className="inset-x-0 w-fit m-auto bottom-4">
       <ToolControlButton {...defaultTools.select}>
         <CursorIcon weight="fill" />
       </ToolControlButton>
@@ -51,13 +56,13 @@ export function ControlToolbar({
         <LineSegmentsIcon weight="fill" />
       </ToolControlButton>
       <ToolControlButton {...defaultTools.apple}>
-        <SpriteIcon src={appleImgUrl} />
+        <SpriteIcon src={appleUrl ?? appleImgUrl} />
       </ToolControlButton>
       <ToolControlButton {...defaultTools.killer}>
-        <SpriteIcon src={killerImgUrl} />
+        <SpriteIcon src={killerUrl ?? killerImgUrl} />
       </ToolControlButton>
       <ToolControlButton {...defaultTools.flower}>
-        <SpriteIcon src={flowerImgUrl} />
+        <SpriteIcon src={flowerUrl ?? flowerImgUrl} />
       </ToolControlButton>
       {isOpenAIEnabled && (
         <ToolControlButton id="ai-chat" name="AI Assistant" shortcut="I">

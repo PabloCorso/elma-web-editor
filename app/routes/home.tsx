@@ -5,6 +5,7 @@ import { ControlToolbar } from "~/components/control-toolbar";
 import { HeaderToolbar } from "~/components/header-toolbar";
 import { CanvasToolbar } from "~/components/canvas-toolbar";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { LgrAssetsProvider } from "~/components/use-lgr-assets";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -20,11 +21,13 @@ export function loader() {
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <TooltipProvider>
-      <EditorProvider>
-        <div className="flex h-[100dvh]">
-          <Editor isOpenAIEnabled={loaderData.isOpenAIEnabled} />
-        </div>
-      </EditorProvider>
+      <LgrAssetsProvider>
+        <EditorProvider>
+          <div className="flex h-[100dvh]">
+            <Editor isOpenAIEnabled={loaderData.isOpenAIEnabled} />
+          </div>
+        </EditorProvider>
+      </LgrAssetsProvider>
     </TooltipProvider>
   );
 }

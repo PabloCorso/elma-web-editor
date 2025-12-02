@@ -12,17 +12,16 @@ import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
-import * as elmajs from "elmajs";
-import { decodeLgrPictureBitmap } from "./utils/pcx-loader";
 import { OBJECT_DIAMETER } from "elmajs";
 import { bikeRender } from "./bike-render";
+import { LgrAssets } from "~/components/lgr-assets";
 
 const OBJECT_FRAME_PX = 40; // width of a single frame in object sprite sheet
 const OBJECT_FPS = 30; // animation speed for object sprites
 
 type EditorEngineOptions = {
   initialLevel?: LevelData;
-  initialLgr?: elmajs.LGR;
+  lgrAssets?: LgrAssets;
   tools?: Array<new (store: EditorStore) => Tool>;
   widgets?: Array<new (store: EditorStore) => Widget>;
   initialToolId?: string;
@@ -39,9 +38,7 @@ export class EditorEngine {
   private animationId: number | null = null;
   private debugMode = false;
   private store: EditorStore;
-  private lgr: elmajs.LGR;
-  private lgrSprites: Record<string, ImageBitmap> = {};
-  private lgrLoaded = false;
+  private lgrAssets: LgrAssets;
 
   // Camera system
   private minZoom;
@@ -66,7 +63,7 @@ export class EditorEngine {
       panSpeed = 1.0,
       zoomStep = 5,
       store,
-      initialLgr,
+      lgrAssets,
     }: EditorEngineOptions = {}
   ) {
     const ctx = canvas.getContext("2d");
@@ -79,11 +76,10 @@ export class EditorEngine {
     this.maxZoom = maxZoom;
     this.panSpeed = panSpeed;
     this.zoomStep = zoomStep;
-    this.lgr = initialLgr || new elmajs.LGR();
-
-    this.loadLgrPictures().catch((err) =>
-      console.error("Failed to load LGR pictures", err)
-    );
+    this.lgrAssets = lgrAssets || new LgrAssets();
+    if (!this.lgrAssets.isReady()) {
+      void this.lgrAssets.load();
+    }
 
     // Use provided store or create a new one
     this.store = store || createEditorStore();
@@ -108,20 +104,6 @@ export class EditorEngine {
   // Expose store for React integration
   getStore(): EditorStore {
     return this.store;
-  }
-
-  private async loadLgrPictures() {
-    for (const picture of this.lgr.pictureData) {
-      const name = picture.name
-        .trim()
-        .toLowerCase()
-        .replace(/\.pcx$/, "");
-      const bmp = await decodeLgrPictureBitmap(picture);
-      if (bmp) this.lgrSprites[name] = bmp;
-      else console.warn(`${picture.name} sprite not found in LGR`);
-    }
-
-    this.lgrLoaded = true;
   }
 
   private setupEventListeners() {
@@ -615,18 +597,18 @@ export class EditorEngine {
   }
 
   private drawObjects() {
-    if (!this.lgrLoaded) return;
+    if (!this.lgrAssets.isReady()) return;
 
     const state = this.store.getState();
 
     bikeRender({
       ctx: this.ctx,
-      lgrSprites: this.lgrSprites,
+      lgrSprites: this.lgrAssets.getSprites(),
       startX: state.start.x,
       startY: state.start.y,
     });
 
-    const appleSprite = this.lgrSprites["qfood1"];
+    const appleSprite = this.lgrAssets.getSprite("qfood1");
     if (appleSprite) {
       this.drawObjectSprite(
         appleSprite,
@@ -635,12 +617,12 @@ export class EditorEngine {
       );
     }
 
-    const killerSprite = this.lgrSprites["qkiller"];
+    const killerSprite = this.lgrAssets.getSprite("qkiller");
     if (killerSprite) {
       this.drawObjectSprite(killerSprite, state.killers, state.animateSprites);
     }
 
-    const exitSprite = this.lgrSprites["qexit"];
+    const exitSprite = this.lgrAssets.getSprite("qexit");
     if (exitSprite) {
       this.drawObjectSprite(exitSprite, state.flowers, state.animateSprites);
     }

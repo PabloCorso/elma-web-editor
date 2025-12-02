@@ -1,4 +1,4 @@
-import type { LGR, PictureData } from "elmajs";
+import type { PictureData } from "elmajs";
 
 type DecodedPcx = {
   width: number;
@@ -95,9 +95,7 @@ function decodePcx(pcx: Uint8Array): DecodedPcx {
   return { width, height, pixels };
 }
 
-export async function pcxToImageBitmap(
-  pcxData: Uint8Array
-): Promise<ImageBitmap> {
+export function pcxToImageBitmap(pcxData: Uint8Array) {
   const { width, height, pixels } = decodePcx(pcxData);
   // Clone into a new buffer (ensures ArrayBuffer, not SharedArrayBuffer).
   const clamped = new Uint8ClampedArray(pixels.length);
@@ -106,9 +104,7 @@ export async function pcxToImageBitmap(
   return createImageBitmap(imageData);
 }
 
-export async function decodeLgrPictureBitmap(
-  picture: PictureData
-): Promise<ImageBitmap | null> {
+export async function decodeLgrPictureBitmap(picture: PictureData) {
   const bytes = new Uint8Array(
     picture.data.buffer,
     picture.data.byteOffset,
