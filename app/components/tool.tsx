@@ -40,7 +40,10 @@ export function ToolButton({
   return (
     <Tooltip>
       <TooltipTrigger>
-        <ToolbarButton aria-label={`${name}${shortcut}`} {...props}>
+        <ToolbarButton
+          aria-label={`${name}${shortcut ? ` (${shortcut})` : ""}`}
+          {...props}
+        >
           {children}
         </ToolbarButton>
       </TooltipTrigger>
