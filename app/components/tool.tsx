@@ -10,8 +10,21 @@ import {
   TooltipTrigger,
   type TooltipContentProps,
 } from "./ui/tooltip";
+import type { ButtonProps } from "./button";
 
-type ToolButtonProps = React.ComponentPropsWithRef<"button"> & {
+export function Tool({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithRef<"div">) {
+  return (
+    <div className={cn("flex gap-px items-center", className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+type ToolButtonProps = ButtonProps & {
   name?: string;
   shortcut?: string;
   tooltipSide?: TooltipContentProps["side"];
@@ -48,6 +61,7 @@ export function ToolControlButton({
   id,
   className,
   children,
+  onClick,
   ...props
 }: ToolControlButtonProps) {
   const activeTool = useEditorActiveTool();
@@ -56,8 +70,9 @@ export function ToolControlButton({
   return (
     <ToolButton
       className={cn({ "bg-primary-hover/50": isActive }, className)}
-      onClick={() => {
+      onClick={(event) => {
         id && activateTool(id);
+        onClick?.(event);
       }}
       {...props}
     >

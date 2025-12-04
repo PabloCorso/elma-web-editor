@@ -7,14 +7,14 @@ import {
   debugPolygonOrientation,
 } from "./helpers";
 import { colors } from "./constants";
-import { type Position, type Polygon } from "elmajs";
+import { type Position, type Polygon, Gravity, OBJECT_DIAMETER } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
 import { drawKuski } from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
-import { drawObject } from "./draw-object";
+import { drawGravityArrow, drawObject } from "./draw-object";
 
 type EditorEngineOptions = {
   initialLevel?: LevelData;
@@ -271,7 +271,7 @@ export class EditorEngine {
     if (isUserTyping()) return;
 
     const state = this.store.getState();
-    const panAmount = 50 / state.zoom;
+    const panAmount = 200 / state.zoom;
 
     // Let active tool handle the key first
     const activeTool = state.actions.getActiveTool();
@@ -285,9 +285,20 @@ export class EditorEngine {
       if (consumed) return;
     }
 
+    const key = event.key.toUpperCase();
+    const tool = Array.from(state.toolsMap.values()).find(
+      (tool) => tool.meta.shortcut?.toUpperCase() === key
+    );
+    if (tool) {
+      state.actions.activateTool(tool.meta.id);
+      return;
+    }
+
     switch (event.key) {
+      case "Escape":
+        state.actions.activateTool("select");
+        break;
       case "ArrowLeft":
-        event.preventDefault();
         updateCamera({
           deltaX: panAmount,
           deltaY: 0,
@@ -298,7 +309,6 @@ export class EditorEngine {
         break;
 
       case "ArrowRight":
-        event.preventDefault();
         updateCamera({
           deltaX: -panAmount,
           deltaY: 0,
@@ -309,7 +319,6 @@ export class EditorEngine {
         break;
 
       case "ArrowUp":
-        event.preventDefault();
         updateCamera({
           deltaX: 0,
           deltaY: panAmount,
@@ -320,7 +329,6 @@ export class EditorEngine {
         break;
 
       case "ArrowDown":
-        event.preventDefault();
         updateCamera({
           deltaX: 0,
           deltaY: -panAmount,
@@ -332,24 +340,20 @@ export class EditorEngine {
 
       case "+":
       case "=":
-        event.preventDefault();
         this.zoomInOut(this.zoomStep);
         break;
 
       case "-":
       case "_":
-        event.preventDefault();
         this.zoomInOut(-this.zoomStep);
         break;
 
       case "1":
-        event.preventDefault();
         this.fitToView();
         break;
 
       case "d":
       case "D":
-        event.preventDefault();
         this.toggleDebugMode();
         break;
     }
@@ -630,6 +634,11 @@ export class EditorEngine {
           position: apple.position,
           animate,
         });
+        drawGravityArrow({
+          ctx: this.ctx,
+          position: apple.position,
+          gravity: apple.gravity,
+        });
       }
     });
 
@@ -638,6 +647,12 @@ export class EditorEngine {
         const sprite = appleSprite(apple.animation);
         if (sprite) {
           this.drawDraftObjectSprite(sprite, apple.position);
+          drawGravityArrow({
+            ctx: this.ctx,
+            position: apple.position,
+            gravity: apple.gravity,
+            opacity: 0.5,
+          });
         }
       });
     }

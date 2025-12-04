@@ -3,7 +3,14 @@ import type { EventContext } from "../utils/event-handler";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { Gravity } from "elmajs";
-import type { Apple } from "../editor.types";
+import type { Apple, AppleAnimation } from "../editor.types";
+
+export type AppleToolState = { animation: AppleAnimation; gravity: Gravity };
+
+export const defaultAppleState: AppleToolState = {
+  animation: 1,
+  gravity: Gravity.None,
+};
 
 export class AppleTool extends Tool {
   readonly meta = defaultTools.apple;
@@ -12,23 +19,59 @@ export class AppleTool extends Tool {
     super(store);
   }
 
+  private getAppleState() {
+    const state = this.store.getState();
+    return (state.toolState.apple as AppleToolState) || defaultAppleState;
+  }
+
+  onActivate() {
+    const state = this.store.getState();
+    const toolState = state.toolState.apple as AppleToolState | undefined;
+    if (!toolState) {
+      state.actions.setToolState(this.meta.id, this.getAppleState());
+    }
+  }
+
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const state = this.store.getState();
-    state.actions.addApple({
-      position: context.worldPos,
-      animation: 0,
-      gravity: 0,
-    });
+    const position = context.worldPos;
+    state.actions.addApple({ position, ...this.getAppleState() });
     return true;
+  }
+
+  onKeyDown(event: KeyboardEvent) {
+    const state = this.store.getState();
+    switch (event.key.toUpperCase()) {
+      case "W":
+        state.actions.setToolState(this.meta.id, { gravity: Gravity.Up });
+        return true;
+      case "A":
+        state.actions.setToolState(this.meta.id, { gravity: Gravity.Down });
+        return true;
+      case "S":
+        state.actions.setToolState(this.meta.id, { gravity: Gravity.Left });
+        return true;
+      case "D":
+        state.actions.setToolState(this.meta.id, { gravity: Gravity.Right });
+        return true;
+      case "E":
+        state.actions.setToolState(this.meta.id, { gravity: Gravity.None });
+        return true;
+      case "1":
+        state.actions.setToolState(this.meta.id, { animation: 1 });
+        return true;
+      case "2":
+        state.actions.setToolState(this.meta.id, { animation: 2 });
+        return true;
+      default:
+        return false;
+    }
   }
 
   getDrafts() {
     const state = this.store.getState();
-    const apple: Apple = {
-      position: state.mousePosition,
-      animation: 1,
-      gravity: Gravity.None,
-    };
+    const position = state.mousePosition;
+    const apple: Apple = { position, ...this.getAppleState() };
     return { apples: [apple] };
   }
 }

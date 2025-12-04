@@ -466,10 +466,11 @@ export class SelectTool extends Tool {
       const appleIndex = state.apples.findIndex((a) => a.position === object);
       if (appleIndex !== -1) {
         if (!updates.apples) updates.apples = [...state.apples];
+        const apple = state.apples[appleIndex];
         updates.apples[appleIndex] = {
           position: newPos,
-          animation: 0,
-          gravity: 0,
+          animation: apple.animation,
+          gravity: apple.gravity,
         };
         updatedSelectedObjects[index] = newPos;
       }

@@ -15,6 +15,7 @@ import {
 } from "./ui/dropdown-menu";
 import { DropdownMenu, DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 import {
+  CaretDownIcon,
   FilePlusIcon,
   FloppyDiskIcon,
   FolderOpenIcon,
@@ -25,6 +26,7 @@ import { getLevelFromState } from "~/editor/utils/download-level";
 import { useState } from "react";
 import { supportsFilePickers } from "~/utils/file-session";
 import { SettingsDialog } from "./settings";
+import { Icon } from "./ui/icon";
 
 export function HeaderToolbar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -76,18 +78,21 @@ export function HeaderToolbar() {
 
   return (
     <>
-      <Toolbar className="left-4 top-4">
+      <Toolbar className="absolute left-4 top-4">
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <div className="relative">
-              <h1 className="sr-only">Elma Web Editor</h1>
-              <ToolbarButton aria-label="Elma Web Editor">
-                <span className="absolute -top-0 -right-2 px-1 text-[8px] font-semibold bg-blue-500 opacity-75 text-white rounded-full">
-                  BETA
-                </span>
-                <img src={logo} className="w-8 h-8 isolate" />
-              </ToolbarButton>
-            </div>
+            <ToolbarButton
+              className="w-14 relative gap-0"
+              aria-label="Elma Web Editor"
+            >
+              <span className="absolute -top-0 right-1 px-1 text-[8px] font-semibold bg-blue-500 opacity-75 text-white rounded-full">
+                BETA
+              </span>
+              <img src={logo} className="w-8 h-8 isolate" />
+              <Icon size="xs" className="text-white/70">
+                <CaretDownIcon />
+              </Icon>
+            </ToolbarButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>

@@ -1,6 +1,6 @@
 import type { StoreApi } from "zustand/vanilla";
 import type { EditorState } from "../editor-state";
-import type { Position, Polygon } from "elmajs";
+import { type Position, type Polygon, Gravity } from "elmajs";
 import type { UIMessage } from "ai";
 import { Widget } from "./widget-interface";
 
@@ -43,7 +43,11 @@ export class AIWidget extends Widget {
   public addApples(apples: Position[]): void {
     const state = this.store.getState();
     for (const apple of apples) {
-      state.actions.addApple({ position: apple, animation: 0, gravity: 0 });
+      state.actions.addApple({
+        position: apple,
+        animation: 1,
+        gravity: Gravity.None,
+      });
     }
   }
 

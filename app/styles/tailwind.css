@@ -8,6 +8,7 @@
 
 :root {
   --border-default: var(--color-slate-800);
+  --border-separator: var(--color-slate-700);
   --background-screen: var(--color-slate-900);
   --background-primary: var(--color-slate-900);
   --background-primary-hover: var(--color-slate-500);
@@ -28,6 +29,9 @@
     --background-color-primary: var(--background-primary);
     --background-color-primary-hover: var(--background-primary-hover);
     --background-color-primary-active: var(--background-primary-active);
+    --background-color-separator: var(--border-separator);
+
     --border-color-default: var(--border-default);
+    --border-separator: var(--border-separator);
   }
 }

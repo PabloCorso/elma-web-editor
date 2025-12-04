@@ -1,41 +1,87 @@
+import * as React from "react";
+import * as ToolbarPrimitives from "@radix-ui/react-toolbar";
 import { cn } from "~/utils/misc";
-import { Icon } from "./ui/icon";
+import { IconButton, type ButtonProps } from "./button";
 
-export function Toolbar({
-  className,
-  children,
-  ...props
-}: React.ComponentPropsWithRef<"div">) {
+type ToolbarProps = Omit<
+  React.ComponentPropsWithRef<typeof ToolbarPrimitives.Root>,
+  "asChild"
+>;
+
+export function Toolbar({ className, ...props }: ToolbarProps) {
   return (
-    <div
+    <ToolbarPrimitives.Root
       className={cn(
-        "absolute inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
+        "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
         className
       )}
       {...props}
-    >
-      {children}
-    </div>
+    />
   );
 }
 
-type ToolbarButtonProps = React.ComponentPropsWithRef<"button">;
+type ToolbarButtonProps = ButtonProps;
 
 export function ToolbarButton({
-  className,
   children,
+  className,
   ...props
 }: ToolbarButtonProps) {
   return (
-    <button
-      type="button"
-      className={cn(
-        "rounded-[4px] shrink-0 hover:bg-primary-hover/80 active:bg-primary-active/80 inline-flex items-center justify-center w-10 h-10",
-        className
-      )}
+    <ToolbarPrimitives.Button className={cn(className)} asChild>
+      <IconButton type="button" iconSize="lg" {...props}>
+        {children}
+      </IconButton>
+    </ToolbarPrimitives.Button>
+  );
+}
+
+type ToolbarSeparatorProps = Omit<
+  React.ComponentPropsWithRef<typeof ToolbarPrimitives.Separator>,
+  "asChild"
+>;
+
+export function ToolbarSeparator({
+  className,
+  ...props
+}: ToolbarSeparatorProps) {
+  return (
+    <ToolbarPrimitives.Separator
+      className={cn("w-px h-6 bg-separator mx-1", className)}
       {...props}
-    >
-      <Icon size="lg">{children}</Icon>
-    </button>
+    />
+  );
+}
+
+type ToolbarGroupProps = Omit<
+  React.ComponentPropsWithRef<typeof ToolbarPrimitives.ToggleGroup>,
+  "asChild"
+>;
+
+export function ToolbarToggleGroup({ className, ...props }: ToolbarGroupProps) {
+  return (
+    // @ts-ignore
+    <ToolbarPrimitives.ToggleGroup
+      rovingFocus={false}
+      className={cn("flex items-center gap-1", className)}
+      {...props}
+    />
+  );
+}
+
+type ToolbarToggleItemProps = ButtonProps & {
+  value: string;
+};
+
+export function ToolbarToggleItem({
+  children,
+  ...props
+}: ToolbarToggleItemProps) {
+  return (
+    <ToolbarPrimitives.ToggleItem asChild {...props}>
+      <IconButton type="button" iconSize="lg">
+        {children}
+      </IconButton>
+    </ToolbarPrimitives.ToggleItem>
   );
 }

@@ -118,7 +118,7 @@ export class LevelImporter {
             flowers.push(position);
             break;
           case 2: // Apple
-            apples.push({ position, animation: 0, gravity: 0 });
+            apples.push({ position, animation: 1, gravity: Gravity.None });
             break;
           case 3: // Killer
             killers.push(position);

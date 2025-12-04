@@ -6,7 +6,7 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import type { EditorEngine } from "~/editor/editor-engine";
-import { ToolButton } from "./tool-button";
+import { ToolButton } from "./tool";
 
 export function CanvasToolbar({
   engineRef,
@@ -15,7 +15,7 @@ export function CanvasToolbar({
 }) {
   const { triggerFitToView } = useEditorActions();
   return (
-    <Toolbar className="right-4 bottom-4">
+    <Toolbar className="absolute right-4 bottom-4">
       <ToolButton
         name="Zoom In"
         shortcut="+"
