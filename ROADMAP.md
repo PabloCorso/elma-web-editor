@@ -26,6 +26,8 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 ## Planned features
 
+- LGR support
+
 - Match features set of in-game editor:
   - General help dialog
   - Apple properties:
@@ -109,8 +111,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Delete tool
     - Cannot delete Start object or last Exit object.
 
-- AI Assistant
-
 - Help section / keyboard shortcuts reference
 
 - Mobile support:
@@ -118,8 +118,9 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Erase tool
   - Mobile toolbar
 
-- LGR support
+- AI Assistant
 
-## Other ideas
+## Other
 
+- Custom lev folder management with preview thumbnails
 - Export to SVG
