@@ -35,6 +35,7 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - Gravity Left
     - Gravity Right
     - Food anim number (1-9)
+      - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
     - In-game set right clicking apple with move tool
   - Pictures:
     - Right click to select picture or mask with texture and left click to place.
