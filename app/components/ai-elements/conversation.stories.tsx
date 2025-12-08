@@ -28,8 +28,8 @@ export const Primary: Story = {
           <Message from="assistant">
             <MessageContent>
               <Response>
-                Hello! I'm the AI assistant for the ElastoMania level editor.
-                How can I help you today?
+                Hello! I&apos;m the AI assistant for the ElastoMania level
+                editor. How can I help you today?
               </Response>
             </MessageContent>
           </Message>

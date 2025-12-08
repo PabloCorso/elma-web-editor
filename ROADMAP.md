@@ -122,5 +122,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 ## Other
 
+- Zoom +/- should be linear (not relative to current zoom level)
 - Custom lev folder management with preview thumbnails
 - Export to SVG

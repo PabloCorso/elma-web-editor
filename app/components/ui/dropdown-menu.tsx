@@ -1,8 +1,4 @@
-import {
-  CaretDownIcon,
-  CaretRightIcon,
-  CheckIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Icon } from "./icon";
 import { cn } from "~/utils/misc";

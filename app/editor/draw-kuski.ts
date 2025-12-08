@@ -22,7 +22,7 @@ function skewimage(
   y2: number,
   box?: boolean
 ) {
-  var o = x2 - x1,
+  const o = x2 - x1,
     a = y2 - y1;
   ctx.save();
   ctx.translate(x1, y1);
@@ -52,27 +52,27 @@ function limb(
     x2: number,
     y2: number
   ) {
-    var dist = hypot(x2 - x1, y2 - y1);
-    var fstLen = fstParams.length,
-      sndLen = sndParams.length;
+    const dist = hypot(x2 - x1, y2 - y1);
+    let fstLen = fstParams.length;
+    const sndLen = sndParams.length;
 
-    var prod =
+    const prod =
       (dist + fstLen + sndLen) *
       (dist - fstLen + sndLen) *
       (dist + fstLen - sndLen) *
       (-dist + fstLen + sndLen);
-    var angle = Math.atan2(y2 - y1, x2 - x1);
-    var jointangle = 0;
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    let jointangle = 0;
     if (prod >= 0 && dist < fstLen + sndLen) {
       // law of sines
-      var circumr = (dist * fstLen * sndLen) / Math.sqrt(prod);
+      const circumr = (dist * fstLen * sndLen) / Math.sqrt(prod);
       jointangle = Math.asin(sndLen / (2 * circumr));
     } else fstLen = (fstLen / (fstLen + sndLen)) * dist;
 
     if (cwInner) jointangle *= -1;
 
-    var jointx = x1 + fstLen * Math.cos(angle + jointangle);
-    var jointy = y1 + fstLen * Math.sin(angle + jointangle);
+    const jointx = x1 + fstLen * Math.cos(angle + jointangle);
+    const jointy = y1 + fstLen * Math.sin(angle + jointangle);
 
     skewimage(
       ctx,
@@ -101,7 +101,7 @@ function limb(
   };
 }
 
-var legLimb = limb(
+const legLimb = limb(
   false,
   {
     length: 26.25 / 48,
@@ -119,7 +119,7 @@ var legLimb = limb(
   }
 );
 
-var armLimb = limb(
+const armLimb = limb(
   true,
   {
     length: 0.3234,
@@ -194,25 +194,25 @@ export function drawKuski({
   ctx.scale(scale, scale);
   ctx.beginPath();
 
-  var bikeR = (coords.bikeR * Math.PI * 2) / 10000;
-  var turn = coords.turn;
-  var leftX = coords.leftX / 1000;
-  var leftY = coords.leftY / 1000;
+  const bikeR = (coords.bikeR * Math.PI * 2) / 10000;
+  const turn = coords.turn;
+  const leftX = coords.leftX / 1000;
+  const leftY = coords.leftY / 1000;
   ctx.translate(-leftX, leftY);
 
-  var leftR = (coords.leftR * Math.PI * 2) / 250;
-  var rightX = coords.rightX / 1000;
-  var rightY = coords.rightY / 1000;
-  var rightR = (coords.rightR * Math.PI * 2) / 250;
-  var headX = coords.headX / 1000;
-  var headY = coords.headY / 1000;
+  const leftR = (coords.leftR * Math.PI * 2) / 250;
+  const rightX = coords.rightX / 1000;
+  const rightY = coords.rightY / 1000;
+  const rightR = (coords.rightR * Math.PI * 2) / 250;
+  const headX = coords.headX / 1000;
+  const headY = coords.headY / 1000;
 
-  var backX = !turn ? rightX : leftX;
-  var backY = !turn ? rightY : leftY;
-  var backR = !turn ? rightR : leftR;
-  var frontX = turn ? rightX : leftX;
-  var frontY = turn ? rightY : leftY;
-  var frontR = turn ? rightR : leftR;
+  const backX = !turn ? rightX : leftX;
+  const backY = !turn ? rightY : leftY;
+  const backR = !turn ? rightR : leftR;
+  const frontX = turn ? rightX : leftX;
+  const frontY = turn ? rightY : leftY;
+  const frontR = turn ? rightR : leftR;
 
   wheel(ctx, lgrSprites, backX, backY, backR);
   wheel(ctx, lgrSprites, frontX, frontY, frontR);
@@ -221,8 +221,8 @@ export function drawKuski({
   ctx.rotate(-bikeR);
   if (turn) ctx.scale(-1, 1);
 
-  var wx, wy, a, r;
-  var hbarsX = -21.5,
+  let wx, wy, a, r;
+  const hbarsX = -21.5,
     hbarsY = -17;
   ctx.save();
   ctx.scale(1 / 48, 1 / 48);
@@ -285,9 +285,9 @@ export function drawKuski({
   ctx.drawImage(lgrSprites.q1head, 0, 0, 1, 1);
   ctx.restore();
 
-  var bumx = 19.5 / 48,
+  const bumx = 19.5 / 48,
     bumy = 0;
-  var pedalx = -wx + 10.2 / 48 / 3,
+  const pedalx = -wx + 10.2 / 48 / 3,
     pedaly = -wy + 65 / 48 / 3;
   legLimb(
     ctx,
@@ -315,11 +315,11 @@ export function drawKuski({
 
   ctx.restore();
 
-  var shoulderx = 0 / 48,
+  const shoulderx = 0 / 48,
     shouldery = -17.5 / 48;
-  var handlex = -wx - 64.5 / 48 / 3,
+  const handlex = -wx - 64.5 / 48 / 3,
     handley = -wy - 59.6 / 48 / 3;
-  var handx = handlex,
+  const handx = handlex,
     handy = handley;
 
   armLimb(

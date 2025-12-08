@@ -60,7 +60,7 @@ type ToolbarGroupProps = Omit<
 
 export function ToolbarToggleGroup({ className, ...props }: ToolbarGroupProps) {
   return (
-    // @ts-ignore
+    // @ts-expect-error Radix types
     <ToolbarPrimitives.ToggleGroup
       rovingFocus={false}
       className={cn("flex items-center gap-1", className)}

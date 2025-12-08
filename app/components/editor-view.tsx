@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { EditorEngine } from "../editor/editor-engine";
 import { useEditorStore } from "~/editor/use-editor-store";
@@ -6,6 +7,7 @@ import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
 import { useLgrAssets } from "./use-lgr-assets";
+import { type LevelData, LevelImporter } from "~/editor/level-importer";
 
 export function EditorView({
   canvasRef,
@@ -40,11 +42,21 @@ export function useEditorView({
   });
   const store = useEditorStore();
   const lgrAssets = useLgrAssets();
+  const [initialLevel, setInitialLevel] = useState<LevelData | null>(null);
+
+  useEffect(() => {
+    async function loadInitialLevel() {
+      const level = await LevelImporter.importBuiltinLevel("WCup907.lev");
+      const data = level.data ?? null;
+      setInitialLevel(data);
+    }
+    loadInitialLevel();
+  }, []);
 
   useEffect(
     function initializeEditorEngine() {
       const canvas = canvasRef.current;
-      if (!canvas || engineRef.current) return;
+      if (!canvas || engineRef.current || !initialLevel) return;
 
       const parent = canvas.parentElement;
       if (!parent) return;
@@ -107,6 +119,7 @@ export function useEditorView({
         tools,
         widgets,
         lgrAssets,
+        initialLevel,
       });
 
       // Add resize observer to handle parent size changes (batched to avoid flicker)
@@ -127,7 +140,7 @@ export function useEditorView({
         }
       };
     },
-    [store, isOpenAIEnabled]
+    [store, initialLevel, isOpenAIEnabled, lgrAssets]
   );
 
   return { canvasRef, engineRef };

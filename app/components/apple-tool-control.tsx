@@ -16,7 +16,7 @@ import {
 } from "~/editor/tools/object-tools";
 import type { AppleAnimation } from "~/editor/editor.types";
 import { cn } from "~/editor/utils/misc";
-import { Button, IconButton, type ButtonProps } from "./button";
+import { Button, type ButtonProps } from "./button";
 
 export function AppleToolControl() {
   const activeTool = useEditorActiveTool();

@@ -7,7 +7,7 @@ import { CanvasToolbar } from "~/components/canvas-toolbar";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { LgrAssetsProvider } from "~/components/use-lgr-assets";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "ElastoMania Level Editor" },
     { name: "description", content: "Web-based ElastoMania Level Editor" },

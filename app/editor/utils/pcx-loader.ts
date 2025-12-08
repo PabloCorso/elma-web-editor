@@ -16,7 +16,7 @@ function decodePcx(pcx: Uint8Array): DecodedPcx {
 
   const dataView = new DataView(pcx.buffer, pcx.byteOffset, pcx.byteLength);
   const manufacturer = dataView.getUint8(0);
-  const version = dataView.getUint8(1);
+  const _version = dataView.getUint8(1);
   const encoding = dataView.getUint8(2);
   const bitsPerPixel = dataView.getUint8(3);
 

@@ -1,18 +1,12 @@
 import { useRef, useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import {
-  useEditor,
   useEditorStore,
   useEditorToolState,
   useEditorWidget,
 } from "../editor/use-editor-store";
 import type { AIWidget, AIToolState } from "../editor/widgets/ai-widget";
-import {
-  DefaultChatTransport,
-  type UIDataTypes,
-  type UIMessagePart,
-  type UITools,
-} from "ai";
+import { DefaultChatTransport } from "ai";
 import type { Polygon, Position } from "elmajs";
 import {
   Conversation,
@@ -20,11 +14,6 @@ import {
   ConversationScrollButton,
 } from "./ai-elements/conversation";
 import { Message, MessageContent } from "./ai-elements/message";
-import {
-  Reasoning,
-  ReasoningTrigger,
-  ReasoningContent,
-} from "./ai-elements/reasoning";
 import { Response } from "./ai-elements/response";
 import {
   PromptInput,
@@ -135,8 +124,8 @@ export function AIChat() {
             <Message from="assistant">
               <MessageContent>
                 <Response>
-                  Hello! I'm the AI assistant for the ElastoMania level editor.
-                  How can I help you today?
+                  Hello! I&apos;m the AI assistant for the ElastoMania level
+                  editor. How can I help you today?
                 </Response>
               </MessageContent>
             </Message>

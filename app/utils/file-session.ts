@@ -2,7 +2,6 @@ import type { Level } from "elmajs";
 import {
   getFileHandle,
   getNewFileHandle,
-  readFile,
   verifyPermission,
   writeFile,
 } from "./file-system-access";

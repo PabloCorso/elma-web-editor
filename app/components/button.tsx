@@ -41,7 +41,6 @@ export type ButtonProps<T extends React.ElementType = "button"> = Omit<
 
 export function Button<T extends React.ElementType = "button">({
   as,
-  variant,
   size = "md",
   iconBefore,
   iconAfter,

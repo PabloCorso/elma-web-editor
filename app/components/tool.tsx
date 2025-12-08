@@ -74,7 +74,7 @@ export function ToolControlButton({
     <ToolButton
       className={cn({ "bg-primary-hover/50": isActive }, className)}
       onClick={(event) => {
-        id && activateTool(id);
+        if (id) activateTool(id);
         onClick?.(event);
       }}
       {...props}

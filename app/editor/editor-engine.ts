@@ -7,7 +7,7 @@ import {
   debugPolygonOrientation,
 } from "./helpers";
 import { colors } from "./constants";
-import { type Position, type Polygon, Gravity, OBJECT_DIAMETER } from "elmajs";
+import { type Position, type Polygon } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
@@ -501,7 +501,7 @@ export class EditorEngine {
     allPolygonsForRendering.forEach((polygon) => {
       if (polygon.vertices.length < 3 || polygon.grass) return;
 
-      let vertices = [...polygon.vertices];
+      const vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
       const shouldBeGround = shouldPolygonBeGround(
         polygon,
@@ -539,7 +539,7 @@ export class EditorEngine {
         return;
       }
 
-      let vertices = [...polygon.vertices];
+      const vertices = [...polygon.vertices];
       const isClockwise = isPolygonClockwise(vertices);
       const shouldBeGround = shouldPolygonBeGround(
         polygon,
