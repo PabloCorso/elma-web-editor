@@ -3,7 +3,6 @@ import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
 import { correctPolygonWinding } from "./helpers";
 import { colors } from "./constants";
-import { type Position } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
@@ -599,10 +598,6 @@ export class EditorEngine {
         });
       }
     });
-  }
-
-  private drawDraftObjectSprite(sprite: ImageBitmap, position: Position) {
-    drawObject({ ctx: this.ctx, sprite, position, opacity: 0.5 });
   }
 
   public destroy() {
