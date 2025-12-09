@@ -1,7 +1,7 @@
 import { type EditorState } from "./editor-state";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
-import { correctPolygonWinding } from "./helpers";
+import { correctPolygonWinding } from "./polygon-utils";
 import { colors } from "./constants";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
@@ -624,10 +624,17 @@ export class EditorEngine {
     this.ctx.textAlign = "left";
     this.ctx.textBaseline = "top";
 
+    // Calculate screen mouse position (inverse of what getEventContext does)
+    const screenMouseX =
+      state.mousePosition.x * state.zoom + state.viewPortOffset.x;
+    const screenMouseY =
+      state.mousePosition.y * state.zoom + state.viewPortOffset.y;
+
     const lines = [
       "Debug Mode: ON",
       "Press 'D' to exit debug mode",
-      `Mouse: (${state.mousePosition.x.toFixed(1)}, ${state.mousePosition.y.toFixed(1)})`,
+      `Mouse (World): (${state.mousePosition.x.toFixed(1)}, ${state.mousePosition.y.toFixed(1)})`,
+      `Mouse (Screen): (${screenMouseX.toFixed(1)}, ${screenMouseY.toFixed(1)})`,
       `Camera: (${state.viewPortOffset.x.toFixed(1)}, ${state.viewPortOffset.y.toFixed(1)})`,
       `Zoom: ${state.zoom.toFixed(2)}`,
     ];

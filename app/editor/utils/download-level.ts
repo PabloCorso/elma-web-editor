@@ -4,7 +4,7 @@ import {
   correctPolygonWinding,
   correctPolygonPrecision,
   correctVertexPrecision as correctPositionPrecision,
-} from "../helpers";
+} from "../polygon-utils";
 
 const { Level, ObjectType, Gravity } = elmajs;
 

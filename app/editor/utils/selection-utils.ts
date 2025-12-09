@@ -1,5 +1,8 @@
 import type { Position, Polygon } from "elmajs";
-import { isWithinThreshold, getClosestPointOnLineSegment } from "./coordinate-utils";
+import {
+  isWithinThreshold,
+  getClosestPointOnLineSegment,
+} from "./coordinate-utils";
 
 export type SelectedVertex = {
   polygon: Polygon;
@@ -68,13 +71,13 @@ export function getAllObjects(
 
 export function isPointInRect(
   point: Position,
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number
+  rect: { minX: number; maxX: number; minY: number; maxY: number }
 ): boolean {
   return (
-    point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+    point.x >= rect.minX &&
+    point.x <= rect.maxX &&
+    point.y >= rect.minY &&
+    point.y <= rect.maxY
   );
 }
 
@@ -97,24 +100,24 @@ export function findPolygonEdgeNearPosition(
   zoom: number
 ): Polygon | null {
   const adjustedThreshold = threshold / zoom;
-  
+
   for (const polygon of polygons) {
     if (polygon.vertices.length < 3) continue;
-    
+
     // Check each edge of the polygon
     for (let i = 0; i < polygon.vertices.length; i++) {
       const start = polygon.vertices[i];
       const end = polygon.vertices[(i + 1) % polygon.vertices.length];
-      
+
       // Calculate distance from point to line segment
       const distance = distanceToLineSegment(pos, start, end);
-      
+
       if (distance <= adjustedThreshold) {
         return polygon;
       }
     }
   }
-  
+
   return null;
 }
 
@@ -130,14 +133,14 @@ function distanceToLineSegment(
 
   const dot = A * C + B * D;
   const lenSq = C * C + D * D;
-  
+
   if (lenSq === 0) {
     // Line segment is actually a point
     return Math.sqrt(A * A + B * B);
   }
-  
+
   const param = dot / lenSq;
-  
+
   let xx, yy;
   if (param < 0) {
     xx = lineStart.x;
@@ -149,10 +152,10 @@ function distanceToLineSegment(
     xx = lineStart.x + param * C;
     yy = lineStart.y + param * D;
   }
-  
+
   const dx = point.x - xx;
   const dy = point.y - yy;
-  
+
   return Math.sqrt(dx * dx + dy * dy);
 }
 
@@ -178,35 +181,39 @@ export function findPolygonLineForEditing(
   polygons: Polygon[],
   threshold: number = 8,
   zoom: number
-): { polygon: Polygon; insertionIndex: number; insertionPoint: Position } | null {
+): {
+  polygon: Polygon;
+  insertionIndex: number;
+  insertionPoint: Position;
+} | null {
   const adjustedThreshold = threshold / zoom;
-  
+
   for (const polygon of polygons) {
     if (polygon.vertices.length < 3) continue;
-    
+
     // Check each edge of the polygon
     for (let i = 0; i < polygon.vertices.length; i++) {
       const start = polygon.vertices[i];
       const end = polygon.vertices[(i + 1) % polygon.vertices.length];
-      
+
       // Calculate distance from point to line segment
       const distance = distanceToLineSegment(pos, start, end);
-      
+
       if (distance <= adjustedThreshold) {
         // Find the closest point on this line segment
         const insertionPoint = getClosestPointOnLineSegment(pos, start, end);
-        
+
         // The insertion index is after the current vertex (i)
         const insertionIndex = (i + 1) % polygon.vertices.length;
-        
+
         return {
           polygon,
           insertionIndex,
-          insertionPoint
+          insertionPoint,
         };
       }
     }
   }
-  
+
   return null;
 }

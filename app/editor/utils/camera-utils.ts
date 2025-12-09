@@ -1,5 +1,6 @@
 import type { Polygon, Position } from "elmajs";
 import type { Apple } from "../editor.types";
+import { calculateBoundingBox } from "./level-utils";
 
 export function updateCamera({
   deltaX,
@@ -107,37 +108,12 @@ export function fitToView({
   setCamera: (x: number, y: number) => void;
   setZoom: (zoom: number) => void;
 }) {
-  // Find bounding box of all polygons and objects
-  let minX = Infinity,
-    minY = Infinity;
-  let maxX = -Infinity,
-    maxY = -Infinity;
-
-  // Check polygons
-  polygons.forEach((polygon) => {
-    polygon.vertices.forEach((vertex) => {
-      minX = Math.min(minX, vertex.x);
-      minY = Math.min(minY, vertex.y);
-      maxX = Math.max(maxX, vertex.x);
-      maxY = Math.max(maxY, vertex.y);
-    });
-  });
-
-  // Check all objects
-  const allObjects = [
-    ...apples.map((apple) => apple.position),
-    ...killers,
-    ...flowers,
+  let { minX, minY, maxX, maxY } = calculateBoundingBox({
+    polygons,
+    apples,
+    killers,
+    flowers,
     start,
-  ];
-
-  allObjects.forEach((obj) => {
-    if (obj && typeof obj.x === "number" && typeof obj.y === "number") {
-      minX = Math.min(minX, obj.x);
-      minY = Math.min(minY, obj.y);
-      maxX = Math.max(maxX, obj.x);
-      maxY = Math.max(maxY, obj.y);
-    }
   });
 
   // If no polygons and no objects, center on origin

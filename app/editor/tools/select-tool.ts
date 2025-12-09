@@ -340,15 +340,7 @@ export class SelectTool extends Tool {
     // Select vertices within the marquee
     state.polygons.forEach((polygon: Polygon) => {
       polygon.vertices.forEach((vertex: Position) => {
-        if (
-          isPointInRect(
-            vertex,
-            bounds.minX,
-            bounds.maxX,
-            bounds.minY,
-            bounds.maxY
-          )
-        ) {
+        if (isPointInRect(vertex, bounds)) {
           const isSelected = toolState.selectedVertices.some(
             (sv: VertexSelection) =>
               sv.polygon === polygon && sv.vertex === vertex
@@ -368,9 +360,7 @@ export class SelectTool extends Tool {
       state.start
     );
     allObjects.forEach(({ obj }: { obj: Position }) => {
-      if (
-        isPointInRect(obj, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY)
-      ) {
+      if (isPointInRect(obj, bounds)) {
         const isSelected = toolState.selectedObjects.includes(obj);
         if (!isSelected) {
           this.selectObject(obj);
