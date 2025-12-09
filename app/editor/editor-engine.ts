@@ -32,7 +32,6 @@ export class EditorEngine {
   private debugMode = false;
   private store: EditorStore;
   private lgrAssets: LgrAssets;
-  private mouseOnCanvas = false;
 
   // Camera system
   private minZoom;
@@ -172,7 +171,7 @@ export class EditorEngine {
     }
 
     state.actions.setMousePosition(context.worldPos);
-    this.mouseOnCanvas = true;
+    state.actions.setMouseOnCanvas(true);
   };
 
   private handleMouseUp = (event: MouseEvent) => {
@@ -197,7 +196,8 @@ export class EditorEngine {
   };
 
   private handleMouseLeave = () => {
-    this.mouseOnCanvas = false;
+    const state = this.store.getState();
+    state.actions.setMouseOnCanvas(false);
   };
 
   private handleRightClick = (event: MouseEvent) => {
@@ -445,21 +445,23 @@ export class EditorEngine {
   private render() {
     const state = this.store.getState();
     this.clearCanvas();
+
+    this.ctx.save();
     this.applyCameraTransform(state);
     this.drawPolygons();
     this.drawObjects();
 
-    // Let active tool render
+    // Let active tool render on world-space canvas
     const activeTool = state.actions.getActiveTool();
     if (activeTool?.onRender) {
-      activeTool.onRender(this.ctx);
+      activeTool.onRender(this.ctx, this.lgrAssets);
     }
 
     this.ctx.restore();
 
-    // Let active tool render overlay
+    // Let active tool render overlay on screen-space UI
     if (activeTool?.onRenderOverlay) {
-      activeTool.onRenderOverlay(this.ctx);
+      activeTool.onRenderOverlay(this.ctx, this.lgrAssets);
     }
 
     if (this.debugMode) {
@@ -473,7 +475,6 @@ export class EditorEngine {
   }
 
   private applyCameraTransform(state: EditorState) {
-    this.ctx.save();
     this.ctx.translate(state.viewPortOffset.x, state.viewPortOffset.y);
     this.ctx.scale(state.zoom, state.zoom);
   }
@@ -557,16 +558,9 @@ export class EditorEngine {
     });
 
     const animate = state.animateSprites;
-    const drafts = this.mouseOnCanvas
-      ? state.actions.getActiveTool()?.getDrafts?.() || {}
-      : {};
 
-    const apple1Sprite = this.lgrAssets.getSprite("qfood1");
-    const apple2Sprite = this.lgrAssets.getSprite("qfood2");
-    const appleSprite = (animation: number) =>
-      animation > 1 ? apple2Sprite : apple1Sprite;
     state.apples.forEach((apple) => {
-      const sprite = appleSprite(apple.animation);
+      const sprite = this.lgrAssets.getAppleSprite(apple.animation);
       if (sprite) {
         drawObject({
           ctx: this.ctx,
@@ -582,22 +576,7 @@ export class EditorEngine {
       }
     });
 
-    if (drafts.apples) {
-      drafts.apples.forEach((apple) => {
-        const sprite = appleSprite(apple.animation);
-        if (sprite) {
-          this.drawDraftObjectSprite(sprite, apple.position);
-          drawGravityArrow({
-            ctx: this.ctx,
-            position: apple.position,
-            gravity: apple.gravity,
-            opacity: 0.5,
-          });
-        }
-      });
-    }
-
-    const killerSprite = this.lgrAssets.getSprite("qkiller");
+    const killerSprite = this.lgrAssets.getKillerSprite();
     state.killers.forEach((killer) => {
       if (killerSprite) {
         drawObject({
@@ -609,15 +588,7 @@ export class EditorEngine {
       }
     });
 
-    if (drafts.killers) {
-      drafts.killers.forEach((killer) => {
-        if (killerSprite) {
-          this.drawDraftObjectSprite(killerSprite, killer);
-        }
-      });
-    }
-
-    const exitSprite = this.lgrAssets.getSprite("qexit");
+    const exitSprite = this.lgrAssets.getFlowerSprite();
     state.flowers.forEach((flower) => {
       if (exitSprite) {
         drawObject({
@@ -628,14 +599,6 @@ export class EditorEngine {
         });
       }
     });
-
-    if (drafts.flowers) {
-      drafts.flowers.forEach((flower) => {
-        if (exitSprite) {
-          this.drawDraftObjectSprite(exitSprite, flower);
-        }
-      });
-    }
   }
 
   private drawDraftObjectSprite(sprite: ImageBitmap, position: Position) {

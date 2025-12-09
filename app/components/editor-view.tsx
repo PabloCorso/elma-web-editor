@@ -28,11 +28,15 @@ export function EditorView({
   );
 }
 
-export function useEditorView({
-  isOpenAIEnabled,
-}: {
+type UseEditorViewOptions = {
+  initialLevel?: InitialLevel;
   isOpenAIEnabled?: boolean;
-}) {
+};
+
+export function useEditorView({
+  initialLevel,
+  isOpenAIEnabled,
+}: UseEditorViewOptions) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
   const resizeFrameRef = useRef<number | null>(null);
@@ -42,21 +46,13 @@ export function useEditorView({
   });
   const store = useEditorStore();
   const lgrAssets = useLgrAssets();
-  const [initialLevel, setInitialLevel] = useState<LevelData | null>(null);
-
-  useEffect(() => {
-    async function loadInitialLevel() {
-      const level = await LevelImporter.importBuiltinLevel("WCup907.lev");
-      const data = level.data ?? null;
-      setInitialLevel(data);
-    }
-    loadInitialLevel();
-  }, []);
 
   useEffect(
     function initializeEditorEngine() {
       const canvas = canvasRef.current;
-      if (!canvas || engineRef.current || !initialLevel) return;
+      if (!canvas || engineRef.current || initialLevel?.status === "loading") {
+        return;
+      }
 
       const parent = canvas.parentElement;
       if (!parent) return;
@@ -119,7 +115,7 @@ export function useEditorView({
         tools,
         widgets,
         lgrAssets,
-        initialLevel,
+        initialLevel: initialLevel?.data,
       });
 
       // Add resize observer to handle parent size changes (batched to avoid flicker)
@@ -144,4 +140,38 @@ export function useEditorView({
   );
 
   return { canvasRef, engineRef };
+}
+
+type InitialLevel = {
+  data: LevelData | undefined;
+  status: "loading" | "done" | "error";
+};
+
+// TODO: should this move to FileSession or EditorStore?
+export function useInitialLevel(levelName?: string): InitialLevel {
+  const [data, setData] = useState<LevelData | undefined>(undefined);
+  const [status, setStatus] = useState<"loading" | "done" | "error">(
+    levelName ? "loading" : "done"
+  );
+
+  useEffect(() => {
+    async function loadInitialLevel() {
+      if (!levelName) return {};
+      try {
+        const level = await LevelImporter.importBuiltinLevel(
+          `${levelName}.lev`
+        );
+        setData(level.data ?? undefined);
+        setStatus(level.data ? "done" : "error");
+      } catch (error) {
+        console.error("Error loading initial level:", error);
+        setData(undefined);
+        setStatus("error");
+      }
+    }
+
+    loadInitialLevel();
+  }, [levelName]);
+
+  return { data, status };
 }

@@ -1,6 +1,7 @@
 import * as elmajs from "elmajs";
 import defaultLgr from "../assets/lgr/Default.lgr?url";
 import { decodeLgrPictureBitmap } from "~/editor/utils/pcx-loader";
+import type { AppleAnimation } from "~/editor/editor.types";
 
 export class LgrAssets {
   private lgr: elmajs.LGR | null = null;
@@ -36,6 +37,20 @@ export class LgrAssets {
   getSprite(name: string) {
     const normName = this.normalizeName(name);
     return this.lgrSprites[normName] || null;
+  }
+
+  getAppleSprite(animation: AppleAnimation) {
+    const apple1Sprite = this.lgrSprites["qfood1"];
+    const apple2Sprite = this.lgrSprites["qfood2"];
+    return animation > 1 ? apple2Sprite : apple1Sprite;
+  }
+
+  getKillerSprite() {
+    return this.getSprite("qkiller");
+  }
+
+  getFlowerSprite() {
+    return this.getSprite("qexit");
   }
 
   isReady() {

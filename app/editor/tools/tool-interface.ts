@@ -3,6 +3,7 @@ import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
 import type { Apple } from "../editor.types";
 import type { DefaultToolMeta } from "./default-tools";
+import type { LgrAssets } from "~/components/lgr-assets";
 
 export type ToolState<T = unknown> = Record<string, T>;
 
@@ -19,8 +20,8 @@ export abstract class Tool {
   onRightClick?(event: MouseEvent, context: EventContext): boolean;
 
   // Rendering
-  onRender?(ctx: CanvasRenderingContext2D): void;
-  onRenderOverlay?(ctx: CanvasRenderingContext2D): void;
+  onRender?(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets): void;
+  onRenderOverlay?(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets): void;
 
   // Draft elements for previewing while using the tool
   getDrafts?(): {

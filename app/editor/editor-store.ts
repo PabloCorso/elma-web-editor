@@ -29,6 +29,7 @@ export function createEditorStore({
     // Editor state
     activeToolId: initialToolId,
     mousePosition: { x: 0, y: 0 },
+    mouseOnCanvas: false,
 
     // Camera state
     viewPortOffset: { x: 0, y: 0 },
@@ -81,6 +82,7 @@ export function createEditorStore({
         }),
 
       setMousePosition: (position) => set({ mousePosition: position }),
+      setMouseOnCanvas: (onCanvas) => set({ mouseOnCanvas: onCanvas }),
       setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
       setZoom: (zoom) => set({ zoom }),
       setPolygons: (polygons) => set({ polygons }),

@@ -28,7 +28,7 @@ import { supportsFilePickers } from "~/utils/file-session";
 import { SettingsDialog } from "./settings";
 import { Icon } from "./ui/icon";
 
-export function HeaderToolbar() {
+export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { setLevelName, loadLevelData, triggerFitToView } = useEditorActions();
   const store = useEditorStore();
@@ -140,13 +140,15 @@ export function HeaderToolbar() {
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="px-2 flex items-center gap-2">
-          <input
-            type="text"
-            value={levelName}
-            onChange={(e) => setLevelName(e.target.value)}
-            className="w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-            placeholder="Enter level name..."
-          />
+          {!isLoading && (
+            <input
+              type="text"
+              value={levelName}
+              onChange={(e) => setLevelName(e.target.value)}
+              className="w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+              placeholder="Enter level name…"
+            />
+          )}
           {filename ? (
             <div>
               {filename} {isModified ? "*" : ""}

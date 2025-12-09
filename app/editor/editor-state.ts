@@ -18,6 +18,7 @@ export type EditorState = {
   // Editor state
   activeToolId: string;
   mousePosition: Position;
+  mouseOnCanvas: boolean;
 
   // Camera state
   viewPortOffset: { x: number; y: number };
@@ -53,6 +54,7 @@ export type EditorState = {
 
     setLevelName: (name: string) => void;
     setMousePosition: (position: Position) => void;
+    setMouseOnCanvas: (onCanvas: boolean) => void;
     setCamera: (x: number, y: number) => void;
     setZoom: (zoom: number) => void;
     setPolygons: (polygons: Polygon[]) => void;

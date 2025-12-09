@@ -4,6 +4,8 @@ import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { Gravity } from "elmajs";
 import type { Apple, AppleAnimation } from "../editor.types";
+import type { LgrAssets } from "~/components/lgr-assets";
+import { drawGravityArrow, drawObject } from "../draw-object";
 
 export type AppleToolState = { animation: AppleAnimation; gravity: Gravity };
 
@@ -22,14 +24,6 @@ export class AppleTool extends Tool {
   private getAppleState() {
     const state = this.store.getState();
     return (state.toolState.apple as AppleToolState) || defaultAppleState;
-  }
-
-  onActivate() {
-    const state = this.store.getState();
-    const toolState = state.toolState.apple as AppleToolState | undefined;
-    if (!toolState) {
-      state.actions.setToolState(this.meta.id, this.getAppleState());
-    }
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
@@ -68,11 +62,41 @@ export class AppleTool extends Tool {
     }
   }
 
+  onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
+    const drafts = this.getDrafts();
+    drafts.apples?.forEach((apple) => {
+      const sprite = lgrAssets.getAppleSprite(apple.animation);
+      if (sprite) {
+        console.log(
+          "Drawing draft apple at",
+          apple.position,
+          apple.gravity,
+          sprite
+        );
+        drawObject({ ctx, sprite, position: apple.position, opacity: 0.5 });
+        drawGravityArrow({
+          ctx,
+          position: apple.position,
+          gravity: apple.gravity,
+          opacity: 0.5,
+        });
+      }
+    });
+  }
+
   getDrafts() {
     const state = this.store.getState();
     const position = state.mousePosition;
     const apple: Apple = { position, ...this.getAppleState() };
     return { apples: [apple] };
+  }
+
+  onActivate() {
+    const state = this.store.getState();
+    const toolState = state.toolState.apple as AppleToolState | undefined;
+    if (!toolState) {
+      state.actions.setToolState(this.meta.id, this.getAppleState());
+    }
   }
 }
 
@@ -87,6 +111,21 @@ export class KillerTool extends Tool {
     const state = this.store.getState();
     state.actions.addKiller(context.worldPos);
     return true;
+  }
+
+  onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
+    const drafts = this.getDrafts();
+    const killerSprite = lgrAssets.getKillerSprite();
+    if (killerSprite) {
+      drafts.killers?.forEach((killer) => {
+        drawObject({
+          ctx,
+          sprite: killerSprite,
+          position: killer,
+          opacity: 0.5,
+        });
+      });
+    }
   }
 
   getDrafts() {
@@ -106,6 +145,21 @@ export class FlowerTool extends Tool {
     const state = this.store.getState();
     state.actions.addFlower(context.worldPos);
     return true;
+  }
+
+  onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
+    const drafts = this.getDrafts();
+    const flowerSprite = lgrAssets.getFlowerSprite();
+    if (flowerSprite) {
+      drafts.flowers?.forEach((flower) => {
+        drawObject({
+          ctx,
+          sprite: flowerSprite,
+          position: flower,
+          opacity: 0.5,
+        });
+      });
+    }
   }
 
   getDrafts() {
