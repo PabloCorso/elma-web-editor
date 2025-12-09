@@ -80,6 +80,7 @@ export class AppleTool extends Tool {
 
   getDrafts() {
     const state = this.store.getState();
+    if (!state.mouseOnCanvas) return {};
     const position = state.mousePosition;
     const apple: Apple = { position, ...this.getAppleState() };
     return { apples: [apple] };
@@ -124,6 +125,7 @@ export class KillerTool extends Tool {
 
   getDrafts() {
     const state = this.store.getState();
+    if (!state.mouseOnCanvas) return {};
     return { killers: [state.mousePosition] };
   }
 }
@@ -158,6 +160,7 @@ export class FlowerTool extends Tool {
 
   getDrafts() {
     const state = this.store.getState();
+    if (!state.mouseOnCanvas) return {};
     return { flowers: [state.mousePosition] };
   }
 }
