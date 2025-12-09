@@ -1,6 +1,6 @@
+import * as elmajs from "elmajs";
 import type { Polygon, Position } from "elmajs";
 
-// Helper function to determine if a polygon is clockwise
 export function isPolygonClockwise(vertices: Position[]): boolean {
   let sum = 0;
   for (let i = 0; i < vertices.length; i++) {
@@ -16,8 +16,9 @@ export function shouldPolygonBeGround(
   polygon: Polygon,
   allPolygons: Polygon[]
 ): boolean {
-  // Use multiple sample points to determine if polygon should be ground
-  const samplePoints = getPolygonSamplePoints(polygon.vertices);
+  const samplePoints: Position[] = computePolygonSamples(polygon);
+
+  // Majority vote from all sample points
   let groundVotes = 0;
   let skyVotes = 0;
 
@@ -40,48 +41,63 @@ export function shouldPolygonBeGround(
     }
   }
 
-  const result = groundVotes >= skyVotes;
-
   // Return the majority vote
-  return result;
+  return groundVotes >= skyVotes;
 }
 
-// Helper function to get multiple sample points from a polygon
-export function getPolygonSamplePoints(vertices: Position[]): Position[] {
-  if (vertices.length < 3) return [];
+export function correctPolygonWinding(
+  polygon: Polygon,
+  allPolygons: Polygon[]
+) {
+  // Calculate winding and ground/sky determination
+  const isClockwise = isPolygonClockwise(polygon.vertices);
+  const shouldBeGround = shouldPolygonBeGround(polygon, allPolygons);
 
-  const center = getPolygonCenter(vertices);
-  const points = [center];
+  // Canvas API fills based on winding direction using "non-zero winding rule":
+  // - CW polygons add to the fill count
+  // - CCW polygons subtract from the fill count
+  // For correct rendering: ground polygons need CW, sky polygons need CCW
+  // So we reverse vertices when shouldBeGround doesn't match isClockwise
+  const vertices =
+    shouldBeGround !== isClockwise
+      ? [...polygon.vertices].reverse()
+      : [...polygon.vertices];
+  return { ...polygon, vertices };
+}
 
-  // Add additional sample points for better accuracy
-  for (let i = 0; i < vertices.length; i++) {
-    const current = vertices[i];
-    const next = vertices[(i + 1) % vertices.length];
+export function correctPolygonPrecision(polygon: Polygon) {
+  const vertices = polygon.vertices.map((pos) => correctVertexPrecision(pos));
+  return { ...polygon, vertices };
+}
 
-    // Add midpoint of each edge
-    const midpoint = {
+// Ensure coordinates are floating point (not integers)
+export function correctVertexPrecision(pos: elmajs.Position) {
+  return {
+    x: Number.isInteger(pos.x) ? parseFloat(pos.x.toFixed(1)) : pos.x,
+    y: Number.isInteger(pos.y) ? parseFloat(pos.y.toFixed(1)) : pos.y,
+  };
+}
+
+// Use a small set of strategic sample points for accuracy while maintaining performance
+// Center + one point per edge (midpoint) provides good coverage without excessive checks
+function computePolygonSamples(polygon: Polygon) {
+  const center = getPolygonCenter(polygon.vertices);
+  const samplePoints: Position[] = [center];
+
+  // Add midpoint of each edge for better accuracy
+  for (let i = 0; i < polygon.vertices.length; i++) {
+    const current = polygon.vertices[i];
+    const next = polygon.vertices[(i + 1) % polygon.vertices.length];
+    samplePoints.push({
       x: (current.x + next.x) / 2,
       y: (current.y + next.y) / 2,
-    };
-    points.push(midpoint);
-
-    // Add points at 1/3 and 2/3 along each edge for better coverage
-    const third1 = {
-      x: current.x + (next.x - current.x) / 3,
-      y: current.y + (next.y - current.y) / 3,
-    };
-    const third2 = {
-      x: current.x + (2 * (next.x - current.x)) / 3,
-      y: current.y + (2 * (next.y - current.y)) / 3,
-    };
-    points.push(third1, third2);
+    });
   }
-
-  return points;
+  return samplePoints;
 }
 
 // Helper function to get the center of a polygon
-export function getPolygonCenter(vertices: Position[]): Position {
+function getPolygonCenter(vertices: Position[]): Position {
   const sumX = vertices.reduce((sum, v) => sum + v.x, 0);
   const sumY = vertices.reduce((sum, v) => sum + v.y, 0);
   return {
@@ -91,10 +107,7 @@ export function getPolygonCenter(vertices: Position[]): Position {
 }
 
 // Helper function to check if a point is inside a polygon with improved precision
-export function isPointInPolygon(
-  point: Position,
-  vertices: Position[]
-): boolean {
+function isPointInPolygon(point: Position, vertices: Position[]): boolean {
   if (vertices.length < 3) return false;
 
   let inside = false;
@@ -152,7 +165,7 @@ export function debugPolygonOrientation(
   }>;
 } {
   const isClockwise = isPolygonClockwise(polygon.vertices);
-  const samplePoints = getPolygonSamplePoints(polygon.vertices);
+  const samplePoints = computePolygonSamples(polygon);
   const containmentResults = [];
 
   for (const point of samplePoints) {

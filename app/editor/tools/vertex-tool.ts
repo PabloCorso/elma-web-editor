@@ -44,7 +44,7 @@ export class VertexTool extends Tool {
     const drawingPolygon = toolState.drawingPolygon;
 
     if (drawingPolygon.length >= 3) {
-      // Create a temporary polygon that includes the current mouse position
+      // Create a draft polygon that includes the current mouse position
       return {
         polygons: [
           { vertices: [...drawingPolygon, state.mousePosition], grass: false },

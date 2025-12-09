@@ -22,7 +22,7 @@ export abstract class Tool {
   onRender?(ctx: CanvasRenderingContext2D): void;
   onRenderOverlay?(ctx: CanvasRenderingContext2D): void;
 
-  // Temporary elements for previewing while using the tool
+  // Draft elements for previewing while using the tool
   getDrafts?(): {
     polygons?: Polygon[];
     apples?: Apple[];

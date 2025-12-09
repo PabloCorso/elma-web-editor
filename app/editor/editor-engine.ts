@@ -1,13 +1,9 @@
 import { type EditorState } from "./editor-state";
 import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
-import {
-  isPolygonClockwise,
-  shouldPolygonBeGround,
-  debugPolygonOrientation,
-} from "./helpers";
+import { correctPolygonWinding } from "./helpers";
 import { colors } from "./constants";
-import { type Position, type Polygon } from "elmajs";
+import { type Position } from "elmajs";
 import { initialLevelData, type LevelData } from "./level-importer";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
@@ -485,45 +481,40 @@ export class EditorEngine {
   private drawPolygons() {
     const state = this.store.getState();
 
-    // Get temporary polygons from the active tool
     const activeTool = state.actions.getActiveTool();
-    const temporaryPolygons = activeTool?.getDrafts?.()?.polygons || [];
+    const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
+    const allPolygons = [...state.polygons, ...draftPolygons];
 
-    // Include temporary polygons in the list for rendering calculations
-    const allPolygonsForRendering = [...state.polygons, ...temporaryPolygons];
+    if (allPolygons.length === 0) return;
 
-    if (allPolygonsForRendering.length === 0) return;
+    const correctedPolygons = state.polygons.map((polygon) => {
+      if (polygon.vertices.length < 3 || polygon.grass) {
+        return polygon;
+      }
+
+      return correctPolygonWinding(polygon, allPolygons);
+    });
 
     // Draw non-grass polygons with fill
     this.ctx.fillStyle = colors.sky;
     this.ctx.beginPath();
 
-    allPolygonsForRendering.forEach((polygon) => {
+    correctedPolygons.forEach((polygon) => {
       if (polygon.vertices.length < 3 || polygon.grass) return;
 
-      const vertices = [...polygon.vertices];
-      const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(
-        polygon,
-        allPolygonsForRendering
-      );
-
-      if (shouldBeGround !== isClockwise) {
-        vertices.reverse();
+      this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
+      for (let i = 1; i < polygon.vertices.length; i++) {
+        this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
       }
 
-      this.ctx.moveTo(vertices[0].x, vertices[0].y);
-      for (let i = 1; i < vertices.length; i++) {
-        this.ctx.lineTo(vertices[i].x, vertices[i].y);
-      }
-      this.ctx.lineTo(vertices[0].x, vertices[0].y);
+      this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
     });
 
     this.ctx.closePath();
-    this.ctx.fill();
+    this.ctx.fill(); // Fill all polygons at once according to even-odd (winding) rule
 
-    // Draw all polygon edges
-    state.polygons.forEach((polygon) => {
+    // Draw all polygon edges (only permanent polygons, not drafts)
+    correctedPolygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
@@ -539,17 +530,7 @@ export class EditorEngine {
         return;
       }
 
-      const vertices = [...polygon.vertices];
-      const isClockwise = isPolygonClockwise(vertices);
-      const shouldBeGround = shouldPolygonBeGround(
-        polygon,
-        allPolygonsForRendering
-      );
-
-      if (shouldBeGround !== isClockwise) {
-        vertices.reverse();
-      }
-
+      const vertices = polygon.vertices;
       this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom;
 
@@ -560,48 +541,7 @@ export class EditorEngine {
       }
       this.ctx.lineTo(vertices[0].x, vertices[0].y);
       this.ctx.stroke();
-
-      if (this.debugMode) {
-        this.drawPolygonDebugInfo(
-          polygon,
-          state.polygons,
-          shouldBeGround,
-          isClockwise
-        );
-      }
     });
-  }
-
-  private drawPolygonDebugInfo(
-    polygon: Polygon,
-    allPolygons: Polygon[],
-    shouldBeGround: boolean,
-    isClockwise: boolean
-  ) {
-    const state = this.store.getState();
-    const debug = debugPolygonOrientation(polygon, allPolygons);
-
-    // Label each vertex with its coordinates
-    polygon.vertices.forEach((v) => {
-      this.ctx.fillStyle = "#ffffff";
-      this.ctx.font = `${12 / state.zoom}px Arial`;
-      const label = `${v.x}, ${v.y}`;
-      this.ctx.fillText(label, v.x + 8 / state.zoom, v.y - 16 / state.zoom);
-    });
-
-    const center = debug.samplePoints[0];
-    this.ctx.fillStyle = shouldBeGround ? "#00ff00" : "#ff0000";
-    this.ctx.beginPath();
-    this.ctx.arc(center.x, center.y, 5 / state.zoom, 0, 2 * Math.PI);
-    this.ctx.fill();
-
-    this.ctx.fillStyle = "#ffffff";
-    this.ctx.font = `${14 / state.zoom}px Arial`;
-    this.ctx.fillText(
-      `${shouldBeGround ? "ground" : "sky"}-${isClockwise ? "clockwise" : "counter-clockwise"}`,
-      center.x + 8 / state.zoom,
-      center.y + 5 / state.zoom
-    );
   }
 
   private drawObjects() {

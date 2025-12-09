@@ -1,6 +1,10 @@
 import * as elmajs from "elmajs";
 import type { EditorState } from "../editor-state";
-import { isPolygonClockwise, shouldPolygonBeGround } from "../helpers";
+import {
+  correctPolygonWinding,
+  correctPolygonPrecision,
+  correctVertexPrecision as correctPositionPrecision,
+} from "../helpers";
 
 const { Level, ObjectType, Gravity } = elmajs;
 
@@ -15,53 +19,37 @@ export function getLevelFromState(state: EditorState) {
   const level = new Level();
   level.name = state.levelName || "Untitled";
 
-  // Normalize polygon winding based on nesting (ground vs sky) before export
   const normalizedPolygons = state.polygons.map((polygon) => {
-    const shouldBeGround = shouldPolygonBeGround(polygon, state.polygons);
-    // Export expects opposite ground/sky orientation than the canvas winding check
-    const shouldBeGroundForExport = !shouldBeGround;
-    const isClockwise = isPolygonClockwise(polygon.vertices);
-    const vertices =
-      shouldBeGroundForExport === isClockwise
-        ? polygon.vertices
-        : [...polygon.vertices].reverse();
-
-    return {
-      ...polygon,
-      vertices: vertices.map((vertex) => ensureFloatingPointPosition(vertex)),
-    };
+    const correctedPolygon = correctPolygonPrecision(polygon);
+    return polygon.grass
+      ? correctedPolygon
+      : correctPolygonWinding(correctedPolygon, state.polygons);
   });
 
-  // Process polygons with floating point coordinates
   level.polygons = normalizedPolygons;
 
-  // Convert separate object arrays to elmajs objects array format
   const objects = [
-    // Start position (type 4)
     {
       type: ObjectType.Start,
-      position: ensureFloatingPointPosition(state.start),
+      position: correctPositionPrecision(state.start),
       gravity: Gravity.None,
       animation: 1,
     },
-    // Apples (type 2)
     ...state.apples.map((apple) => ({
       type: ObjectType.Apple,
-      position: ensureFloatingPointPosition(apple.position),
+      position: correctPositionPrecision(apple.position),
       gravity: Gravity.None,
       animation: 1,
     })),
-    // Killers (type 3)
     ...state.killers.map((pos) => ({
       type: ObjectType.Killer,
-      position: ensureFloatingPointPosition(pos),
+      position: correctPositionPrecision(pos),
       gravity: Gravity.None,
       animation: 1,
     })),
-    // Flowers (type 1)
     ...state.flowers.map((pos) => ({
       type: ObjectType.Exit,
-      position: ensureFloatingPointPosition(pos),
+      position: correctPositionPrecision(pos),
       gravity: Gravity.None,
       animation: 1,
     })),
@@ -71,14 +59,6 @@ export function getLevelFromState(state: EditorState) {
   level.integrity = level.calculateIntegrity();
 
   return level;
-}
-
-// Ensure coordinates are floating point (not integers)
-function ensureFloatingPointPosition(pos: elmajs.Position) {
-  return {
-    x: Number.isInteger(pos.x) ? parseFloat(pos.x.toFixed(1)) : pos.x,
-    y: Number.isInteger(pos.y) ? parseFloat(pos.y.toFixed(1)) : pos.y,
-  };
 }
 
 export function levelToBlob(level: elmajs.Level): Blob {
