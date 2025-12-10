@@ -133,11 +133,7 @@ async function parseLevFile(data: ArrayBuffer): Promise<ImportResult> {
       pictures: level.pictures,
     };
 
-    console.log("Parsed .lev level data:", levelData);
-    return {
-      success: true,
-      data: levelData,
-    };
+    return { success: true, data: levelData };
   } catch (error) {
     return {
       success: false,

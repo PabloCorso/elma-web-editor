@@ -69,6 +69,15 @@ export class LgrAssets {
     return this.getSprite("qexit");
   }
 
+  getPictureSprites() {
+    return (
+      standardSprites.pictures.map((name) => ({
+        name,
+        sprite: this.getSprite(name),
+      })) || []
+    );
+  }
+
   isReady() {
     return !!this.lgr;
   }

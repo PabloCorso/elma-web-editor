@@ -7,7 +7,6 @@ import { SpriteIcon } from "./sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { useLgrSprite } from "./use-lgr-assets";
-import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Gravity } from "elmajs";
 import {
   defaultAppleState,
@@ -17,9 +16,9 @@ import type { AppleAnimation } from "~/editor/editor.types";
 import { cn } from "~/editor/utils/misc";
 import { type ButtonProps } from "./ui/button";
 import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
+import { Portal } from "@radix-ui/react-portal";
 
 export function AppleToolControl(props: ToolControlButtonProps) {
-  const activeTool = useEditorActiveTool();
   const appleTool = useEditorToolState<AppleToolState>(defaultTools.apple.id);
   const { setToolState } = useEditorActions();
 
@@ -37,64 +36,65 @@ export function AppleToolControl(props: ToolControlButtonProps) {
   const currentGravity = appleTool?.gravity ?? defaultAppleState.gravity;
   const apple = { 1: apple1, 2: apple2 }[currentAnimation];
 
+  const activeTool = useEditorActiveTool();
   const isActive = activeTool?.meta.id === defaultTools.apple.id;
   return (
-    <Popover open={isActive} modal={false}>
-      <PopoverAnchor>
-        <ToolControlButton
-          className="relative"
-          iconAfter={<AppleArrowIcon gravity={currentGravity} />}
-          {...defaultTools.apple}
-          {...props}
-        >
-          <SpriteIcon src={apple.src} />
-        </ToolControlButton>
-      </PopoverAnchor>
-      <PopoverContent sideOffset={12} side="right" align="center">
-        <Toolbar orientation="vertical">
-          <AppleButton
-            shortcut="1"
-            iconBefore={<SpriteIcon src={apple1.src} />}
-            onClick={() => handleAppleAnimationChange(1)}
-          />
-          <AppleButton
-            shortcut="2"
-            iconBefore={<SpriteIcon src={apple2.src} />}
-            onClick={() => handleAppleAnimationChange(2)}
-          />
-          <ToolbarSeparator />
-          <AppleButton
-            shortcut="E"
-            iconBefore={<SpriteIcon src={apple.src} />}
-            onClick={() => handleGravityChange(Gravity.None)}
-          />
-          <AppleButton
-            shortcut="W"
-            onClick={() => handleGravityChange(Gravity.Down)}
-            iconBefore={<SpriteIcon src={apple.src} />}
-            iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
-          />
-          <AppleButton
-            shortcut="A"
-            onClick={() => handleGravityChange(Gravity.Left)}
-            iconBefore={<SpriteIcon src={apple.src} />}
-            iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
-          />
-          <AppleButton
-            shortcut="S"
-            onClick={() => handleGravityChange(Gravity.Up)}
-            iconBefore={<SpriteIcon src={apple.src} />}
-            iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
-          />
-          <AppleButton
-            shortcut="D"
-            onClick={() => handleGravityChange(Gravity.Right)}
-            iconBefore={<SpriteIcon src={apple.src} />}
-            iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
-          />
-        </Toolbar>
-      </PopoverContent>
-    </Popover>
+    <>
+      <ToolControlButton
+        className="relative"
+        iconAfter={<AppleArrowIcon gravity={currentGravity} />}
+        {...defaultTools.apple}
+        {...props}
+      >
+        <SpriteIcon src={apple.src} />
+      </ToolControlButton>
+      {isActive && (
+        <Portal className="h-fit fixed max-h-[80vh] left-20 shadow-lg inset-y-4 my-auto overflow-y-auto">
+          <Toolbar orientation="vertical">
+            <AppleButton
+              shortcut="1"
+              iconBefore={<SpriteIcon src={apple1.src} />}
+              onClick={() => handleAppleAnimationChange(1)}
+            />
+            <AppleButton
+              shortcut="2"
+              iconBefore={<SpriteIcon src={apple2.src} />}
+              onClick={() => handleAppleAnimationChange(2)}
+            />
+            <ToolbarSeparator />
+            <AppleButton
+              shortcut="E"
+              iconBefore={<SpriteIcon src={apple.src} />}
+              onClick={() => handleGravityChange(Gravity.None)}
+            />
+            <AppleButton
+              shortcut="W"
+              onClick={() => handleGravityChange(Gravity.Down)}
+              iconBefore={<SpriteIcon src={apple.src} />}
+              iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
+            />
+            <AppleButton
+              shortcut="A"
+              onClick={() => handleGravityChange(Gravity.Left)}
+              iconBefore={<SpriteIcon src={apple.src} />}
+              iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
+            />
+            <AppleButton
+              shortcut="S"
+              onClick={() => handleGravityChange(Gravity.Up)}
+              iconBefore={<SpriteIcon src={apple.src} />}
+              iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
+            />
+            <AppleButton
+              shortcut="D"
+              onClick={() => handleGravityChange(Gravity.Right)}
+              iconBefore={<SpriteIcon src={apple.src} />}
+              iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
+            />
+          </Toolbar>
+        </Portal>
+      )}
+    </>
   );
 }
 
@@ -122,7 +122,6 @@ function GravityIcon(props: React.SVGAttributes<SVGSVGElement>) {
 }
 
 function AppleButton({
-  children,
   className,
   shortcut,
   ...props
@@ -131,17 +130,16 @@ function AppleButton({
     <ToolbarButton
       size="sm"
       className={cn("relative", className)}
-      iconAfter={<ShortcutIndicator shortcut={shortcut} />}
+      iconAfter={shortcut && <ShortcutIndicator>{shortcut}</ShortcutIndicator>}
       {...props}
-    >
-      {children}
-    </ToolbarButton>
+    />
   );
 }
 
 function AppleArrowIcon({
   gravity,
   className,
+  style,
   ...props
 }: { gravity: Gravity } & React.SVGProps<SVGSVGElement>) {
   if (gravity === Gravity.None) return null;
@@ -149,7 +147,7 @@ function AppleArrowIcon({
   return (
     <GravityIcon
       className={cn("absolute inset-0 m-auto text-[#fde047]", className)}
-      style={{ transform: `rotate(${rotation}deg)` }}
+      style={{ transform: `rotate(${rotation}deg)`, ...style }}
       {...props}
     />
   );
@@ -157,10 +155,8 @@ function AppleArrowIcon({
 
 function ShortcutIndicator({
   className,
-  shortcut,
   ...props
-}: React.ComponentPropsWithRef<"span"> & { shortcut?: string }) {
-  if (!shortcut) return null;
+}: React.ComponentPropsWithRef<"span">) {
   return (
     <span
       className={cn(
@@ -168,8 +164,6 @@ function ShortcutIndicator({
         className
       )}
       {...props}
-    >
-      {shortcut}
-    </span>
+    />
   );
 }

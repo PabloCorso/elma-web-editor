@@ -4,9 +4,9 @@
 
 @source "../node_modules/streamdown/dist/index.js";
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
+  color-scheme: dark;
+
   --border-default: var(--color-slate-800);
   --border-separator: var(--color-slate-700);
   --background-screen: var(--color-slate-900);

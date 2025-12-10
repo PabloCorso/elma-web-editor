@@ -27,7 +27,7 @@ export function Toolbar({
         role="toolbar"
         aria-orientation={orientation}
         className={cn(
-          "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
+          "inline-flex items-center rounded-lg border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
           "aria-[orientation=vertical]:flex-col",
           className
         )}

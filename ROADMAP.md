@@ -55,7 +55,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
       - flag 450 S
       - hang 434 S
       - log1 420 S
-      - log1 420 S
       - log2 420 S
       - mushroom 430 S
       - plantain 450 U
@@ -65,7 +64,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
       - supphred 380 S
       - support1 380 U
       - support2 380 U
-      - support2 380 U
       - support3 380 U
       - suppvred 380 S
       - susp 380 U
@@ -74,7 +72,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
       - tree1 550 S
       - tree2 540 S
       - tree3 560 S
-      - tree4 600 S
       - tree4 600 S
       - tree5 600 S
       - OTHER: 999 G

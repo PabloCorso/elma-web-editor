@@ -48,7 +48,23 @@ export function useLgrSprite(name: string) {
   );
 }
 
-function bitmapToDataUrl(bmp: ImageBitmap | null) {
+export function usePictureSprites() {
+  const lgrAssets = useLgrAssets();
+  const pictureSprites = lgrAssets.lgr?.getPictureSprites() || [];
+  return useMemo(
+    () =>
+      pictureSprites.map(({ name, sprite }) => ({
+        name,
+        src: bitmapToDataUrl(sprite),
+        width: sprite?.width,
+        height: sprite?.height,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lgrAssets.isLoaded]
+  );
+}
+
+export function bitmapToDataUrl(bmp: ImageBitmap | null) {
   if (typeof document === "undefined" || !bmp) return undefined;
   const canvas = document.createElement("canvas");
   canvas.width = bmp.width;

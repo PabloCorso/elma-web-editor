@@ -24,7 +24,6 @@ export class LevelFolder {
 
   async loadFromStorage() {
     if (!isClient()) return false;
-    console.log("Initializing LevelFolder from storage...");
     const handle = await loadHandle(LEVEL_FOLDER_KEY);
     if (!handle) {
       this.handle = undefined;
