@@ -5,7 +5,7 @@ import { defaultTools } from "./default-tools";
 
 export type HandToolState = { isDragging: boolean };
 
-export class HandTool extends Tool {
+export class HandTool extends Tool<HandToolState> {
   readonly meta = defaultTools.hand;
   private lastX = 0;
   private lastY = 0;
@@ -19,23 +19,22 @@ export class HandTool extends Tool {
   }
 
   clear(): void {
-    const state = this.store.getState();
-    state.actions.setToolState<HandToolState>("hand", { isDragging: false });
+    const { setToolState } = this.getState();
+    setToolState({ isDragging: false });
     this.lastX = 0;
     this.lastY = 0;
   }
 
   onPointerDown(event: PointerEvent): boolean {
-    const state = this.store.getState();
-    state.actions.setToolState<HandToolState>("hand", { isDragging: true });
+    const { setToolState } = this.getState();
+    setToolState({ isDragging: true });
     this.lastX = event.clientX;
     this.lastY = event.clientY;
     return true;
   }
 
   onPointerMove(event: PointerEvent): boolean {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<HandToolState>("hand");
+    const { state, toolState } = this.getState();
     if (!toolState?.isDragging) {
       return false;
     }
@@ -55,8 +54,8 @@ export class HandTool extends Tool {
   }
 
   onPointerUp(_event: PointerEvent, _context: EventContext): boolean {
-    const state = this.store.getState();
-    state.actions.setToolState<HandToolState>("hand", { isDragging: false });
+    const { setToolState } = this.getState();
+    setToolState({ isDragging: false });
     return true;
   }
 }

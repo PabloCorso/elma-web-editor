@@ -7,10 +7,24 @@ import type { LgrAssets } from "~/components/lgr-assets";
 
 export type ToolState<T = unknown> = Record<string, T>;
 
-export abstract class Tool {
+export abstract class Tool<T extends ToolState = ToolState> {
   abstract readonly meta: DefaultToolMeta;
 
   constructor(protected store: EditorStore) {}
+
+  protected getState() {
+    const state = this.store.getState();
+    const toolState = state.actions.getToolState<T>(this.meta.id);
+    const setToolState = (toolStatePatch: Partial<T>) => {
+      state.actions.setToolState<T>(this.meta.id, toolStatePatch);
+    };
+    return { state, toolState, setToolState };
+  }
+
+  // Lifecycle
+  onActivate?(): void;
+  onDeactivate?(): void;
+  clear?(): void;
 
   // Event handling - return true if event was consumed
   onPointerDown?(event: PointerEvent, context: EventContext): boolean;
@@ -31,9 +45,4 @@ export abstract class Tool {
     flowers?: Position[];
     pictures?: Picture[];
   };
-
-  // Lifecycle
-  onActivate?(): void;
-  onDeactivate?(): void;
-  clear?(): void;
 }

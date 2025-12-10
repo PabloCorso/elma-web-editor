@@ -5,7 +5,7 @@ import {
   SparkleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { SpriteIcon } from "./sprite-icon";
-import { ToolControlButton } from "./tool";
+import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { Toolbar, ToolbarSeparator } from "./toolbar";
 import { useLgrSprite } from "./use-lgr-assets";
@@ -18,67 +18,67 @@ export function ControlToolbar({
   isOpenAIEnabled?: boolean;
 }) {
   return (
-    <Toolbar className="absolute inset-x-0 w-fit m-auto sm:bottom-4 bottom-20">
-      <SelectToolControl />
-      <HandToolControl />
+    <Toolbar className="absolute inset-y-0 h-fit m-auto left-4 flex-col">
+      <SelectToolControl tooltipSide="right" />
+      <HandToolControl tooltipSide="right" />
 
-      <ToolbarSeparator />
+      <ToolbarSeparator direction="vertical" />
 
-      <VertexToolControl />
-      <AppleToolControl />
-      <KillerToolControl />
-      <FlowerToolControl />
-      <PictureToolControl />
-      {isOpenAIEnabled && <AIChatToolControl />}
+      <VertexToolControl tooltipSide="right" />
+      <AppleToolControl tooltipSide="right" />
+      <KillerToolControl tooltipSide="right" />
+      <FlowerToolControl tooltipSide="right" />
+      <PictureToolControl tooltipSide="right" />
+      {isOpenAIEnabled && <AIChatToolControl tooltipSide="right" />}
     </Toolbar>
   );
 }
 
-function SelectToolControl() {
+function SelectToolControl(props: ToolControlButtonProps) {
   return (
-    <ToolControlButton {...defaultTools.select}>
+    <ToolControlButton {...defaultTools.select} {...props}>
       <CursorIcon weight="light" />
     </ToolControlButton>
   );
 }
 
-function HandToolControl() {
+function HandToolControl(props: ToolControlButtonProps) {
   return (
-    <ToolControlButton {...defaultTools.hand}>
+    <ToolControlButton {...defaultTools.hand} {...props}>
       <HandIcon weight="light" />
     </ToolControlButton>
   );
 }
 
-function VertexToolControl() {
+function VertexToolControl(props: ToolControlButtonProps) {
   return (
-    <ToolControlButton {...defaultTools.vertex}>
+    <ToolControlButton {...defaultTools.vertex} {...props}>
       <LineSegmentsIcon weight="light" />
     </ToolControlButton>
   );
 }
 
-function KillerToolControl() {
+function KillerToolControl(props: ToolControlButtonProps) {
   const killerSprite = useLgrSprite("qkiller");
   return (
-    <ToolControlButton {...defaultTools.killer}>
+    <ToolControlButton {...defaultTools.killer} {...props}>
       <SpriteIcon src={killerSprite.src} />
     </ToolControlButton>
   );
 }
 
-function FlowerToolControl() {
+function FlowerToolControl(props: ToolControlButtonProps) {
   const flowerSprite = useLgrSprite("qexit");
   return (
-    <ToolControlButton {...defaultTools.flower}>
+    <ToolControlButton {...defaultTools.flower} {...props}>
       <SpriteIcon src={flowerSprite.src} />
     </ToolControlButton>
   );
 }
 
-function AIChatToolControl() {
+function AIChatToolControl(props: ToolControlButtonProps) {
   return (
-    <ToolControlButton id="ai-chat" name="AI Assistant" shortcut="I">
+    <ToolControlButton id="ai-chat" name="AI Assistant" shortcut="I" {...props}>
       <SparkleIcon weight="fill" />
     </ToolControlButton>
   );

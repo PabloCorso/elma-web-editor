@@ -11,12 +11,14 @@ import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 
+const VERTEX_THRESHOLD = 15;
+
 export type VertexToolState = {
   drawingPolygon: Position[];
   originalPolygon?: Polygon; // The polygon being edited (if any)
 };
 
-export class VertexTool extends Tool {
+export class VertexTool extends Tool<VertexToolState> {
   readonly meta = defaultTools.vertex;
 
   constructor(store: EditorStore) {
@@ -31,16 +33,12 @@ export class VertexTool extends Tool {
   }
 
   clear(): void {
-    const state = this.store.getState();
-    state.actions.setToolState(defaultTools.vertex.id, {
-      drawingPolygon: [],
-      originalPolygon: undefined,
-    });
+    const { setToolState } = this.getState();
+    setToolState({ drawingPolygon: [], originalPolygon: undefined });
   }
 
   getDrafts() {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
+    const { state, toolState } = this.getState();
     const drawingPolygon = toolState.drawingPolygon;
 
     if (drawingPolygon.length >= 3) {
@@ -57,15 +55,16 @@ export class VertexTool extends Tool {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
+    const { state, toolState, setToolState } = this.getState();
 
     // If we're already drawing a polygon, continue with normal drawing behavior
     if (toolState.drawingPolygon.length > 0) {
       // Check if clicking near the first point to close the polygon
       if (toolState.drawingPolygon.length >= 3) {
         const firstPoint = toolState.drawingPolygon[0];
-        if (isWithinThreshold(worldPos, firstPoint, 15, state.zoom)) {
+        if (
+          isWithinThreshold(worldPos, firstPoint, VERTEX_THRESHOLD / state.zoom)
+        ) {
           const newPolygon = {
             vertices: [...toolState.drawingPolygon],
             grass: false,
@@ -78,7 +77,7 @@ export class VertexTool extends Tool {
 
       // Continue drawing the current polygon
       const newVertices = [...toolState.drawingPolygon, worldPos];
-      state.actions.setToolState(this.meta.id, { drawingPolygon: newVertices });
+      setToolState({ drawingPolygon: newVertices });
       return true;
     }
 
@@ -115,8 +114,7 @@ export class VertexTool extends Tool {
   }
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
+    const { state, toolState, setToolState } = this.getState();
 
     if (event.key === "Escape") {
       // If we're editing an existing polygon, restore it
@@ -128,7 +126,7 @@ export class VertexTool extends Tool {
         this.clear();
       } else {
         // If we're creating a new polygon, just clear the drawing
-        state.actions.setToolState(this.meta.id, { drawingPolygon: [] });
+        setToolState({ drawingPolygon: [] });
       }
       return true;
     }
@@ -141,9 +139,7 @@ export class VertexTool extends Tool {
       // Reverse the direction of the polygon by reversing the vertices array
       if (toolState.drawingPolygon.length > 1) {
         const reversedVertices = [...toolState.drawingPolygon].reverse();
-        state.actions.setToolState(this.meta.id, {
-          drawingPolygon: reversedVertices,
-        });
+        setToolState({ drawingPolygon: reversedVertices });
       }
       return true;
     }
@@ -157,8 +153,7 @@ export class VertexTool extends Tool {
   }
 
   onRender(ctx: CanvasRenderingContext2D): void {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
+    const { state, toolState } = this.getState();
     if (toolState.drawingPolygon.length === 0) return;
 
     ctx.strokeStyle = colors.edges;
@@ -183,8 +178,7 @@ export class VertexTool extends Tool {
   }
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
+    const { state, toolState } = this.getState();
     if (toolState.drawingPolygon.length > 0) {
       const lastPoint =
         toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
@@ -231,13 +225,12 @@ export class VertexTool extends Tool {
   }
 
   private addPolygon(polygon: Polygon): void {
-    const state = this.store.getState();
+    const { state } = this.getState();
     state.actions.setPolygons([...state.polygons, polygon]);
   }
 
   private finalizeDrawingOrRestore(): boolean {
-    const state = this.store.getState();
-    const toolState = state.actions.getToolState<VertexToolState>(this.meta.id);
+    const { state, toolState } = this.getState();
     if (!toolState) return false;
 
     if (toolState.drawingPolygon.length >= 3) {

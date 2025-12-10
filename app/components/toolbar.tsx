@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ToolbarPrimitives from "@radix-ui/react-toolbar";
 import { cn } from "~/utils/misc";
-import { IconButton, type ButtonProps } from "./button";
+import { IconButton, type ButtonProps } from "./ui/button";
 
 type ToolbarProps = Omit<
   React.ComponentPropsWithRef<typeof ToolbarPrimitives.Root>,
@@ -36,18 +36,25 @@ export function ToolbarButton({
   );
 }
 
-type ToolbarSeparatorProps = Omit<
+export type ToolbarSeparatorProps = Omit<
   React.ComponentPropsWithRef<typeof ToolbarPrimitives.Separator>,
   "asChild"
->;
+> & {
+  direction?: "horizontal" | "vertical";
+};
 
 export function ToolbarSeparator({
+  direction = "horizontal",
   className,
   ...props
 }: ToolbarSeparatorProps) {
   return (
     <ToolbarPrimitives.Separator
-      className={cn("w-px h-6 bg-separator mx-1", className)}
+      className={cn(
+        "bg-separator",
+        direction === "horizontal" ? "w-px h-6 mx-1" : "h-px w-6 my-1",
+        className
+      )}
       {...props}
     />
   );

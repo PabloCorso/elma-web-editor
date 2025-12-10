@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
   type TooltipContentProps,
 } from "./ui/tooltip";
-import type { ButtonProps } from "./button";
+import type { ButtonProps } from "./ui/button";
 
 export function Tool({
   className,
@@ -58,7 +58,7 @@ export function ToolButton({
   );
 }
 
-type ToolControlButtonProps = ToolButtonProps & { id?: string };
+export type ToolControlButtonProps = ToolButtonProps & { id?: string };
 
 export function ToolControlButton({
   id,

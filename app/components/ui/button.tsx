@@ -1,25 +1,14 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/utils/misc";
-import { Icon } from "./icon";
+import { Icon, type IconProps } from "./icon";
 
 export const buttonVariants = cva(
   [
-    "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-bold transition-colors",
-    "focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 focus-visible:outline-none",
+    "inline-flex aria-expanded:bg-primary-hover/80 shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded text-sm font-bold transition-colors",
     "disabled:pointer-events-none disabled:opacity-40",
   ],
   {
     variants: {
-      variant: {
-        primary:
-          "border-primary-600 bg-primary text-on-color hover:bg-primary-hover active:bg-primary-active",
-        secondary:
-          "border border-primary bg-subtle text-primary hover:bg-subtle-hover active:bg-subtle-active",
-        ghost:
-          "border border-transparent text-primary hover:bg-subtle-hover active:bg-subtle-active",
-        danger:
-          "bg-error text-on-color hover:bg-error-hover active:bg-error-active",
-      },
       size: {
         sm: "h-8 px-3 py-2 text-xs",
         md: "h-10 px-4 py-2.5 text-sm",
@@ -33,7 +22,6 @@ export const buttonVariants = cva(
       { iconOnly: true, size: "lg", className: "w-12" },
     ],
     defaultVariants: {
-      variant: "primary",
       size: "md",
       iconOnly: false,
     },
@@ -48,14 +36,15 @@ export type ButtonProps<T extends React.ElementType = "button"> = Omit<
     as?: T;
     iconBefore?: React.ReactNode;
     iconAfter?: React.ReactNode;
+    iconSize?: IconProps["size"];
   };
 
 export function Button<T extends React.ElementType = "button">({
   as,
-  variant,
   size = "md",
   iconBefore,
   iconAfter,
+  iconSize = size,
   children,
   className,
   iconOnly: iconOnlyProp,
@@ -69,17 +58,17 @@ export function Button<T extends React.ElementType = "button">({
 
   return (
     <Comp
-      className={cn(buttonVariants({ variant, size, iconOnly, className }))}
+      className={cn(buttonVariants({ size, iconOnly, className }))}
       {...props}
     >
       {iconBefore && (
-        <Icon size={size} className="shrink-0">
+        <Icon size={iconSize} className="shrink-0">
           {iconBefore}
         </Icon>
       )}
       {children}
       {iconAfter && (
-        <Icon size={size} className="shrink-0">
+        <Icon size={iconSize} className="shrink-0">
           {iconAfter}
         </Icon>
       )}
@@ -93,6 +82,7 @@ export type IconButtonProps<T extends React.ElementType = "button"> = Omit<
 > &
   Omit<VariantProps<typeof buttonVariants>, "iconOnly"> & {
     as?: T;
+    iconSize?: IconProps["size"];
   };
 
 export function IconButton<T extends React.ElementType = "button">({

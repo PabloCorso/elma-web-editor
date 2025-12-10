@@ -4,10 +4,10 @@ import {
   useEditorToolState,
 } from "~/editor/use-editor-store";
 import { SpriteIcon } from "./sprite-icon";
-import { ToolControlButton } from "./tool";
+import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { useLgrSprite } from "./use-lgr-assets";
-import { Popover, PopoverAnchor, PopoverContent } from "./popover";
+import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Gravity } from "elmajs";
 import {
   defaultAppleState,
@@ -15,9 +15,11 @@ import {
 } from "~/editor/tools/object-tools";
 import type { AppleAnimation } from "~/editor/editor.types";
 import { cn } from "~/editor/utils/misc";
-import { Button, type ButtonProps } from "./button";
+import { Button, type ButtonProps } from "./ui/button";
+import { createContext, useContext } from "react";
+import { ToolbarSeparator, type ToolbarSeparatorProps } from "./toolbar";
 
-export function AppleToolControl() {
+export function AppleToolControl(props: ToolControlButtonProps) {
   const activeTool = useEditorActiveTool();
   const appleTool = useEditorToolState<AppleToolState>(defaultTools.apple.id);
   const { setToolState } = useEditorActions();
@@ -41,14 +43,16 @@ export function AppleToolControl() {
     <Popover open={isActive} modal={false}>
       <PopoverAnchor>
         <ToolControlButton
+          className="relative"
           {...defaultTools.apple}
           iconAfter={<AppleArrowIcon gravity={currentGravity} />}
+          {...props}
         >
           <SpriteIcon src={apple.src} />
         </ToolControlButton>
       </PopoverAnchor>
-      <PopoverContent sideOffset={12} side="top" align="center">
-        <SimpleToolbar>
+      <PopoverContent sideOffset={12} side="right" align="center">
+        <SimpleToolbar direction="vertical">
           <SimpleToggleGroup>
             <SimpleToggleButton
               shortcut="1"
@@ -138,19 +142,29 @@ function AppleArrowIcon({
   );
 }
 
+const SimpleToolbarContext = createContext<{
+  direction: "horizontal" | "vertical";
+}>({ direction: "horizontal" });
+
 // Simple div-based toolbar components without roving focus
 function SimpleToolbar({
+  direction = "horizontal",
   className,
   ...props
-}: React.ComponentPropsWithRef<"div">) {
+}: React.ComponentPropsWithRef<"div"> & {
+  direction?: "horizontal" | "vertical";
+}) {
   return (
-    <div
-      className={cn(
-        "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
-        className
-      )}
-      {...props}
-    />
+    <SimpleToolbarContext.Provider value={{ direction }}>
+      <div
+        className={cn(
+          "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
+          { "flex-col": direction === "vertical" },
+          className
+        )}
+        {...props}
+      />
+    </SimpleToolbarContext.Provider>
   );
 }
 
@@ -158,13 +172,22 @@ function SimpleToggleGroup({
   className,
   ...props
 }: React.ComponentPropsWithRef<"div">) {
+  const { direction } = useContext(SimpleToolbarContext);
   return (
-    <div className={cn("flex items-center gap-1", className)} {...props} />
+    <div
+      className={cn(
+        "flex items-center gap-1",
+        { "flex-col": direction === "vertical" },
+        className
+      )}
+      {...props}
+    />
   );
 }
 
-function SimpleSeparator({ className }: { className?: string }) {
-  return <div className={cn("w-px h-6 bg-separator mx-1", className)} />;
+function SimpleSeparator(props: ToolbarSeparatorProps) {
+  const { direction } = useContext(SimpleToolbarContext);
+  return <ToolbarSeparator direction={direction} {...props} />;
 }
 
 function SimpleToggleButton({

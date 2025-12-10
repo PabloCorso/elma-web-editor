@@ -12,12 +12,11 @@ export type SelectedVertex = {
 export function findVertexNearPosition(
   pos: Position,
   polygons: Polygon[],
-  threshold: number = 10,
-  zoom: number
+  threshold: number = 10
 ): { polygon: Polygon; vertex: Position } | null {
   for (const polygon of polygons) {
     for (const vertex of polygon.vertices) {
-      if (isWithinThreshold(pos, vertex, threshold, zoom)) {
+      if (isWithinThreshold(pos, vertex, threshold)) {
         return { polygon, vertex };
       }
     }
@@ -26,13 +25,12 @@ export function findVertexNearPosition(
 }
 
 export function findObjectNearPosition(
-  pos: Position,
+  position: Position,
   objects: Position[],
-  threshold: number = 15,
-  zoom: number
+  threshold = 15
 ): Position | null {
   for (const object of objects) {
-    if (isWithinThreshold(pos, object, threshold, zoom)) {
+    if (isWithinThreshold(position, object, threshold)) {
       return object;
     }
   }
@@ -96,11 +94,8 @@ export function getSelectionBounds(
 export function findPolygonEdgeNearPosition(
   pos: Position,
   polygons: Polygon[],
-  threshold: number = 8,
-  zoom: number
+  threshold = 8
 ): Polygon | null {
-  const adjustedThreshold = threshold / zoom;
-
   for (const polygon of polygons) {
     if (polygon.vertices.length < 3) continue;
 
@@ -112,7 +107,7 @@ export function findPolygonEdgeNearPosition(
       // Calculate distance from point to line segment
       const distance = distanceToLineSegment(pos, start, end);
 
-      if (distance <= adjustedThreshold) {
+      if (distance <= threshold) {
         return polygon;
       }
     }
@@ -168,7 +163,7 @@ export function findPolygonVertexForEditing(
   for (const polygon of polygons) {
     for (let i = 0; i < polygon.vertices.length; i++) {
       const vertex = polygon.vertices[i];
-      if (isWithinThreshold(pos, vertex, threshold, zoom)) {
+      if (isWithinThreshold(pos, vertex, threshold / zoom)) {
         return { polygon, vertexIndex: i, vertex };
       }
     }

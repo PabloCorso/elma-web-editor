@@ -29,10 +29,9 @@ export function distance(pos1: Position, pos2: Position): number {
 export function isWithinThreshold(
   pos1: Position,
   pos2: Position,
-  threshold: number,
-  zoom: number
-): boolean {
-  return distance(pos1, pos2) <= threshold / zoom;
+  threshold = 15
+) {
+  return distance(pos1, pos2) <= threshold;
 }
 
 export function getClosestPointOnLineSegment(

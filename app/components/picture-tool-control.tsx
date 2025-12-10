@@ -1,6 +1,6 @@
 import { useEditorToolState } from "~/editor/use-editor-store";
 import { PictureIcon } from "./sprite-icon";
-import { ToolControlButton } from "./tool";
+import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { useLgrSprite } from "./use-lgr-assets";
 import {
@@ -8,14 +8,14 @@ import {
   type PictureToolState,
 } from "~/editor/tools/picture-tool";
 
-export function PictureToolControl() {
+export function PictureToolControl(props: ToolControlButtonProps) {
   const pictureTool = useEditorToolState<PictureToolState>(
     defaultTools.picture.id
   );
 
   const sprite = useLgrSprite(pictureTool?.name ?? defaultPictureState.name);
   return (
-    <ToolControlButton {...defaultTools.picture}>
+    <ToolControlButton {...defaultTools.picture} {...props}>
       <PictureIcon src={sprite.src} />
     </ToolControlButton>
   );

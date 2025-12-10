@@ -14,48 +14,50 @@ export const defaultAppleState: AppleToolState = {
   gravity: Gravity.None,
 };
 
-export class AppleTool extends Tool {
+export class AppleTool extends Tool<AppleToolState> {
   readonly meta = defaultTools.apple;
 
   constructor(store: EditorStore) {
     super(store);
   }
 
-  private getAppleState() {
-    const state = this.store.getState();
-    return (state.toolState.apple as AppleToolState) || defaultAppleState;
+  onActivate() {
+    const { toolState, setToolState } = this.getState();
+    if (!toolState) {
+      setToolState(defaultAppleState);
+    }
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
-    const state = this.store.getState();
+    const { state, toolState } = this.getState();
     const position = context.worldPos;
-    state.actions.addApple({ position, ...this.getAppleState() });
+    state.actions.addApple({ position, ...toolState });
     return true;
   }
 
   onKeyDown(event: KeyboardEvent) {
-    const state = this.store.getState();
+    const { setToolState } = this.getState();
     switch (event.key.toUpperCase()) {
       case "W":
-        state.actions.setToolState(this.meta.id, { gravity: Gravity.Up });
+        setToolState({ gravity: Gravity.Up });
         return true;
       case "A":
-        state.actions.setToolState(this.meta.id, { gravity: Gravity.Down });
+        setToolState({ gravity: Gravity.Down });
         return true;
       case "S":
-        state.actions.setToolState(this.meta.id, { gravity: Gravity.Left });
+        setToolState({ gravity: Gravity.Left });
         return true;
       case "D":
-        state.actions.setToolState(this.meta.id, { gravity: Gravity.Right });
+        setToolState({ gravity: Gravity.Right });
         return true;
       case "E":
-        state.actions.setToolState(this.meta.id, { gravity: Gravity.None });
+        setToolState({ gravity: Gravity.None });
         return true;
       case "1":
-        state.actions.setToolState(this.meta.id, { animation: 1 });
+        setToolState({ animation: 1 });
         return true;
       case "2":
-        state.actions.setToolState(this.meta.id, { animation: 2 });
+        setToolState({ animation: 2 });
         return true;
       default:
         return false;
@@ -84,19 +86,11 @@ export class AppleTool extends Tool {
   }
 
   getDrafts() {
-    const state = this.store.getState();
+    const { state, toolState } = this.getState();
     if (!state.mouseOnCanvas) return {};
     const position = state.mousePosition;
-    const apple: Apple = { position, ...this.getAppleState() };
+    const apple: Apple = { position, ...toolState };
     return { apples: [apple] };
-  }
-
-  onActivate() {
-    const state = this.store.getState();
-    const toolState = state.toolState.apple as AppleToolState | undefined;
-    if (!toolState) {
-      state.actions.setToolState(this.meta.id, this.getAppleState());
-    }
   }
 }
 
@@ -108,7 +102,7 @@ export class KillerTool extends Tool {
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
-    const state = this.store.getState();
+    const { state } = this.getState();
     state.actions.addKiller(context.worldPos);
     return true;
   }
@@ -129,7 +123,7 @@ export class KillerTool extends Tool {
   }
 
   getDrafts() {
-    const state = this.store.getState();
+    const { state } = this.getState();
     if (!state.mouseOnCanvas) return {};
     return { killers: [state.mousePosition] };
   }
@@ -143,7 +137,7 @@ export class FlowerTool extends Tool {
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
-    const state = this.store.getState();
+    const { state } = this.getState();
     state.actions.addFlower(context.worldPos);
     return true;
   }
@@ -164,7 +158,7 @@ export class FlowerTool extends Tool {
   }
 
   getDrafts() {
-    const state = this.store.getState();
+    const { state } = this.getState();
     if (!state.mouseOnCanvas) return {};
     return { flowers: [state.mousePosition] };
   }

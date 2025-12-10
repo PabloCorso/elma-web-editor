@@ -12,21 +12,22 @@ export const defaultPictureState: PictureToolState = {
   name: "barrel",
 };
 
-export class PictureTool extends Tool {
+export class PictureTool extends Tool<PictureToolState> {
   readonly meta = defaultTools.picture;
 
   constructor(store: EditorStore) {
     super(store);
   }
 
-  private getPictureState() {
-    const state = this.store.getState();
-    return (state.toolState.picture as PictureToolState) || defaultPictureState;
+  onActivate() {
+    const { toolState, setToolState } = this.getState();
+    if (!toolState) {
+      setToolState(defaultPictureState);
+    }
   }
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
-    const state = this.store.getState();
-    const toolState = state.toolState.picture as PictureToolState | undefined;
+    const { state, toolState } = this.getState();
     if (!toolState?.name) return false;
 
     const position = context.worldPos;
@@ -35,21 +36,12 @@ export class PictureTool extends Tool {
   }
 
   onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
-    const state = this.store.getState();
-    const toolState = state.toolState.picture as PictureToolState | undefined;
+    const { state, toolState } = this.getState();
     if (!toolState?.name || !state.mouseOnCanvas) return {};
 
     const sprite = lgrAssets.getSprite(toolState.name);
     if (sprite) {
       drawPicture({ ctx, sprite, position: state.mousePosition, opacity: 0.5 });
-    }
-  }
-
-  onActivate() {
-    const state = this.store.getState();
-    const toolState = state.toolState.picture as PictureToolState | undefined;
-    if (!toolState) {
-      state.actions.setToolState(this.meta.id, this.getPictureState());
     }
   }
 }
