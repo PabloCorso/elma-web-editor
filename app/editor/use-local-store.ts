@@ -10,6 +10,7 @@ type LocalStorageLevel = Pick<
   | "killers"
   | "flowers"
   | "start"
+  | "pictures"
   | "activeToolId"
   | "animateSprites"
   | "showSprites"
@@ -39,6 +40,7 @@ export function useLocalStorageSync(key = "elma-web-store") {
           killers: savedData.killers,
           flowers: savedData.flowers,
           start: savedData.start,
+          pictures: savedData.pictures || [],
         });
 
         // Restore other state
@@ -69,6 +71,7 @@ export function useLocalStorageSync(key = "elma-web-store") {
         killers: state.killers,
         flowers: state.flowers,
         start: state.start,
+        pictures: state.pictures,
         activeToolId: state.activeToolId,
         animateSprites: state.animateSprites,
         showSprites: state.showSprites,

@@ -1,7 +1,7 @@
 import type { Polygon, Position } from "elmajs";
-import type { LevelData } from "./level-importer";
+import type { LevelData } from "./level-utils";
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { Apple } from "./editor.types";
+import type { Apple, Picture } from "./editor.types";
 import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "../utils/file-session";
 import { LevelFolder } from "../utils/level-folder";
@@ -14,6 +14,7 @@ export type EditorState = {
   killers: Position[];
   flowers: Position[];
   start: Position;
+  pictures: Picture[];
 
   // Editor state
   activeToolId: string;
@@ -51,6 +52,8 @@ export type EditorState = {
     removeKiller: (killer: Position) => void;
     addFlower: (flower: Position) => void;
     removeFlower: (flower: Position) => void;
+    addPicture: (picture: Picture) => void;
+    removePicture: (picture: Picture) => void;
 
     setLevelName: (name: string) => void;
     setMousePosition: (position: Position) => void;

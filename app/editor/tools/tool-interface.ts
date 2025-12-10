@@ -1,7 +1,7 @@
 import type { EventContext } from "../utils/event-handler";
 import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
-import type { Apple } from "../editor.types";
+import type { Apple, Picture } from "../editor.types";
 import type { DefaultToolMeta } from "./default-tools";
 import type { LgrAssets } from "~/components/lgr-assets";
 
@@ -29,6 +29,7 @@ export abstract class Tool {
     apples?: Apple[];
     killers?: Position[];
     flowers?: Position[];
+    pictures?: Picture[];
   };
 
   // Lifecycle

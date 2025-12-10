@@ -1,4 +1,4 @@
-import type { LevelData } from "./level-importer";
+import type { LevelData } from "./level-utils";
 
 export type LeanPosition = { x: number; y: number };
 export type LeanPolygon = { vertices: LeanPosition[] };

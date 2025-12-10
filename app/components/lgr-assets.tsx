@@ -1,7 +1,8 @@
 import * as elmajs from "elmajs";
 import defaultLgr from "../assets/lgr/Default.lgr?url";
-import { decodeLgrPictureBitmap } from "~/editor/utils/pcx-loader";
+import { decodeLgrSprite } from "~/editor/utils/pcx-loader";
 import type { AppleAnimation } from "~/editor/editor.types";
+import { standardSprites } from "./standard-sprites";
 
 export class LgrAssets {
   private lgr: elmajs.LGR | null = null;
@@ -10,7 +11,7 @@ export class LgrAssets {
   async load() {
     const buf = await fetch(defaultLgr).then((r) => r.arrayBuffer());
     this.lgr = elmajs.LGR.from(new Uint8Array(buf));
-    await this.loadAllSprites(); // or skip for lazy loading
+    await this.loadAllSprites();
   }
 
   private normalizeName(name: string) {
@@ -22,11 +23,15 @@ export class LgrAssets {
 
   private async loadAllSprites() {
     if (!this.lgr) return;
+
     for (const picture of this.lgr.pictureData) {
       const name = this.normalizeName(picture.name);
       if (this.lgrSprites[name]) continue;
-      const bmp = await decodeLgrPictureBitmap(picture);
-      if (bmp) this.lgrSprites[name] = bmp;
+
+      const sprite = await decodeLgrSprite(picture);
+      if (sprite) {
+        this.lgrSprites[name] = sprite;
+      }
     }
   }
 
@@ -37,6 +42,17 @@ export class LgrAssets {
   getSprite(name: string) {
     const normName = this.normalizeName(name);
     return this.lgrSprites[normName] || null;
+  }
+
+  getKuskiSprites() {
+    const kuskiSprites: Record<string, ImageBitmap> = {};
+    for (const partName of standardSprites.kuski) {
+      const sprite = this.getSprite(partName);
+      if (sprite) {
+        kuskiSprites[partName] = sprite;
+      }
+    }
+    return kuskiSprites;
   }
 
   getAppleSprite(animation: AppleAnimation) {

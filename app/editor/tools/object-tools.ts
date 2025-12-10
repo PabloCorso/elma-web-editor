@@ -67,7 +67,12 @@ export class AppleTool extends Tool {
     drafts.apples?.forEach((apple) => {
       const sprite = lgrAssets.getAppleSprite(apple.animation);
       if (sprite) {
-        drawObject({ ctx, sprite, position: apple.position, opacity: 0.5 });
+        drawObject({
+          ctx,
+          sprite,
+          position: apple.position,
+          opacity: 0.5,
+        });
         drawGravityArrow({
           ctx,
           position: apple.position,

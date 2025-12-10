@@ -3,7 +3,6 @@ import {
   useEditorActiveTool,
   useEditorToolState,
 } from "~/editor/use-editor-store";
-import appleImgUrl from "~/assets/elma/qfood1.png?url";
 import { SpriteIcon } from "./sprite-icon";
 import { ToolControlButton } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
@@ -31,11 +30,11 @@ export function AppleToolControl() {
     setToolState<AppleToolState>(defaultTools.apple.id, { gravity });
   };
 
-  const apple1Url = useLgrSprite("qfood1");
-  const apple2Url = useLgrSprite("qfood2");
+  const apple1 = useLgrSprite("qfood1");
+  const apple2 = useLgrSprite("qfood2");
   const currentAnimation = appleTool?.animation || defaultAppleState.animation;
   const currentGravity = appleTool?.gravity ?? defaultAppleState.gravity;
-  const appleUrl = { 1: apple1Url, 2: apple2Url }[currentAnimation];
+  const apple = { 1: apple1, 2: apple2 }[currentAnimation];
 
   const isActive = activeTool?.meta.id === defaultTools.apple.id;
   return (
@@ -45,7 +44,7 @@ export function AppleToolControl() {
           {...defaultTools.apple}
           iconAfter={<AppleArrowIcon gravity={currentGravity} />}
         >
-          <SpriteIcon src={appleUrl ?? appleImgUrl} />
+          <SpriteIcon src={apple.src} />
         </ToolControlButton>
       </PopoverAnchor>
       <PopoverContent sideOffset={12} side="top" align="center">
@@ -53,12 +52,12 @@ export function AppleToolControl() {
           <SimpleToggleGroup>
             <SimpleToggleButton
               shortcut="1"
-              iconBefore={<SpriteIcon src={apple1Url ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple1.src} />}
               onClick={() => handleAppleAnimationChange(1)}
             />
             <SimpleToggleButton
               shortcut="2"
-              iconBefore={<SpriteIcon src={apple2Url ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple2.src} />}
               onClick={() => handleAppleAnimationChange(2)}
             />
           </SimpleToggleGroup>
@@ -66,31 +65,31 @@ export function AppleToolControl() {
           <SimpleToggleGroup>
             <SimpleToggleButton
               shortcut="E"
-              iconBefore={<SpriteIcon src={appleUrl ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple.src} />}
               onClick={() => handleGravityChange(Gravity.None)}
             />
             <SimpleToggleButton
               shortcut="W"
               onClick={() => handleGravityChange(Gravity.Down)}
-              iconBefore={<SpriteIcon src={appleUrl ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
             />
             <SimpleToggleButton
               shortcut="A"
               onClick={() => handleGravityChange(Gravity.Left)}
-              iconBefore={<SpriteIcon src={appleUrl ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
             />
             <SimpleToggleButton
               shortcut="S"
               onClick={() => handleGravityChange(Gravity.Up)}
-              iconBefore={<SpriteIcon src={appleUrl ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
             />
             <SimpleToggleButton
               shortcut="D"
               onClick={() => handleGravityChange(Gravity.Right)}
-              iconBefore={<SpriteIcon src={appleUrl ?? appleImgUrl} />}
+              iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
             />
           </SimpleToggleGroup>

@@ -35,7 +35,7 @@ export default defineConfig([
       "react/react-in-jsx-scope": "off",
       "react-hooks/refs": "off",
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

@@ -3,13 +3,15 @@ import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
 import { correctPolygonWinding } from "./polygon-utils";
 import { colors } from "./constants";
-import { initialLevelData, type LevelData } from "./level-importer";
+import { initialLevelData, type LevelData } from "./level-utils";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
 import { drawKuski } from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject } from "./draw-object";
+import { drawPicture } from "./draw-picture";
+import { worldToScreen } from "./utils/coordinate-utils";
 
 type EditorEngineOptions = {
   initialLevel?: LevelData;
@@ -449,6 +451,7 @@ export class EditorEngine {
     this.applyCameraTransform(state);
     this.drawPolygons();
     this.drawObjects();
+    this.drawPictures();
 
     // Let active tool render on world-space canvas
     const activeTool = state.actions.getActiveTool();
@@ -551,7 +554,7 @@ export class EditorEngine {
 
     drawKuski({
       ctx: this.ctx,
-      lgrSprites: this.lgrAssets.getSprites(),
+      lgrSprites: this.lgrAssets.getKuskiSprites(),
       startX: state.start.x,
       startY: state.start.y,
     });
@@ -600,6 +603,19 @@ export class EditorEngine {
     });
   }
 
+  private drawPictures() {
+    if (!this.lgrAssets.isReady()) return;
+
+    const state = this.store.getState();
+
+    state.pictures.forEach((picture) => {
+      const sprite = this.lgrAssets.getSprite(picture.name);
+      if (sprite) {
+        drawPicture({ ctx: this.ctx, sprite, position: picture.position });
+      }
+    });
+  }
+
   public destroy() {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
@@ -625,16 +641,17 @@ export class EditorEngine {
     this.ctx.textBaseline = "top";
 
     // Calculate screen mouse position (inverse of what getEventContext does)
-    const screenMouseX =
-      state.mousePosition.x * state.zoom + state.viewPortOffset.x;
-    const screenMouseY =
-      state.mousePosition.y * state.zoom + state.viewPortOffset.y;
+    const screenMouse = worldToScreen(
+      state.mousePosition,
+      state.viewPortOffset,
+      state.zoom
+    );
 
     const lines = [
       "Debug Mode: ON",
       "Press 'D' to exit debug mode",
       `Mouse (World): (${state.mousePosition.x.toFixed(1)}, ${state.mousePosition.y.toFixed(1)})`,
-      `Mouse (Screen): (${screenMouseX.toFixed(1)}, ${screenMouseY.toFixed(1)})`,
+      `Mouse (Screen): (${screenMouse.x.toFixed(1)}, ${screenMouse.y.toFixed(1)})`,
       `Camera: (${state.viewPortOffset.x.toFixed(1)}, ${state.viewPortOffset.y.toFixed(1)})`,
       `Zoom: ${state.zoom.toFixed(2)}`,
     ];

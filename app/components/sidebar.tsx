@@ -3,7 +3,7 @@ import {
   useEditorActiveTool,
   useEditor,
 } from "../editor/use-editor-store";
-import { LevelImporter } from "../editor/level-importer";
+import { importBuiltinLevel } from "../editor/level-utils";
 import { type BuiltinLevel } from "../editor/builtin-levels";
 import { BuiltinLevels } from "./built-in-levels";
 import { useState } from "react";
@@ -24,7 +24,7 @@ export function Sidebar() {
   const showSprites = useEditor((state) => state.showSprites);
 
   const handleBuiltinLevelImport = async (level: BuiltinLevel) => {
-    const result = await LevelImporter.importBuiltinLevel(level.filename);
+    const result = await importBuiltinLevel(level.filename);
     if (result.success && result.data) {
       activeTool?.clear?.();
       importLevel(result.data);

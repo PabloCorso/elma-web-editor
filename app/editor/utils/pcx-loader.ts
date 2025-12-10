@@ -95,20 +95,20 @@ function decodePcx(pcx: Uint8Array): DecodedPcx {
   return { width, height, pixels };
 }
 
-export function pcxToImageBitmap(pcxData: Uint8Array) {
-  const { width, height, pixels } = decodePcx(pcxData);
+function pcxToImageBitmap(decodedPcx: DecodedPcx) {
   // Clone into a new buffer (ensures ArrayBuffer, not SharedArrayBuffer).
-  const clamped = new Uint8ClampedArray(pixels.length);
-  clamped.set(pixels);
-  const imageData = new ImageData(clamped, width, height);
+  const clamped = new Uint8ClampedArray(decodedPcx.pixels.length);
+  clamped.set(decodedPcx.pixels);
+  const imageData = new ImageData(clamped, decodedPcx.width, decodedPcx.height);
   return createImageBitmap(imageData);
 }
 
-export async function decodeLgrPictureBitmap(picture: PictureData) {
+export async function decodeLgrSprite(picture: PictureData) {
   const bytes = new Uint8Array(
     picture.data.buffer,
     picture.data.byteOffset,
     picture.data.byteLength
   );
-  return pcxToImageBitmap(bytes);
+  const decodedPcx = decodePcx(bytes);
+  return pcxToImageBitmap(decodedPcx);
 }

@@ -31,13 +31,15 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 - Match features set of in-game editor:
   - General help dialog
   - Apple properties:
-    - Normal Food
-    - Gravity Up
-    - Gravity Down
-    - Gravity Left
-    - Gravity Right
-    - Food anim number (1-9)
-      - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
+    - Normal Food ✅
+    - Gravity Up ✅
+    - Gravity Down ✅
+    - Gravity Left ✅
+    - Gravity Right ✅
+    - Food anim number (1-9) ✅
+  - Food anim number:
+    - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
+  - Update food properties:
     - In-game set right clicking apple with move tool
   - Pictures:
     - Right click to select picture or mask with texture and left click to place.

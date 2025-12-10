@@ -1,29 +1,39 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { EditorEngine } from "../editor/editor-engine";
-import { useEditorStore } from "~/editor/use-editor-store";
+import {
+  useEditorActiveTool,
+  useEditorStore,
+  useEditorToolState,
+} from "~/editor/use-editor-store";
 import { VertexTool } from "~/editor/tools/vertex-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
 import { useLgrAssets } from "./use-lgr-assets";
-import { type LevelData, LevelImporter } from "~/editor/level-importer";
+import { importBuiltinLevel, type LevelData } from "~/editor/level-utils";
+import { PictureTool } from "~/editor/tools/picture-tool";
+import { HandTool, type HandToolState } from "~/editor/tools/hand-tool";
+import { cn } from "~/utils/misc";
 
-export function EditorView({
-  canvasRef,
-}: {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-}) {
+type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
+
+export function EditorView({ className, ...props }: EditorViewProps) {
+  const activeTool = useEditorActiveTool();
+  const handToolState = useEditorToolState<HandToolState>("hand");
   return (
     <canvas
-      ref={canvasRef}
-      className="w-full h-full cursor-crosshair select-none"
-      style={{
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MozUserSelect: "none",
-        msUserSelect: "none",
-      }}
+      className={cn(
+        "w-full h-full select-none cursor-crosshair",
+        {
+          "cursor-grab": activeTool?.meta.id === "hand",
+          "cursor-grabbing":
+            activeTool?.meta.id === "hand" && handToolState?.isDragging,
+        },
+
+        className
+      )}
+      {...props}
     />
   );
 }
@@ -103,7 +113,15 @@ export function useEditorView({
 
       applyResize();
 
-      const tools = [VertexTool, SelectTool, AppleTool, KillerTool, FlowerTool];
+      const tools = [
+        SelectTool,
+        HandTool,
+        VertexTool,
+        AppleTool,
+        KillerTool,
+        FlowerTool,
+        PictureTool,
+      ];
 
       const widgets = [];
       if (isOpenAIEnabled) {
@@ -114,7 +132,7 @@ export function useEditorView({
         store,
         tools,
         widgets,
-        lgrAssets,
+        lgrAssets: lgrAssets.lgr ?? undefined,
         initialLevel: initialLevel?.data,
       });
 
@@ -158,9 +176,7 @@ export function useInitialLevel(levelName?: string): InitialLevel {
     async function loadInitialLevel() {
       if (!levelName) return {};
       try {
-        const level = await LevelImporter.importBuiltinLevel(
-          `${levelName}.lev`
-        );
+        const level = await importBuiltinLevel(`${levelName}.lev`);
         setData(level.data ?? undefined);
         setStatus(level.data ? "done" : "error");
       } catch (error) {

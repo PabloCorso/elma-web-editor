@@ -15,10 +15,12 @@ import { colors } from "../constants";
 import type { Apple } from "../editor.types";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
+import { worldToScreen } from "../utils/coordinate-utils";
 
 export type SelectionToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
   selectedObjects: Position[];
+  selectedPictures?: Position[];
 };
 
 type VertexSelection = { polygon: Polygon; vertex: Position };
@@ -132,33 +134,16 @@ export class SelectTool extends Tool {
     const state = this.store.getState();
     // Draw selection handles in screen coordinates
     ctx.fillStyle = colors.selection;
-    const handleSize = 3; // Fixed size in screen pixels
     const toolState = state.actions.getToolState<SelectionToolState>("select");
 
     toolState.selectedVertices.forEach(({ vertex }: VertexSelection) => {
-      // Convert world coordinates to screen coordinates
-      const screenX = vertex.x * state.zoom + state.viewPortOffset.x;
-      const screenY = vertex.y * state.zoom + state.viewPortOffset.y;
-
-      ctx.fillRect(
-        screenX - handleSize,
-        screenY - handleSize,
-        handleSize * 2,
-        handleSize * 2
-      );
+      const position = worldToScreen(vertex, state.viewPortOffset, state.zoom);
+      drawSelectHandle(ctx, position);
     });
 
     toolState.selectedObjects.forEach((object: ObjectSelection) => {
-      // Convert world coordinates to screen coordinates
-      const screenX = object.x * state.zoom + state.viewPortOffset.x;
-      const screenY = object.y * state.zoom + state.viewPortOffset.y;
-
-      ctx.fillRect(
-        screenX - handleSize,
-        screenY - handleSize,
-        handleSize * 2,
-        handleSize * 2
-      );
+      const position = worldToScreen(object, state.viewPortOffset, state.zoom);
+      drawSelectHandle(ctx, position);
     });
 
     // Draw marquee selection in screen coordinates
@@ -169,12 +154,14 @@ export class SelectTool extends Tool {
       );
       const width = bounds.maxX - bounds.minX;
       const height = bounds.maxY - bounds.minY;
-
-      // Convert world coordinates to screen coordinates
-      const screenMinX = bounds.minX * state.zoom + state.viewPortOffset.x;
-      const screenMinY = bounds.minY * state.zoom + state.viewPortOffset.y;
       const screenWidth = width * state.zoom;
       const screenHeight = height * state.zoom;
+
+      const { x: screenMinX, y: screenMinY } = worldToScreen(
+        { x: bounds.minX, y: bounds.minY },
+        state.viewPortOffset,
+        state.zoom
+      );
 
       ctx.fillStyle = "rgba(255, 255, 0, 0.2)";
       ctx.fillRect(screenMinX, screenMinY, screenWidth, screenHeight);
@@ -562,4 +549,12 @@ export class SelectTool extends Tool {
 
     this.clear();
   }
+}
+
+function drawSelectHandle(
+  ctx: CanvasRenderingContext2D,
+  position: Position,
+  size = 3
+): void {
+  ctx.fillRect(position.x - size, position.y - size, size * 2, size * 2);
 }

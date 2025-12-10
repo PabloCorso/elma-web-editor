@@ -25,6 +25,7 @@ export function createEditorStore({
     killers: [],
     flowers: [],
     start: { x: 0, y: 0 },
+    pictures: [],
 
     // Editor state
     activeToolId: initialToolId,
@@ -78,6 +79,16 @@ export function createEditorStore({
         set({
           flowers: get().flowers.filter(
             (f) => f.x !== flower.x || f.y !== flower.y
+          ),
+        }),
+      addPicture: (picture) =>
+        set({ pictures: [...(get().pictures || []), picture] }),
+      removePicture: (picture) =>
+        set({
+          pictures: (get().pictures || []).filter(
+            (p) =>
+              p.position.x !== picture.position.x ||
+              p.position.y !== picture.position.y
           ),
         }),
 
@@ -171,14 +182,7 @@ export function createEditorStore({
         set((state) => ({ showSprites: !state.showSprites })),
 
       loadLevelData: (levelData) =>
-        set({
-          levelName: levelData.name || defaultLevelTitle,
-          polygons: levelData.polygons,
-          apples: levelData.apples,
-          killers: levelData.killers,
-          flowers: levelData.flowers,
-          start: levelData.start,
-        }),
+        set({ ...levelData, levelName: levelData.name || defaultLevelTitle }),
 
       triggerFitToView: () =>
         set((state) => ({ fitToViewTrigger: state.fitToViewTrigger + 1 })),

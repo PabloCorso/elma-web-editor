@@ -25,7 +25,7 @@ export function getEventContext(
   zoom: number
 ): EventContext {
   const coords = getCanvasCoordinates(event, canvas);
-  const worldPos = screenToWorld(coords.x, coords.y, viewPortOffset, zoom);
+  const worldPos = screenToWorld(coords, viewPortOffset, zoom);
 
   return { worldPos, screenX: coords.x, screenY: coords.y };
 }

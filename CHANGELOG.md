@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+- Improved LGR support and added picture tool.
+
 ## 2025-12-01
 
 - Updated on feedback from `@insguy`:

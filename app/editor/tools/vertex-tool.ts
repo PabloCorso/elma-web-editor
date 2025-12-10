@@ -1,7 +1,7 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { EditorState } from "../editor-state";
-import { isWithinThreshold } from "../utils/coordinate-utils";
+import { isWithinThreshold, worldToScreen } from "../utils/coordinate-utils";
 import {
   findPolygonLineForEditing,
   findPolygonVertexForEditing,
@@ -190,33 +190,40 @@ export class VertexTool extends Tool {
         toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
 
       // Convert world coordinates to screen coordinates
-      const lastScreenX = lastPoint.x * state.zoom + state.viewPortOffset.x;
-      const lastScreenY = lastPoint.y * state.zoom + state.viewPortOffset.y;
-      const mouseScreenX =
-        state.mousePosition.x * state.zoom + state.viewPortOffset.x;
-      const mouseScreenY =
-        state.mousePosition.y * state.zoom + state.viewPortOffset.y;
+      const lastScreen = worldToScreen(
+        lastPoint,
+        state.viewPortOffset,
+        state.zoom
+      );
+      const mouseScreen = worldToScreen(
+        state.mousePosition,
+        state.viewPortOffset,
+        state.zoom
+      );
 
       // Draw preview line from last point to mouse cursor (solid)
       ctx.strokeStyle = colors.edges;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(lastScreenX, lastScreenY);
-      ctx.lineTo(mouseScreenX, mouseScreenY);
+      ctx.moveTo(lastScreen.x, lastScreen.y);
+      ctx.lineTo(mouseScreen.x, mouseScreen.y);
       ctx.stroke();
 
       // Draw potential closing line from first point to mouse cursor when we have 3+ vertices (dashed)
       if (toolState.drawingPolygon.length >= 3) {
         const firstPoint = toolState.drawingPolygon[0];
-        const firstScreenX = firstPoint.x * state.zoom + state.viewPortOffset.x;
-        const firstScreenY = firstPoint.y * state.zoom + state.viewPortOffset.y;
+        const firstScreen = worldToScreen(
+          firstPoint,
+          state.viewPortOffset,
+          state.zoom
+        );
 
         ctx.strokeStyle = colors.edges;
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]); // Dashed line for closing edge
         ctx.beginPath();
-        ctx.moveTo(firstScreenX, firstScreenY);
-        ctx.lineTo(mouseScreenX, mouseScreenY);
+        ctx.moveTo(firstScreen.x, firstScreen.y);
+        ctx.lineTo(mouseScreen.x, mouseScreen.y);
         ctx.stroke();
         ctx.setLineDash([]);
       }

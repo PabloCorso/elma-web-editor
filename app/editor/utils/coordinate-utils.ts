@@ -1,14 +1,24 @@
 import type { Position } from "elmajs";
 
 export function screenToWorld(
-  screenX: number,
-  screenY: number,
+  screen: Position,
   viewPortOffset: Position,
   zoom: number
 ): Position {
   return {
-    x: (screenX - viewPortOffset.x) / zoom,
-    y: (screenY - viewPortOffset.y) / zoom,
+    x: (screen.x - viewPortOffset.x) / zoom,
+    y: (screen.y - viewPortOffset.y) / zoom,
+  };
+}
+
+export function worldToScreen(
+  world: Position,
+  viewPortOffset: Position,
+  zoom: number
+): Position {
+  return {
+    x: world.x * zoom + viewPortOffset.x,
+    y: world.y * zoom + viewPortOffset.y,
   };
 }
 
@@ -37,19 +47,19 @@ export function getClosestPointOnLineSegment(
 
   const dot = A * C + B * D;
   const lenSq = C * C + D * D;
-  
+
   if (lenSq === 0) {
     // Line segment is actually a point
     return lineStart;
   }
-  
+
   let param = dot / lenSq;
-  
+
   // Clamp param to [0, 1] to stay within the line segment
   param = Math.max(0, Math.min(1, param));
-  
+
   return {
     x: lineStart.x + param * C,
-    y: lineStart.y + param * D
+    y: lineStart.y + param * D,
   };
 }

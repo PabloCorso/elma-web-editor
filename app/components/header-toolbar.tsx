@@ -21,7 +21,7 @@ import {
   FolderOpenIcon,
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { LevelImporter } from "~/editor/level-importer";
+import { importFromFile } from "~/editor/level-utils";
 import { getLevelFromState } from "~/editor/utils/download-level";
 import { useState } from "react";
 import { supportsFilePickers } from "~/utils/file-session";
@@ -50,7 +50,7 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
         ? new File([new Uint8Array(fileContent)], fileName)
         : new File([fileContent], fileName);
 
-    const result = await LevelImporter.importFromFile(file);
+    const result = await importFromFile(file);
     if (result.success && result.data) {
       activeTool?.clear?.();
       loadLevelData(result.data);

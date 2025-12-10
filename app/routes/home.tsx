@@ -53,7 +53,7 @@ function Editor({ initialLevelName, isOpenAIEnabled }: EditorProps) {
       <ControlToolbar />
       <CanvasToolbar engineRef={engineRef} />
       <div className="flex-1">
-        <EditorView canvasRef={canvasRef} />
+        <EditorView ref={canvasRef} />
       </div>
     </>
   );
