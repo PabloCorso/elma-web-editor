@@ -29,5 +29,11 @@ export function drawPicture({
     worldWidth,
     worldHeight
   );
+
+  // draw rectangle around picture
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 0.01;
+  ctx.strokeRect(position.x, position.y, worldWidth, worldHeight);
+
   ctx.restore();
 }

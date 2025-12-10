@@ -1,94 +1,73 @@
-import * as React from "react";
-import * as ToolbarPrimitives from "@radix-ui/react-toolbar";
 import { cn } from "~/utils/misc";
 import { IconButton, type ButtonProps } from "./ui/button";
+import { createContext, useContext } from "react";
 
-type ToolbarProps = Omit<
-  React.ComponentPropsWithRef<typeof ToolbarPrimitives.Root>,
-  "asChild"
->;
+type ToolbarOrientation = "horizontal" | "vertical";
 
-export function Toolbar({ className, ...props }: ToolbarProps) {
+type ToolbarContextValue = {
+  orientation: ToolbarOrientation;
+};
+
+const ToolbarContext = createContext<ToolbarContextValue>({
+  orientation: "horizontal",
+});
+
+type ToolbarProps = React.ComponentPropsWithRef<"div"> & {
+  orientation?: ToolbarOrientation;
+};
+
+export function Toolbar({
+  className,
+  orientation = "horizontal",
+  ...props
+}: ToolbarProps) {
   return (
-    <ToolbarPrimitives.Root
-      className={cn(
-        "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
-        className
-      )}
-      {...props}
-    />
+    <ToolbarContext.Provider value={{ orientation }}>
+      <div
+        role="toolbar"
+        aria-orientation={orientation}
+        className={cn(
+          "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
+          "aria-[orientation=vertical]:flex-col",
+          className
+        )}
+        {...props}
+      />
+    </ToolbarContext.Provider>
   );
 }
 
 type ToolbarButtonProps = ButtonProps;
 
-export function ToolbarButton({
-  children,
-  className,
-  ...props
-}: ToolbarButtonProps) {
+export function ToolbarButton({ children, ...props }: ToolbarButtonProps) {
   return (
-    <ToolbarPrimitives.Button className={cn(className)} asChild>
-      <IconButton type="button" iconSize="lg" {...props}>
-        {children}
-      </IconButton>
-    </ToolbarPrimitives.Button>
+    <IconButton type="button" iconSize="lg" {...props}>
+      {children}
+    </IconButton>
   );
 }
 
-export type ToolbarSeparatorProps = Omit<
-  React.ComponentPropsWithRef<typeof ToolbarPrimitives.Separator>,
-  "asChild"
-> & {
-  direction?: "horizontal" | "vertical";
+export type ToolbarSeparatorProps = React.ComponentPropsWithRef<"div"> & {
+  orientation?: ToolbarOrientation;
 };
 
 export function ToolbarSeparator({
-  direction = "horizontal",
+  orientation: orientationProp,
   className,
   ...props
 }: ToolbarSeparatorProps) {
+  const { orientation } = useContext(ToolbarContext);
   return (
-    <ToolbarPrimitives.Separator
+    <div
+      role="separator"
+      aria-orientation={orientationProp ?? orientation}
       className={cn(
         "bg-separator",
-        direction === "horizontal" ? "w-px h-6 mx-1" : "h-px w-6 my-1",
+        "aria-[orientation=horizontal]:w-px aria-[orientation=horizontal]:h-6 aria-[orientation=horizontal]:mx-1",
+        "aria-[orientation=vertical]:h-px aria-[orientation=vertical]:w-6 aria-[orientation=vertical]:my-1",
         className
       )}
       {...props}
     />
-  );
-}
-
-type ToolbarGroupProps = Omit<
-  React.ComponentPropsWithRef<typeof ToolbarPrimitives.ToggleGroup>,
-  "asChild"
->;
-
-export function ToolbarToggleGroup({ className, ...props }: ToolbarGroupProps) {
-  return (
-    // @ts-expect-error Radix types
-    <ToolbarPrimitives.ToggleGroup
-      rovingFocus={false}
-      className={cn("flex items-center gap-1", className)}
-      {...props}
-    />
-  );
-}
-
-type ToolbarToggleItemProps = ButtonProps & {
-  value: string;
-};
-
-export function ToolbarToggleItem({
-  children,
-  ...props
-}: ToolbarToggleItemProps) {
-  return (
-    <ToolbarPrimitives.ToggleItem asChild {...props}>
-      <IconButton type="button" iconSize="lg">
-        {children}
-      </IconButton>
-    </ToolbarPrimitives.ToggleItem>
   );
 }

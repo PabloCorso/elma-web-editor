@@ -73,7 +73,7 @@ export function DialogXClose(props: IconButtonProps) {
   const ariaLabel = props["aria-label"] ?? "Close";
   return (
     <DialogPrimitive.Close asChild>
-      <IconButton variant="ghost" {...props} aria-label={ariaLabel}>
+      <IconButton {...props} aria-label={ariaLabel}>
         <XIcon aria-hidden="true" />
       </IconButton>
     </DialogPrimitive.Close>

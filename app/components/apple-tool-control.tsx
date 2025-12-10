@@ -15,9 +15,8 @@ import {
 } from "~/editor/tools/object-tools";
 import type { AppleAnimation } from "~/editor/editor.types";
 import { cn } from "~/editor/utils/misc";
-import { Button, type ButtonProps } from "./ui/button";
-import { createContext, useContext } from "react";
-import { ToolbarSeparator, type ToolbarSeparatorProps } from "./toolbar";
+import { type ButtonProps } from "./ui/button";
+import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
 
 export function AppleToolControl(props: ToolControlButtonProps) {
   const activeTool = useEditorActiveTool();
@@ -44,60 +43,56 @@ export function AppleToolControl(props: ToolControlButtonProps) {
       <PopoverAnchor>
         <ToolControlButton
           className="relative"
-          {...defaultTools.apple}
           iconAfter={<AppleArrowIcon gravity={currentGravity} />}
+          {...defaultTools.apple}
           {...props}
         >
           <SpriteIcon src={apple.src} />
         </ToolControlButton>
       </PopoverAnchor>
       <PopoverContent sideOffset={12} side="right" align="center">
-        <SimpleToolbar direction="vertical">
-          <SimpleToggleGroup>
-            <SimpleToggleButton
-              shortcut="1"
-              iconBefore={<SpriteIcon src={apple1.src} />}
-              onClick={() => handleAppleAnimationChange(1)}
-            />
-            <SimpleToggleButton
-              shortcut="2"
-              iconBefore={<SpriteIcon src={apple2.src} />}
-              onClick={() => handleAppleAnimationChange(2)}
-            />
-          </SimpleToggleGroup>
-          <SimpleSeparator />
-          <SimpleToggleGroup>
-            <SimpleToggleButton
-              shortcut="E"
-              iconBefore={<SpriteIcon src={apple.src} />}
-              onClick={() => handleGravityChange(Gravity.None)}
-            />
-            <SimpleToggleButton
-              shortcut="W"
-              onClick={() => handleGravityChange(Gravity.Down)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
-            />
-            <SimpleToggleButton
-              shortcut="A"
-              onClick={() => handleGravityChange(Gravity.Left)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
-            />
-            <SimpleToggleButton
-              shortcut="S"
-              onClick={() => handleGravityChange(Gravity.Up)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
-            />
-            <SimpleToggleButton
-              shortcut="D"
-              onClick={() => handleGravityChange(Gravity.Right)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
-            />
-          </SimpleToggleGroup>
-        </SimpleToolbar>
+        <Toolbar orientation="vertical">
+          <AppleButton
+            shortcut="1"
+            iconBefore={<SpriteIcon src={apple1.src} />}
+            onClick={() => handleAppleAnimationChange(1)}
+          />
+          <AppleButton
+            shortcut="2"
+            iconBefore={<SpriteIcon src={apple2.src} />}
+            onClick={() => handleAppleAnimationChange(2)}
+          />
+          <ToolbarSeparator />
+          <AppleButton
+            shortcut="E"
+            iconBefore={<SpriteIcon src={apple.src} />}
+            onClick={() => handleGravityChange(Gravity.None)}
+          />
+          <AppleButton
+            shortcut="W"
+            onClick={() => handleGravityChange(Gravity.Down)}
+            iconBefore={<SpriteIcon src={apple.src} />}
+            iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
+          />
+          <AppleButton
+            shortcut="A"
+            onClick={() => handleGravityChange(Gravity.Left)}
+            iconBefore={<SpriteIcon src={apple.src} />}
+            iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
+          />
+          <AppleButton
+            shortcut="S"
+            onClick={() => handleGravityChange(Gravity.Up)}
+            iconBefore={<SpriteIcon src={apple.src} />}
+            iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
+          />
+          <AppleButton
+            shortcut="D"
+            onClick={() => handleGravityChange(Gravity.Right)}
+            iconBefore={<SpriteIcon src={apple.src} />}
+            iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
+          />
+        </Toolbar>
       </PopoverContent>
     </Popover>
   );
@@ -126,6 +121,24 @@ function GravityIcon(props: React.SVGAttributes<SVGSVGElement>) {
   );
 }
 
+function AppleButton({
+  children,
+  className,
+  shortcut,
+  ...props
+}: ButtonProps & { shortcut?: string }) {
+  return (
+    <ToolbarButton
+      size="sm"
+      className={cn("relative", className)}
+      iconAfter={<ShortcutIndicator shortcut={shortcut} />}
+      {...props}
+    >
+      {children}
+    </ToolbarButton>
+  );
+}
+
 function AppleArrowIcon({
   gravity,
   className,
@@ -142,76 +155,21 @@ function AppleArrowIcon({
   );
 }
 
-const SimpleToolbarContext = createContext<{
-  direction: "horizontal" | "vertical";
-}>({ direction: "horizontal" });
-
-// Simple div-based toolbar components without roving focus
-function SimpleToolbar({
-  direction = "horizontal",
+function ShortcutIndicator({
   className,
+  shortcut,
   ...props
-}: React.ComponentPropsWithRef<"div"> & {
-  direction?: "horizontal" | "vertical";
-}) {
+}: React.ComponentPropsWithRef<"span"> & { shortcut?: string }) {
+  if (!shortcut) return null;
   return (
-    <SimpleToolbarContext.Provider value={{ direction }}>
-      <div
-        className={cn(
-          "inline-flex items-center rounded-[8px] border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
-          { "flex-col": direction === "vertical" },
-          className
-        )}
-        {...props}
-      />
-    </SimpleToolbarContext.Provider>
-  );
-}
-
-function SimpleToggleGroup({
-  className,
-  ...props
-}: React.ComponentPropsWithRef<"div">) {
-  const { direction } = useContext(SimpleToolbarContext);
-  return (
-    <div
+    <span
       className={cn(
-        "flex items-center gap-1",
-        { "flex-col": direction === "vertical" },
+        "absolute bottom-1 max-w-2 max-h-2 right-1 text-[8px] text-white/75 font-medium px-0.5 bg-background/80 rounded-sm leading-none",
         className
       )}
       {...props}
-    />
-  );
-}
-
-function SimpleSeparator(props: ToolbarSeparatorProps) {
-  const { direction } = useContext(SimpleToolbarContext);
-  return <ToolbarSeparator direction={direction} {...props} />;
-}
-
-function SimpleToggleButton({
-  className,
-  children,
-  shortcut,
-  ...props
-}: ButtonProps & { shortcut?: string }) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      iconSize="lg"
-      className={cn("relative", className)}
-      iconOnly
-      tabIndex={-1}
-      {...props}
     >
-      {children}
-      {shortcut && (
-        <span className="absolute bottom-0 right-0 text-[8px] text-white/75 font-medium px-0.5 bg-background/80 rounded-sm leading-none">
-          {shortcut}
-        </span>
-      )}
-    </Button>
+      {shortcut}
+    </span>
   );
 }

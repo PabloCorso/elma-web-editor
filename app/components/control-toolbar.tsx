@@ -18,11 +18,14 @@ export function ControlToolbar({
   isOpenAIEnabled?: boolean;
 }) {
   return (
-    <Toolbar className="absolute inset-y-0 h-fit m-auto left-4 flex-col">
+    <Toolbar
+      className="absolute inset-y-0 h-fit m-auto left-4"
+      orientation="vertical"
+    >
       <SelectToolControl tooltipSide="right" />
       <HandToolControl tooltipSide="right" />
 
-      <ToolbarSeparator direction="vertical" />
+      <ToolbarSeparator />
 
       <VertexToolControl tooltipSide="right" />
       <AppleToolControl tooltipSide="right" />
