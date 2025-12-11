@@ -21,15 +21,23 @@ import {
   FolderOpenIcon,
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { levelFromFile, elmaLevelFromEditorState } from "~/editor/helpers/level-parser";
+import {
+  levelFromFile,
+  elmaLevelFromEditorState,
+} from "~/editor/helpers/level-parser";
 import { useState } from "react";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
 import { SettingsDialog } from "./settings";
 import { Icon } from "./ui/icon";
+import { cn } from "~/utils/misc";
 
 export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { setLevelName, loadLevel: loadLevelData, triggerFitToView } = useEditorActions();
+  const {
+    setLevelName,
+    loadLevel: loadLevelData,
+    triggerFitToView,
+  } = useEditorActions();
   const store = useEditorStore();
   const activeTool = useEditorActiveTool();
   const levelName = useLevelName();
@@ -145,7 +153,9 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
               type="text"
               value={levelName}
               onChange={(e) => setLevelName(e.target.value)}
-              className="w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+              className={cn(
+                "focus-ring w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 text-sm"
+              )}
               placeholder="Enter level name…"
             />
           )}

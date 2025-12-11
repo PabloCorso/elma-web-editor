@@ -35,7 +35,7 @@ export function SettingsDialog(props: DialogProps) {
               href="https://github.com/PabloCorso/elma-web-editor/blob/main/CHANGELOG.md"
               target="_blank"
               rel="noreferrer"
-              className="underline"
+              className="underline focus-ring"
             >
               CHANGELOG
             </a>{" "}

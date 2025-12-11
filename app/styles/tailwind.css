@@ -13,6 +13,7 @@
   --background-primary: var(--color-slate-900);
   --background-primary-hover: var(--color-slate-500);
   --background-primary-active: var(--color-slate-400);
+  --tree-green: #008008;
 }
 
 @layer theme {
@@ -35,5 +36,11 @@
     --border-color-separator: var(--border-separator);
 
     --divide-color-separator: var(--border-separator);
+
+    --ring-color-tree-green: var(--tree-green);
   }
+}
+
+@utility focus-ring {
+  @apply focus-visible:ring-2 focus-visible:ring-tree-green focus-visible:outline-none;
 }
