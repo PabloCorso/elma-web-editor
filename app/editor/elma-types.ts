@@ -12,6 +12,7 @@ export enum ObjectType {
   Killer = 3,
   Start = 4,
 }
+
 export enum Gravity {
   None = 0,
   Up = 1,
@@ -30,14 +31,11 @@ export type Position = InstanceType<typeof elmajs.Position>;
 export type Polygon = InstanceType<typeof elmajs.Polygon>;
 export type ElmaPicture = InstanceType<typeof elmajs.Picture>;
 
-export type Level = {
-  levelName: string;
-  polygons: Polygon[];
-  apples: Apple[];
-  killers: Position[];
-  flowers: Position[];
-  start: Position;
-  pictures: Picture[];
+export type Picture = {
+  name: string;
+  position: Position;
+  // distance: number;
+  // clip: Clip;
 };
 
 export type AppleAnimation = 1 | 2;
@@ -48,4 +46,12 @@ export type Apple = {
   gravity: Gravity;
 };
 
-export type Picture = Pick<ElmaPicture, "name" | "position">;
+export type Level = {
+  levelName: string;
+  polygons: Polygon[];
+  apples: Apple[];
+  killers: Position[];
+  flowers: Position[];
+  start: Position;
+  pictures: Picture[];
+};

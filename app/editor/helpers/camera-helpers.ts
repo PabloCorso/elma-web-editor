@@ -26,7 +26,7 @@ export function updateZoom({
   maxZoom,
   currentZoom,
   setZoom,
-  mousePosition,
+  anchor,
   currentOffset,
   setCamera,
 }: {
@@ -35,7 +35,7 @@ export function updateZoom({
   maxZoom: number;
   currentZoom: number;
   setZoom: (zoom: number) => void;
-  mousePosition?: { x: number; y: number };
+  anchor?: { x: number; y: number };
   currentOffset?: { x: number; y: number };
   setCamera?: (x: number, y: number) => void;
 }) {
@@ -45,10 +45,9 @@ export function updateZoom({
     setZoom(clampedZoom);
 
     // Adjust viewport to keep mouse position fixed if coordinates provided
-    if (mousePosition && currentOffset && setCamera) {
+    if (anchor && currentOffset && setCamera) {
       adjustViewportForZoom({
-        mouseX: mousePosition.x,
-        mouseY: mousePosition.y,
+        anchor,
         oldZoom: currentZoom,
         newZoom: clampedZoom,
         currentOffset,
@@ -59,27 +58,25 @@ export function updateZoom({
 }
 
 function adjustViewportForZoom({
-  mouseX,
-  mouseY,
+  anchor,
   oldZoom,
   newZoom,
   currentOffset,
   setCamera,
 }: {
-  mouseX: number;
-  mouseY: number;
+  anchor: { x: number; y: number };
   oldZoom: number;
   newZoom: number;
   currentOffset: { x: number; y: number };
   setCamera: (x: number, y: number) => void;
 }) {
   // Convert screen coordinates to world coordinates
-  const worldX = (mouseX - currentOffset.x) / oldZoom;
-  const worldY = (mouseY - currentOffset.y) / oldZoom;
+  const worldX = (anchor.x - currentOffset.x) / oldZoom;
+  const worldY = (anchor.y - currentOffset.y) / oldZoom;
 
   // Calculate new camera offset to keep the same world position under the mouse
-  const newOffsetX = mouseX - worldX * newZoom;
-  const newOffsetY = mouseY - worldY * newZoom;
+  const newOffsetX = anchor.x - worldX * newZoom;
+  const newOffsetY = anchor.y - worldY * newZoom;
 
   setCamera(newOffsetX, newOffsetY);
 }

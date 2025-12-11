@@ -237,7 +237,7 @@ export class EditorEngine {
         maxZoom: this.maxZoom,
         currentZoom: state.zoom,
         setZoom: state.actions.setZoom,
-        mousePosition: { x: mouseX, y: mouseY },
+        anchor: { x: mouseX, y: mouseY },
         currentOffset: state.viewPortOffset,
         setCamera: state.actions.setCamera,
       });
@@ -313,7 +313,7 @@ export class EditorEngine {
     }
 
     // Handle arrow keys
-    const panAmount = 200 / state.zoom;
+    const panAmount = 200;
     const arrowDeltas: Record<string, { deltaX: number; deltaY: number }> = {
       ArrowLeft: { deltaX: panAmount, deltaY: 0 },
       ArrowRight: { deltaX: -panAmount, deltaY: 0 },
@@ -335,33 +335,36 @@ export class EditorEngine {
     const shortcuts: Record<string, () => void> = {
       Escape: () => state.actions.activateTool("select"),
       "+": () => this.zoomInOut(this.zoomStep),
+      "=": () => this.zoomInOut(this.zoomStep),
       "-": () => this.zoomInOut(-this.zoomStep),
+      _: () => this.zoomInOut(-this.zoomStep),
       "1": () => this.fitToView(),
     };
     shortcuts[event.key]?.();
   };
 
-  private zoomInOut(value: number) {
+  private zoomInOut(step: number) {
     const state = this.store.getState();
     const anchor = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
+
     updateZoom({
-      newZoom: state.zoom + value,
+      newZoom: state.zoom + step,
       minZoom: this.minZoom,
       maxZoom: this.maxZoom,
       currentZoom: state.zoom,
       setZoom: state.actions.setZoom,
-      mousePosition: anchor,
+      anchor: anchor,
       currentOffset: state.viewPortOffset,
       setCamera: anchor ? state.actions.setCamera : undefined,
     });
   }
 
-  public zoomIn(zoom = this.zoomStep) {
-    this.zoomInOut(zoom);
+  public zoomIn(step = this.zoomStep) {
+    this.zoomInOut(step);
   }
 
-  public zoomOut(zoom = this.zoomStep) {
-    this.zoomInOut(-zoom);
+  public zoomOut(step = this.zoomStep) {
+    this.zoomInOut(-step);
   }
 
   private handleResize = () => {
