@@ -7,9 +7,9 @@ import {
   findPolygonVertexForEditing,
 } from "../utils/selection-utils";
 import { colors } from "../constants";
-import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
+import type { Polygon, Position } from "../elma-types";
 
 const VERTEX_THRESHOLD = 15;
 

@@ -1,7 +1,6 @@
 import type { EventContext } from "../utils/event-handler";
-import type { Polygon, Position } from "elmajs";
 import type { EditorStore } from "../editor-store";
-import type { Apple, Picture } from "../editor.types";
+import type { Apple, Picture, Polygon, Position } from "../elma-types";
 import type { DefaultToolMeta } from "./default-tools";
 import type { LgrAssets } from "~/components/lgr-assets";
 

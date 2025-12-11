@@ -1,16 +1,13 @@
-import type { Level } from "elmajs";
 import {
   getFileHandle,
   getNewFileHandle,
   verifyPermission,
   writeFile,
 } from "./file-system-access";
-import {
-  downloadLevel,
-  getLevelFromState,
-  levelToBlob,
-} from "~/editor/utils/download-level";
+import { downloadLevel, levelToBlob } from "~/editor/utils/download-level";
 import type { EditorStore } from "~/editor/editor-store";
+import { elmaLevelFromEditorState } from "~/editor/utils/level-parser";
+import type { ElmaLevel } from "~/editor/elma-types";
 
 export class FileSession {
   private store: EditorStore;
@@ -60,7 +57,7 @@ export class FileSession {
   async save() {
     if (!isClient()) return false;
 
-    const level = getLevelFromState(this.store.getState());
+    const level = elmaLevelFromEditorState(this.store.getState());
     if (!supportsFilePickers()) {
       downloadLevel(level);
       return true;
@@ -79,7 +76,7 @@ export class FileSession {
     return true;
   }
 
-  async saveAs(level: Level): Promise<boolean> {
+  async saveAs(level: ElmaLevel) {
     if (!isClient()) return false;
 
     // No picker support: download instead.

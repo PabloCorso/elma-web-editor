@@ -1,4 +1,4 @@
-import { type Position } from "elmajs";
+import type { Position } from "./elma-types";
 
 const PICTURE_SCALE = 1 / 48;
 

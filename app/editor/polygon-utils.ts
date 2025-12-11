@@ -1,5 +1,4 @@
-import * as elmajs from "elmajs";
-import type { Polygon, Position } from "elmajs";
+import type { Polygon, Position } from "./elma-types";
 
 export function isPolygonClockwise(vertices: Position[]): boolean {
   let sum = 0;
@@ -71,7 +70,7 @@ export function correctPolygonPrecision(polygon: Polygon) {
 }
 
 // Ensure coordinates are floating point (not integers)
-export function correctVertexPrecision(pos: elmajs.Position) {
+export function correctVertexPrecision(pos: Position) {
   return {
     x: Number.isInteger(pos.x) ? parseFloat(pos.x.toFixed(1)) : pos.x,
     y: Number.isInteger(pos.y) ? parseFloat(pos.y.toFixed(1)) : pos.y,

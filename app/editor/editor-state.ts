@@ -1,21 +1,10 @@
-import type { Polygon, Position } from "elmajs";
-import type { LevelData } from "./utils/level-parser";
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { Apple, Picture } from "./editor.types";
+import type { Apple, Level, Picture, Polygon, Position } from "./elma-types";
 import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "../utils/file-session";
 import { LevelFolder } from "../utils/level-folder";
 
-export type EditorState = {
-  // Level data
-  levelName: string;
-  polygons: Polygon[];
-  apples: Apple[];
-  killers: Position[];
-  flowers: Position[];
-  start: Position;
-  pictures: Picture[];
-
+export type EditorState = Level & {
   // Editor state
   activeToolId: string;
   mousePosition: Position;
@@ -86,7 +75,7 @@ export type EditorState = {
     // View operations
     toggleAnimateSprites: () => void;
     toggleShowSprites: () => void;
-    loadLevelData: (levelData: LevelData) => void;
+    loadLevel: (level: Level) => void;
     triggerFitToView: () => void;
   };
 };

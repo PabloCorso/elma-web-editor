@@ -1,5 +1,4 @@
-import type { Polygon, Position } from "elmajs";
-import type { Apple } from "../editor.types";
+import type { Apple, Polygon, Position } from "../elma-types";
 
 export function calculateBoundingBox({
   polygons,

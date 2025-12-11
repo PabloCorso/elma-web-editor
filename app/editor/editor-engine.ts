@@ -3,7 +3,6 @@ import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
 import { correctPolygonWinding } from "./polygon-utils";
 import { colors } from "./constants";
-import { initialLevelData, type LevelData } from "./utils/level-parser";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
@@ -12,9 +11,11 @@ import { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject } from "./draw-object";
 import { drawPicture } from "./draw-picture";
 import { worldToScreen } from "./utils/coordinate-utils";
+import type { Level } from "./elma-types";
+import { defaultLevel } from "./utils/level-parser";
 
 type EditorEngineOptions = {
-  initialLevel?: LevelData;
+  initialLevel?: Level;
   initialToolId?: string;
   tools?: Array<new (store: EditorStore) => Tool>;
   widgets?: Array<new (store: EditorStore) => Widget>;
@@ -48,7 +49,7 @@ export class EditorEngine {
   constructor(
     canvas: HTMLCanvasElement,
     {
-      initialLevel = initialLevelData,
+      initialLevel = defaultLevel,
       initialToolId = "select",
       tools = [],
       widgets = [],
@@ -90,7 +91,7 @@ export class EditorEngine {
     this.setupStoreListeners();
 
     // Initialize with level data
-    state.actions.loadLevelData(initialLevel);
+    state.actions.loadLevel(initialLevel);
     this.startRenderLoop();
     this.fitToView();
   }
@@ -400,16 +401,6 @@ export class EditorEngine {
       maxZoom: this.maxZoom,
       setCamera: state.actions.setCamera,
       setZoom: state.actions.setZoom,
-    });
-  }
-
-  public loadLevel(levelData: LevelData) {
-    this.store.setState({
-      polygons: levelData.polygons,
-      apples: levelData.apples,
-      killers: levelData.killers,
-      flowers: levelData.flowers,
-      start: levelData.start,
     });
   }
 

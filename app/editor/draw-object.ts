@@ -1,7 +1,5 @@
-import { Gravity, OBJECT_DIAMETER, type Position } from "elmajs";
-
-const OBJECT_FRAME_PX = 40; // width of a single frame in object sprite sheet
-const OBJECT_FPS = 30; // animation speed for object sprites
+import { OBJECT_FRAME_PX, OBJECT_FPS, OBJECT_DIAMETER } from "./constants";
+import { Gravity, type Position } from "./elma-types";
 
 export function drawObject({
   ctx,

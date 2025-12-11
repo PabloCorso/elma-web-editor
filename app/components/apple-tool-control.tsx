@@ -7,12 +7,11 @@ import { SpriteIcon } from "./sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { useLgrSprite } from "./use-lgr-assets";
-import { Gravity } from "elmajs";
 import {
   defaultAppleState,
   type AppleToolState,
 } from "~/editor/tools/object-tools";
-import type { AppleAnimation } from "~/editor/editor.types";
+import { type AppleAnimation, Gravity } from "~/editor/elma-types";
 import { cn } from "~/editor/utils/misc";
 import { type ButtonProps } from "./ui/button";
 import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";

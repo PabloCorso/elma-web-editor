@@ -2,8 +2,7 @@ import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
-import { Gravity } from "elmajs";
-import type { Apple, AppleAnimation } from "../editor.types";
+import { Gravity, type Apple, type AppleAnimation } from "../elma-types";
 import type { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject } from "../draw-object";
 

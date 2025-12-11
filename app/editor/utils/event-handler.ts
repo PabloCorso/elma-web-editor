@@ -1,4 +1,4 @@
-import type { Position } from "elmajs";
+import type { Position } from "../elma-types";
 import { screenToWorld } from "./coordinate-utils";
 
 export type EventContext = {

@@ -1,6 +1,5 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../utils/event-handler";
-import type { Position, Polygon } from "elmajs";
 import {
   findVertexNearPosition,
   findObjectNearPosition,
@@ -12,7 +11,7 @@ import {
   getSelectionBounds,
 } from "../utils/selection-utils";
 import { colors } from "../constants";
-import type { Apple } from "../editor.types";
+import type { Apple, Polygon, Position } from "../elma-types";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { isWithinThreshold, worldToScreen } from "../utils/coordinate-utils";

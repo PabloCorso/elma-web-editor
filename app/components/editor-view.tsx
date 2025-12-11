@@ -11,10 +11,11 @@ import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
 import { useLgrAssets } from "./use-lgr-assets";
-import { importBuiltinLevel, type LevelData } from "~/editor/utils/level-parser";
+import { getBuiltinLevel } from "~/editor/utils/level-parser";
 import { PictureTool } from "~/editor/tools/picture-tool";
 import { HandTool, type HandToolState } from "~/editor/tools/hand-tool";
 import { cn } from "~/utils/misc";
+import type { Level } from "~/editor/elma-types";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
 
@@ -161,13 +162,13 @@ export function useEditorView({
 }
 
 type InitialLevel = {
-  data: LevelData | undefined;
+  data: Level | undefined;
   status: "loading" | "done" | "error";
 };
 
 // TODO: should this move to FileSession or EditorStore?
 export function useInitialLevel(levelName?: string): InitialLevel {
-  const [data, setData] = useState<LevelData | undefined>(undefined);
+  const [data, setData] = useState<Level | undefined>(undefined);
   const [status, setStatus] = useState<"loading" | "done" | "error">(
     levelName ? "loading" : "done"
   );
@@ -176,9 +177,9 @@ export function useInitialLevel(levelName?: string): InitialLevel {
     async function loadInitialLevel() {
       if (!levelName) return {};
       try {
-        const level = await importBuiltinLevel(`${levelName}.lev`);
-        setData(level.data ?? undefined);
-        setStatus(level.data ? "done" : "error");
+        const level = await getBuiltinLevel(`${levelName}.lev`);
+        setData(level ?? undefined);
+        setStatus(level ? "done" : "error");
       } catch (error) {
         console.error("Error loading initial level:", error);
         setData(undefined);

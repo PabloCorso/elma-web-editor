@@ -1,4 +1,4 @@
-import type { Position, Polygon } from "elmajs";
+import type { Polygon, Position } from "../elma-types";
 import {
   isWithinThreshold,
   getClosestPointOnLineSegment,

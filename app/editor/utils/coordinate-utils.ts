@@ -1,4 +1,4 @@
-import type { Position } from "elmajs";
+import type { Position } from "../elma-types";
 
 export function screenToWorld(
   screen: Position,

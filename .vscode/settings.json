@@ -14,5 +14,6 @@
     ["cx\\(((?:[^()]|\\([^()]*\\))*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
   ],
   "tailwindCSS.codeLens": true,
-  "tailwindCSS.experimental.configFile": "app/styles/tailwind.css"
+  "tailwindCSS.experimental.configFile": "app/styles/tailwind.css",
+  "cSpell.ignoreWords": ["elma", "kuski"]
 }

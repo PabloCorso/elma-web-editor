@@ -181,8 +181,8 @@ export function createEditorStore({
       toggleShowSprites: () =>
         set((state) => ({ showSprites: !state.showSprites })),
 
-      loadLevelData: (levelData) =>
-        set({ ...levelData, levelName: levelData.name || defaultLevelTitle }),
+      loadLevel: (level) =>
+        set({ ...level, levelName: level.levelName || defaultLevelTitle }),
 
       triggerFitToView: () =>
         set((state) => ({ fitToViewTrigger: state.fitToViewTrigger + 1 })),

@@ -3,7 +3,7 @@ import type { EditorStore } from "../editor-store";
 import type { EventContext } from "../utils/event-handler";
 import { defaultTools } from "./default-tools";
 import { Tool } from "./tool-interface";
-import type { Picture } from "../editor.types";
+import type { Picture } from "../elma-types";
 import { drawPicture } from "../draw-picture";
 
 export type PictureToolState = Pick<Picture, "name">;

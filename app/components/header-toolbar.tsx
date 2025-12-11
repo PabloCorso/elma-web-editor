@@ -21,8 +21,7 @@ import {
   FolderOpenIcon,
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { importFromFile } from "~/editor/utils/level-parser";
-import { getLevelFromState } from "~/editor/utils/download-level";
+import { levelFromFile, elmaLevelFromEditorState } from "~/editor/utils/level-parser";
 import { useState } from "react";
 import { supportsFilePickers } from "~/utils/file-session";
 import { SettingsDialog } from "./settings";
@@ -30,7 +29,7 @@ import { Icon } from "./ui/icon";
 
 export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { setLevelName, loadLevelData, triggerFitToView } = useEditorActions();
+  const { setLevelName, loadLevel: loadLevelData, triggerFitToView } = useEditorActions();
   const store = useEditorStore();
   const activeTool = useEditorActiveTool();
   const levelName = useLevelName();
@@ -50,13 +49,14 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
         ? new File([new Uint8Array(fileContent)], fileName)
         : new File([fileContent], fileName);
 
-    const result = await importFromFile(file);
-    if (result.success && result.data) {
+    try {
+      const level = await levelFromFile(file);
       activeTool?.clear?.();
-      loadLevelData(result.data);
+      loadLevelData(level);
       triggerFitToView();
-    } else {
-      alert(`Import failed: ${result.error}`);
+    } catch (error) {
+      alert(`Import failed: ${error instanceof Error ? error.message : error}`);
+      return;
     }
   };
 
@@ -72,7 +72,7 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
   const handleSaveAs = async () => {
     const state = store.getState();
     const fileSession = state.fileSession;
-    const level = getLevelFromState(state);
+    const level = elmaLevelFromEditorState(state);
     await fileSession.saveAs(level);
   };
 

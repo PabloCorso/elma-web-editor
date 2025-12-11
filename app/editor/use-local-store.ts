@@ -33,8 +33,8 @@ export function useLocalStorageSync(key = "elma-web-store") {
 
         // Import the level data into the store
         const state = store.getState();
-        state.actions.loadLevelData({
-          name: savedData.levelName,
+        state.actions.loadLevel({
+          levelName: savedData.levelName,
           polygons: savedData.polygons,
           apples: savedData.apples,
           killers: savedData.killers,

@@ -1,8 +1,8 @@
 import type { StoreApi } from "zustand/vanilla";
 import type { EditorState } from "../editor-state";
-import { type Position, type Polygon, Gravity } from "elmajs";
 import type { UIMessage } from "ai";
 import { Widget } from "./widget-interface";
+import { Gravity, type Polygon, type Position } from "../elma-types";
 
 export type AIToolState = {
   isChatOpen: boolean;
