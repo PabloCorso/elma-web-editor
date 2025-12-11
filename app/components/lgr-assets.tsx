@@ -69,12 +69,10 @@ export class LgrAssets {
   }
 
   getPictureSprites() {
-    return (
-      standardSprites.pictures.map((name) => ({
-        name,
-        sprite: this.getSprite(name),
-      })) || []
-    );
+    return standardSprites.pictures.map((picture) => ({
+      picture,
+      sprite: this.getSprite(picture.name),
+    }));
   }
 
   isReady() {

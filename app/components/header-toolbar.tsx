@@ -33,11 +33,7 @@ import { cn } from "~/utils/misc";
 
 export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const {
-    setLevelName,
-    loadLevel: loadLevelData,
-    triggerFitToView,
-  } = useEditorActions();
+  const { setLevelName, loadLevel, triggerFitToView } = useEditorActions();
   const store = useEditorStore();
   const activeTool = useEditorActiveTool();
   const levelName = useLevelName();
@@ -60,7 +56,7 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
     try {
       const level = await levelFromFile(file);
       activeTool?.clear?.();
-      loadLevelData(level);
+      loadLevel(level);
       triggerFitToView();
     } catch (error) {
       alert(`Import failed: ${error instanceof Error ? error.message : error}`);

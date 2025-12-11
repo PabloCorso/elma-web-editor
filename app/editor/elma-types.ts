@@ -34,8 +34,8 @@ export type ElmaPicture = InstanceType<typeof elmajs.Picture>;
 export type Picture = {
   name: string;
   position: Position;
-  // distance: number;
-  // clip: Clip;
+  distance: number;
+  clip: Clip;
 };
 
 export type AppleAnimation = 1 | 2;

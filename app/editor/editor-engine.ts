@@ -428,8 +428,8 @@ export class EditorEngine {
     this.ctx.save();
     this.applyCameraTransform(state);
     this.drawPolygons();
-    this.drawObjects();
     this.drawPictures();
+    this.drawObjects();
 
     // Let active tool render on world-space canvas
     const activeTool = state.actions.getActiveTool();

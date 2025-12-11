@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- Improved LGR support and added picture tool.
+- Improved LGR support and added picture tool (only default distance and clipping for now).
+- Update toolbars positioning, controls are back to the left side.
+- Added base undo/redo feature.
+- Added hand tool for panning the view.
 
 ## 2025-12-01
 

@@ -53,8 +53,8 @@ export function usePictureSprites() {
   const pictureSprites = lgrAssets.lgr?.getPictureSprites() || [];
   return useMemo(
     () =>
-      pictureSprites.map(({ name, sprite }) => ({
-        name,
+      pictureSprites.map(({ picture, sprite }) => ({
+        picture,
         src: bitmapToDataUrl(sprite),
         width: sprite?.width,
         height: sprite?.height,

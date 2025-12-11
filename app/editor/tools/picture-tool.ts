@@ -3,14 +3,14 @@ import type { EditorStore } from "../editor-store";
 import type { EventContext } from "../helpers/event-handler";
 import { defaultTools } from "./default-tools";
 import { Tool } from "./tool-interface";
-import type { Picture } from "../elma-types";
+import { type Picture } from "../elma-types";
 import { drawPicture } from "../draw-picture";
+import { standardSprites } from "~/components/standard-sprites";
 
-export type PictureToolState = Pick<Picture, "name">;
+export type PictureToolState = Pick<Picture, "name" | "distance" | "clip">;
 
-export const defaultPictureState: PictureToolState = {
-  name: "barrel",
-};
+export const defaultPictureState: PictureToolState =
+  standardSprites.pictures[0];
 
 export class PictureTool extends Tool<PictureToolState> {
   readonly meta = defaultTools.picture;
@@ -31,7 +31,10 @@ export class PictureTool extends Tool<PictureToolState> {
     if (!toolState?.name) return false;
 
     const position = context.worldPos;
-    state.actions.addPicture({ name: toolState.name, position });
+    const defaults =
+      standardSprites.pictures.find((pic) => pic.name === toolState.name) ||
+      defaultPictureState;
+    state.actions.addPicture({ ...defaults, name: toolState.name, position });
     return true;
   }
 
