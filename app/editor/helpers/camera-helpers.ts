@@ -1,5 +1,5 @@
 import type { Apple, Polygon, Position } from "../elma-types";
-import { calculateBoundingBox } from "./level-utils";
+import { calculateBoundingBox } from "./level-helpers";
 
 export function updateCamera({
   deltaX,

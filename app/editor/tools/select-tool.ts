@@ -1,5 +1,5 @@
 import { Tool } from "./tool-interface";
-import type { EventContext } from "../utils/event-handler";
+import type { EventContext } from "../helpers/event-handler";
 import {
   findVertexNearPosition,
   findObjectNearPosition,
@@ -9,13 +9,16 @@ import {
   getAllObjects,
   isPointInRect,
   getSelectionBounds,
-} from "../utils/selection-utils";
+} from "../helpers/selection-helpers";
 import { colors } from "../constants";
 import type { Apple, Polygon, Position } from "../elma-types";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
-import { isWithinThreshold, worldToScreen } from "../utils/coordinate-utils";
-import { checkModifierKey } from "../utils/misc";
+import {
+  isWithinThreshold,
+  worldToScreen,
+} from "../helpers/coordinate-helpers";
+import { checkModifierKey } from "~/utils/misc";
 
 const SELECT_THRESHOLD = 15;
 
@@ -143,6 +146,7 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
     const { state, toolState } = this.getState();
+    if (!toolState) return;
 
     // Draw selection handles in screen coordinates
     const { selectedVertices, selectedObjects, selectedPictures } = toolState;
@@ -208,8 +212,9 @@ export class SelectTool extends Tool<SelectionToolState> {
     modifier: boolean
   ): void {
     const { toolState } = this.getState();
-    const isSelected = isVertexSelected(vertex, toolState.selectedVertices);
+    if (!toolState) return;
 
+    const isSelected = isVertexSelected(vertex, toolState.selectedVertices);
     if (!modifier && !isSelected) {
       this.clear();
     }
@@ -224,6 +229,8 @@ export class SelectTool extends Tool<SelectionToolState> {
     modifier: boolean
   ): void {
     const { toolState } = this.getState();
+    if (!toolState) return;
+
     const isSelected = isObjectSelected(object, toolState.selectedObjects);
 
     if (!modifier && !isSelected) {
@@ -237,8 +244,9 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private handlePictureSelection(picture: Position, modifier: boolean): void {
     const { toolState } = this.getState();
-    const isSelected = isObjectSelected(picture, toolState.selectedPictures);
+    if (!toolState) return;
 
+    const isSelected = isObjectSelected(picture, toolState.selectedPictures);
     if (!modifier && !isSelected) {
       this.clear();
     }
@@ -250,10 +258,11 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private handlePolygonSelection(polygon: Polygon, modifier: boolean): void {
     const { toolState } = this.getState();
+    if (!toolState) return;
+
     const isSelected = toolState.selectedVertices.some(
       (sv: VertexSelection) => sv.polygon === polygon
     );
-
     if (!modifier && !isSelected) {
       this.clear();
     }
@@ -265,6 +274,7 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private startDragging(worldPos: Position): void {
     const { toolState } = this.getState();
+    if (!toolState) return;
 
     this.isDragging = true;
     this.dragStartPos = worldPos;
@@ -290,6 +300,8 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private handleDragging(worldPos: Position): void {
     const { toolState } = this.getState();
+    if (!toolState) return;
+
     const totalDeltaX = worldPos.x - this.dragStartPos.x;
     const totalDeltaY = worldPos.y - this.dragStartPos.y;
 
@@ -339,6 +351,8 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private finalizeMarqueeSelection(): void {
     const { state, toolState } = this.getState();
+    if (!toolState) return;
+
     const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
 
     // Select vertices within the marquee
@@ -387,6 +401,8 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private selectVertex(polygon: Polygon, vertex: Position): void {
     const { toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
     setToolState({
       selectedVertices: [...toolState.selectedVertices, { polygon, vertex }],
     });
@@ -394,11 +410,15 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private selectObject(object: ObjectSelection): void {
     const { toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
     setToolState({ selectedObjects: [...toolState.selectedObjects, object] });
   }
 
   private selectPicture(picture: Position): void {
     const { toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
     setToolState({
       selectedPictures: [...toolState.selectedPictures, picture],
     });
@@ -406,6 +426,7 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private selectPolygon(polygon: Polygon): void {
     const { toolState, setToolState } = this.getState();
+    if (!toolState) return;
 
     // Filter out vertices that are already selected
     const existingSelectedVertices = toolState.selectedVertices.filter(
@@ -423,6 +444,8 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private updateSelectedVertices(newPositions: Position[]): void {
     const { state, toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
     const updatedPolygons = [...state.polygons];
     const updatedSelectedVertices = [...toolState.selectedVertices];
 
@@ -454,6 +477,8 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private updateSelectedObjects(newPositions: Position[]): void {
     const { state, toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
     const updates: {
       apples?: Apple[];
       killers?: Position[];
@@ -508,6 +533,8 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private updateSelectedPictures(newPositions: Position[]): void {
     const { state, toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
     const updatedPictures = [...state.pictures];
     const updatedSelectedPictures = [...toolState.selectedPictures];
 
@@ -546,6 +573,7 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private deleteSelection(): void {
     const { state, toolState } = this.getState();
+    if (!toolState) return;
 
     // Group selected vertices by polygon index
     const verticesByPolygonIndex = new Map<number, Position[]>();

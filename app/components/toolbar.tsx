@@ -12,7 +12,7 @@ const ToolbarContext = createContext<ToolbarContextValue>({
   orientation: "horizontal",
 });
 
-type ToolbarProps = React.ComponentPropsWithRef<"div"> & {
+export type ToolbarProps = React.ComponentPropsWithRef<"div"> & {
   orientation?: ToolbarOrientation;
 };
 

@@ -1,7 +1,7 @@
 import { type EditorState } from "./editor-state";
-import { getEventContext, isUserTyping } from "./utils/event-handler";
-import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
-import { correctPolygonWinding } from "./polygon-utils";
+import { getEventContext, isUserTyping } from "./helpers/event-handler";
+import { updateCamera, updateZoom, fitToView } from "./helpers/camera-helpers";
+import { correctPolygonWinding } from "./helpers/polygon-helpers";
 import { colors } from "./constants";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
@@ -10,10 +10,10 @@ import { drawKuski } from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject } from "./draw-object";
 import { drawPicture } from "./draw-picture";
-import { worldToScreen } from "./utils/coordinate-utils";
+import { worldToScreen } from "./helpers/coordinate-helpers";
 import type { Level } from "./elma-types";
-import { defaultLevel } from "./utils/level-parser";
-import { checkModifierKey } from "./utils/misc";
+import { defaultLevel } from "./helpers/level-parser";
+import { checkModifierKey } from "~/utils/misc";
 
 type EditorEngineOptions = {
   initialLevel?: Level;
@@ -227,7 +227,8 @@ export class EditorEngine {
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    if (checkModifierKey(event)) {
+    const modifier = checkModifierKey(event);
+    if (modifier) {
       const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = state.zoom * zoomFactor;
       updateZoom({
@@ -270,7 +271,6 @@ export class EditorEngine {
     if (isUserTyping()) return;
 
     const state = this.store.getState();
-    const panAmount = 200 / state.zoom;
 
     // Let active tool handle the key first
     const activeTool = state.actions.getActiveTool();
@@ -293,69 +293,52 @@ export class EditorEngine {
       return;
     }
 
-    switch (event.key) {
-      case "Escape":
-        state.actions.activateTool("select");
-        break;
-      case "ArrowLeft":
-        updateCamera({
-          deltaX: panAmount,
-          deltaY: 0,
-          currentOffset: state.viewPortOffset,
-          setCamera: state.actions.setCamera,
-          panSpeed: this.panSpeed,
-        });
-        break;
-
-      case "ArrowRight":
-        updateCamera({
-          deltaX: -panAmount,
-          deltaY: 0,
-          currentOffset: state.viewPortOffset,
-          setCamera: state.actions.setCamera,
-          panSpeed: this.panSpeed,
-        });
-        break;
-
-      case "ArrowUp":
-        updateCamera({
-          deltaX: 0,
-          deltaY: panAmount,
-          currentOffset: state.viewPortOffset,
-          setCamera: state.actions.setCamera,
-          panSpeed: this.panSpeed,
-        });
-        break;
-
-      case "ArrowDown":
-        updateCamera({
-          deltaX: 0,
-          deltaY: -panAmount,
-          currentOffset: state.viewPortOffset,
-          setCamera: state.actions.setCamera,
-          panSpeed: this.panSpeed,
-        });
-        break;
-
-      case "+":
-      case "=":
-        this.zoomInOut(this.zoomStep);
-        break;
-
-      case "-":
-      case "_":
-        this.zoomInOut(-this.zoomStep);
-        break;
-
-      case "1":
-        this.fitToView();
-        break;
-
-      case "d":
-      case "D":
+    const modifier = checkModifierKey(event);
+    if (modifier) {
+      if (event.key === "y" || (event.key === "z" && event.shiftKey)) {
+        this.store.temporal.getState().redo();
+        event.preventDefault();
+        return;
+      }
+      if (event.key === "z") {
+        this.store.temporal.getState().undo();
+        event.preventDefault();
+        return;
+      }
+      if (event.key === "d" && event.shiftKey) {
         this.toggleDebugMode();
-        break;
+        event.preventDefault();
+        return;
+      }
     }
+
+    // Handle arrow keys
+    const panAmount = 200 / state.zoom;
+    const arrowDeltas: Record<string, { deltaX: number; deltaY: number }> = {
+      ArrowLeft: { deltaX: panAmount, deltaY: 0 },
+      ArrowRight: { deltaX: -panAmount, deltaY: 0 },
+      ArrowUp: { deltaX: 0, deltaY: panAmount },
+      ArrowDown: { deltaX: 0, deltaY: -panAmount },
+    };
+
+    if (event.key in arrowDeltas) {
+      updateCamera({
+        ...arrowDeltas[event.key],
+        currentOffset: state.viewPortOffset,
+        setCamera: state.actions.setCamera,
+        panSpeed: this.panSpeed,
+      });
+      return;
+    }
+
+    // Handle other shortcuts
+    const shortcuts: Record<string, () => void> = {
+      Escape: () => state.actions.activateTool("select"),
+      "+": () => this.zoomInOut(this.zoomStep),
+      "-": () => this.zoomInOut(-this.zoomStep),
+      "1": () => this.fitToView(),
+    };
+    shortcuts[event.key]?.();
   };
 
   private zoomInOut(value: number) {

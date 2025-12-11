@@ -12,7 +12,7 @@ import {
   type DialogProps,
 } from "./ui/dialog";
 import { useState } from "react";
-import { supportsFilePickers } from "~/utils/file-session";
+import { supportsFilePickers } from "~/editor/helpers/file-session";
 
 export function SettingsDialog(props: DialogProps) {
   const store = useEditorStore();

@@ -1,5 +1,5 @@
 import { Tool } from "./tool-interface";
-import type { EventContext } from "../utils/event-handler";
+import type { EventContext } from "../helpers/event-handler";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 

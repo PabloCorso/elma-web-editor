@@ -1,5 +1,5 @@
 import type { Position } from "../elma-types";
-import { screenToWorld } from "./coordinate-utils";
+import { screenToWorld } from "./coordinate-helpers";
 
 export type EventContext = {
   worldPos: Position;

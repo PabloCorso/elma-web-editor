@@ -1,4 +1,4 @@
-import type { EventContext } from "../utils/event-handler";
+import type { EventContext } from "../helpers/event-handler";
 import type { EditorStore } from "../editor-store";
 import type { Apple, Picture, Polygon, Position } from "../elma-types";
 import type { DefaultToolMeta } from "./default-tools";

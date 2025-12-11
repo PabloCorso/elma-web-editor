@@ -12,7 +12,7 @@ import {
   type AppleToolState,
 } from "~/editor/tools/object-tools";
 import { type AppleAnimation, Gravity } from "~/editor/elma-types";
-import { cn } from "~/editor/utils/misc";
+import { cn } from "~/utils/misc";
 import { type ButtonProps } from "./ui/button";
 import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
 import { Portal } from "@radix-ui/react-portal";

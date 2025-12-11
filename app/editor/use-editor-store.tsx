@@ -1,8 +1,8 @@
 import { createContext, useContext, useRef } from "react";
 import { useStore as useZustand } from "zustand";
-import { type EditorState } from "./editor-state";
 import { createEditorStore, type EditorStore } from "./editor-store";
 import type { ToolState } from "./tools/tool-interface";
+import type { EditorState } from "./editor-state";
 
 const EditorContext = createContext<EditorStore | null>(null);
 
@@ -33,12 +33,25 @@ export function useEditorStore() {
   return store;
 }
 
-export function useEditor<T>(selector: (s: EditorState) => T) {
+export function useEditor<T>(selector: (state: EditorState) => T): T {
   const store = useContext(EditorContext);
   if (!store) {
     throw new Error("useEditor must be used within a <EditorProvider />");
   }
   return useZustand(store, selector);
+}
+
+export function useEditorHistory() {
+  return useEditorStore().temporal.getState();
+}
+
+export function useEditorCanUndo() {
+  const store = useEditorStore();
+  return useZustand(store.temporal, (state) => state.pastStates.length > 0);
+}
+export function useEditorCanRedo() {
+  const store = useEditorStore();
+  return useZustand(store.temporal, (state) => state.futureStates.length > 0);
 }
 
 export function useLevelName() {

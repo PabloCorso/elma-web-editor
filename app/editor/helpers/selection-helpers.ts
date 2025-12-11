@@ -2,7 +2,7 @@ import type { Polygon, Position } from "../elma-types";
 import {
   isWithinThreshold,
   getClosestPointOnLineSegment,
-} from "./coordinate-utils";
+} from "./coordinate-helpers";
 
 export type SelectedVertex = {
   polygon: Polygon;

@@ -12,7 +12,7 @@ import {
   correctPolygonWinding,
   correctPolygonPrecision,
   correctVertexPrecision as correctPositionPrecision,
-} from "../polygon-utils";
+} from "./polygon-helpers";
 
 export type ImportResult = {
   success: boolean;

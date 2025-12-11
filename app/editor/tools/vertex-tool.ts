@@ -1,11 +1,11 @@
 import { Tool } from "./tool-interface";
-import type { EventContext } from "../utils/event-handler";
+import type { EventContext } from "../helpers/event-handler";
 import type { EditorState } from "../editor-state";
-import { isWithinThreshold, worldToScreen } from "../utils/coordinate-utils";
+import { isWithinThreshold, worldToScreen } from "../helpers/coordinate-helpers";
 import {
   findPolygonLineForEditing,
   findPolygonVertexForEditing,
-} from "../utils/selection-utils";
+} from "../helpers/selection-helpers";
 import { colors } from "../constants";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
@@ -39,6 +39,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
   getDrafts() {
     const { state, toolState } = this.getState();
+    if (!toolState) return { polygons: [] };
     const drawingPolygon = toolState.drawingPolygon;
 
     if (drawingPolygon.length >= 3) {
@@ -56,6 +57,7 @@ export class VertexTool extends Tool<VertexToolState> {
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
     const { state, toolState, setToolState } = this.getState();
+    if (!toolState) return false;
 
     // If we're already drawing a polygon, continue with normal drawing behavior
     if (toolState.drawingPolygon.length > 0) {
@@ -115,6 +117,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
     const { state, toolState, setToolState } = this.getState();
+    if (!toolState) return false;
 
     if (event.key === "Escape") {
       // If we're editing an existing polygon, restore it
@@ -154,7 +157,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
   onRender(ctx: CanvasRenderingContext2D): void {
     const { state, toolState } = this.getState();
-    if (toolState.drawingPolygon.length === 0) return;
+    if (!toolState || toolState.drawingPolygon.length === 0) return;
 
     ctx.strokeStyle = colors.edges;
     ctx.lineWidth = 1 / state.zoom;
@@ -179,48 +182,48 @@ export class VertexTool extends Tool<VertexToolState> {
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
     const { state, toolState } = this.getState();
-    if (toolState.drawingPolygon.length > 0) {
-      const lastPoint =
-        toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
+    if (!toolState || toolState.drawingPolygon.length === 0) return;
 
-      // Convert world coordinates to screen coordinates
-      const lastScreen = worldToScreen(
-        lastPoint,
+    const lastPoint =
+      toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
+
+    // Convert world coordinates to screen coordinates
+    const lastScreen = worldToScreen(
+      lastPoint,
+      state.viewPortOffset,
+      state.zoom
+    );
+    const mouseScreen = worldToScreen(
+      state.mousePosition,
+      state.viewPortOffset,
+      state.zoom
+    );
+
+    // Draw preview line from last point to mouse cursor (solid)
+    ctx.strokeStyle = colors.edges;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(lastScreen.x, lastScreen.y);
+    ctx.lineTo(mouseScreen.x, mouseScreen.y);
+    ctx.stroke();
+
+    // Draw potential closing line from first point to mouse cursor when we have 3+ vertices (dashed)
+    if (toolState.drawingPolygon.length >= 3) {
+      const firstPoint = toolState.drawingPolygon[0];
+      const firstScreen = worldToScreen(
+        firstPoint,
         state.viewPortOffset,
         state.zoom
       );
-      const mouseScreen = worldToScreen(
-        state.mousePosition,
-        state.viewPortOffset,
-        state.zoom
-      );
 
-      // Draw preview line from last point to mouse cursor (solid)
       ctx.strokeStyle = colors.edges;
       ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]); // Dashed line for closing edge
       ctx.beginPath();
-      ctx.moveTo(lastScreen.x, lastScreen.y);
+      ctx.moveTo(firstScreen.x, firstScreen.y);
       ctx.lineTo(mouseScreen.x, mouseScreen.y);
       ctx.stroke();
-
-      // Draw potential closing line from first point to mouse cursor when we have 3+ vertices (dashed)
-      if (toolState.drawingPolygon.length >= 3) {
-        const firstPoint = toolState.drawingPolygon[0];
-        const firstScreen = worldToScreen(
-          firstPoint,
-          state.viewPortOffset,
-          state.zoom
-        );
-
-        ctx.strokeStyle = colors.edges;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]); // Dashed line for closing edge
-        ctx.beginPath();
-        ctx.moveTo(firstScreen.x, firstScreen.y);
-        ctx.lineTo(mouseScreen.x, mouseScreen.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
+      ctx.setLineDash([]);
     }
   }
 

@@ -32,6 +32,8 @@
     --background-color-separator: var(--border-separator);
 
     --border-color-default: var(--border-default);
-    --border-separator: var(--border-separator);
+    --border-color-separator: var(--border-separator);
+
+    --divide-color-separator: var(--border-separator);
   }
 }

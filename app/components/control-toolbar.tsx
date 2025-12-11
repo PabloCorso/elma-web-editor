@@ -19,8 +19,8 @@ export function ControlToolbar({
 }) {
   return (
     <Toolbar
-      className="absolute inset-y-0 h-fit m-auto left-4"
       orientation="vertical"
+      className="flex flex-col gap-2 absolute inset-y-0 h-fit m-auto left-4"
     >
       <SelectToolControl tooltipSide="right" />
       <HandToolControl tooltipSide="right" />

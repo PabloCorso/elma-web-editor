@@ -1,4 +1,4 @@
-import type { Polygon, Position } from "./elma-types";
+import type { Polygon, Position } from "../elma-types";
 
 export function isPolygonClockwise(vertices: Position[]): boolean {
   let sum = 0;

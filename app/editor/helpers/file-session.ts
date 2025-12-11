@@ -4,9 +4,9 @@ import {
   verifyPermission,
   writeFile,
 } from "./file-system-access";
-import { downloadLevel, levelToBlob } from "~/editor/utils/download-level";
+import { downloadLevel, levelToBlob } from "~/editor/helpers/download-level";
 import type { EditorStore } from "~/editor/editor-store";
-import { elmaLevelFromEditorState } from "~/editor/utils/level-parser";
+import { elmaLevelFromEditorState } from "~/editor/helpers/level-parser";
 import type { ElmaLevel } from "~/editor/elma-types";
 
 export class FileSession {

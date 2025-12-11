@@ -1,5 +1,5 @@
 import defaultLgr from "../assets/lgr/Default.lgr?url";
-import { decodeLgrSprite } from "~/editor/utils/pcx-loader";
+import { decodeLgrSprite } from "~/editor/helpers/pcx-loader";
 import { ElmaLGR, type AppleAnimation } from "~/editor/elma-types";
 import { standardSprites } from "./standard-sprites";
 

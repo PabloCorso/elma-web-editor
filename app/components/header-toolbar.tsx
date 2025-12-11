@@ -21,9 +21,9 @@ import {
   FolderOpenIcon,
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { levelFromFile, elmaLevelFromEditorState } from "~/editor/utils/level-parser";
+import { levelFromFile, elmaLevelFromEditorState } from "~/editor/helpers/level-parser";
 import { useState } from "react";
-import { supportsFilePickers } from "~/utils/file-session";
+import { supportsFilePickers } from "~/editor/helpers/file-session";
 import { SettingsDialog } from "./settings";
 import { Icon } from "./ui/icon";
 

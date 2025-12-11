@@ -1,6 +1,6 @@
 import type { LgrAssets } from "~/components/lgr-assets";
 import type { EditorStore } from "../editor-store";
-import type { EventContext } from "../utils/event-handler";
+import type { EventContext } from "../helpers/event-handler";
 import { defaultTools } from "./default-tools";
 import { Tool } from "./tool-interface";
 import type { Picture } from "../elma-types";

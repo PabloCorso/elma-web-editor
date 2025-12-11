@@ -1,8 +1,8 @@
 import type { Tool, ToolState } from "./tools/tool-interface";
 import type { Apple, Level, Picture, Polygon, Position } from "./elma-types";
 import type { Widget } from "./widgets/widget-interface";
-import { FileSession } from "../utils/file-session";
-import { LevelFolder } from "../utils/level-folder";
+import { FileSession } from "./helpers/file-session";
+import { LevelFolder } from "./helpers/level-folder";
 
 export type EditorState = Level & {
   // Editor state
@@ -57,7 +57,7 @@ export type EditorState = Level & {
     getTool: (toolId: string) => Tool | undefined;
 
     // Tools
-    getToolState: <T extends ToolState>(toolId: string) => T;
+    getToolState: <T extends ToolState>(toolId: string) => T | undefined;
     setToolState: <T extends ToolState>(
       toolId: string,
       state: Partial<T>

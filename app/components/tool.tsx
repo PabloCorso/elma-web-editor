@@ -24,7 +24,7 @@ export function Tool({
   );
 }
 
-type ToolButtonProps = ButtonProps & {
+export type ToolButtonProps = ButtonProps & {
   name?: string;
   shortcut?: string;
   tooltipSide?: TooltipContentProps["side"];

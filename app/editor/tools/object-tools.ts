@@ -1,5 +1,5 @@
 import { Tool } from "./tool-interface";
-import type { EventContext } from "../utils/event-handler";
+import type { EventContext } from "../helpers/event-handler";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { Gravity, type Apple, type AppleAnimation } from "../elma-types";
@@ -29,6 +29,7 @@ export class AppleTool extends Tool<AppleToolState> {
 
   onPointerDown(_event: PointerEvent, context: EventContext): boolean {
     const { state, toolState } = this.getState();
+    if (!toolState) return false;
     const position = context.worldPos;
     state.actions.addApple({ position, ...toolState });
     return true;
@@ -86,7 +87,7 @@ export class AppleTool extends Tool<AppleToolState> {
 
   getDrafts() {
     const { state, toolState } = this.getState();
-    if (!state.mouseOnCanvas) return {};
+    if (!state.mouseOnCanvas || !toolState) return {};
     const position = state.mousePosition;
     const apple: Apple = { position, ...toolState };
     return { apples: [apple] };
