@@ -481,7 +481,7 @@ export class EditorEngine {
 
     if (allPolygons.length === 0) return;
 
-    const correctedPolygons = state.polygons.map((polygon) => {
+    const correctedPolygons = allPolygons.map((polygon) => {
       if (polygon.vertices.length < 3 || polygon.grass) {
         return polygon;
       }

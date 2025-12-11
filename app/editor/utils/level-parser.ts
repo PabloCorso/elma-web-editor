@@ -58,10 +58,6 @@ export async function levelFromFile(file: File) {
 
 export async function getBuiltinLevel(filename: string) {
   const response = await fetch(`/assets/lev/${filename}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch built-in level: ${response.statusText}`);
-  }
-
   const file = await response.arrayBuffer();
   const level = await parseLevFile(file);
   if (!level.levelName) {
