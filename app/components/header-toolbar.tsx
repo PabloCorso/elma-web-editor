@@ -21,7 +21,7 @@ import {
   FolderOpenIcon,
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { importFromFile } from "~/editor/level-utils";
+import { importFromFile } from "~/editor/utils/level-parser";
 import { getLevelFromState } from "~/editor/utils/download-level";
 import { useState } from "react";
 import { supportsFilePickers } from "~/utils/file-session";

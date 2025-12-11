@@ -1,5 +1,5 @@
 import { Gravity, type Polygon, type Position } from "elmajs";
-import type { Apple, Picture } from "./editor.types";
+import type { Apple, Picture } from "../editor.types";
 
 export type LevelData = {
   name?: string;

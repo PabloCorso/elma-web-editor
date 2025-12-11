@@ -11,7 +11,7 @@ import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
 import { AIWidget } from "~/editor/widgets/ai-widget";
 import { useLgrAssets } from "./use-lgr-assets";
-import { importBuiltinLevel, type LevelData } from "~/editor/level-utils";
+import { importBuiltinLevel, type LevelData } from "~/editor/utils/level-parser";
 import { PictureTool } from "~/editor/tools/picture-tool";
 import { HandTool, type HandToolState } from "~/editor/tools/hand-tool";
 import { cn } from "~/utils/misc";

@@ -3,7 +3,7 @@ import { getEventContext, isUserTyping } from "./utils/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./utils/camera-utils";
 import { correctPolygonWinding } from "./polygon-utils";
 import { colors } from "./constants";
-import { initialLevelData, type LevelData } from "./level-utils";
+import { initialLevelData, type LevelData } from "./utils/level-parser";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";

@@ -1,5 +1,5 @@
 import type { Polygon, Position } from "elmajs";
-import type { LevelData } from "./level-utils";
+import type { LevelData } from "./utils/level-parser";
 import type { Tool, ToolState } from "./tools/tool-interface";
 import type { Apple, Picture } from "./editor.types";
 import type { Widget } from "./widgets/widget-interface";

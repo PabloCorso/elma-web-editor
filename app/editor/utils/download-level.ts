@@ -28,7 +28,7 @@ export function getLevelFromState(state: EditorState) {
 
   level.polygons = normalizedPolygons;
 
-  const objects = [
+  level.objects = [
     {
       type: ObjectType.Start,
       position: correctPositionPrecision(state.start),
@@ -55,7 +55,17 @@ export function getLevelFromState(state: EditorState) {
     })),
   ];
 
-  level.objects = objects;
+  level.pictures = state.pictures.map((picture) => ({
+    name: picture.name,
+    texture: "",
+    mask: "",
+    position: correctPositionPrecision(picture.position),
+    distance: 999,
+    clip: elmajs.Clip.Sky,
+    grass: false,
+    vertices: [],
+  }));
+
   level.integrity = level.calculateIntegrity();
 
   return level;
