@@ -13,6 +13,7 @@ import { drawPicture } from "./draw-picture";
 import { worldToScreen } from "./utils/coordinate-utils";
 import type { Level } from "./elma-types";
 import { defaultLevel } from "./utils/level-parser";
+import { checkModifierKey } from "./utils/misc";
 
 type EditorEngineOptions = {
   initialLevel?: Level;
@@ -226,7 +227,7 @@ export class EditorEngine {
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    if (event.metaKey || event.ctrlKey) {
+    if (checkModifierKey(event)) {
       const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = state.zoom * zoomFactor;
       updateZoom({

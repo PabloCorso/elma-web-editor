@@ -15,6 +15,7 @@ import type { Apple, Polygon, Position } from "../elma-types";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { isWithinThreshold, worldToScreen } from "../utils/coordinate-utils";
+import { checkModifierKey } from "../utils/misc";
 
 const SELECT_THRESHOLD = 15;
 
@@ -76,25 +77,26 @@ export class SelectTool extends Tool<SelectionToolState> {
       8 / state.zoom
     );
 
+    const modifier = checkModifierKey(event);
     if (vertex) {
-      this.handleVertexSelection(vertex, event.ctrlKey);
+      this.handleVertexSelection(vertex, modifier);
       this.startDragging(context.worldPos);
       return true;
     } else if (picture) {
-      this.handlePictureSelection(picture, event.ctrlKey);
+      this.handlePictureSelection(picture, modifier);
       this.startDragging(context.worldPos);
       return true;
     } else if (object) {
-      this.handleObjectSelection(object, event.ctrlKey);
+      this.handleObjectSelection(object, modifier);
       this.startDragging(context.worldPos);
       return true;
     } else if (polygonEdge) {
-      this.handlePolygonSelection(polygonEdge, event.ctrlKey);
+      this.handlePolygonSelection(polygonEdge, modifier);
       this.startDragging(context.worldPos);
       return true;
     }
 
-    this.startMarqueeSelection(context.worldPos, event.ctrlKey);
+    this.startMarqueeSelection(context.worldPos, modifier);
     return true;
   }
 
@@ -203,12 +205,12 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private handleVertexSelection(
     vertex: VertexSelection,
-    isCtrlKey: boolean
+    modifier: boolean
   ): void {
     const { toolState } = this.getState();
     const isSelected = isVertexSelected(vertex, toolState.selectedVertices);
 
-    if (!isCtrlKey && !isSelected) {
+    if (!modifier && !isSelected) {
       this.clear();
     }
 
@@ -219,12 +221,12 @@ export class SelectTool extends Tool<SelectionToolState> {
 
   private handleObjectSelection(
     object: ObjectSelection,
-    isCtrlKey: boolean
+    modifier: boolean
   ): void {
     const { toolState } = this.getState();
     const isSelected = isObjectSelected(object, toolState.selectedObjects);
 
-    if (!isCtrlKey && !isSelected) {
+    if (!modifier && !isSelected) {
       this.clear();
     }
 
@@ -233,11 +235,11 @@ export class SelectTool extends Tool<SelectionToolState> {
     }
   }
 
-  private handlePictureSelection(picture: Position, isCtrlKey: boolean): void {
+  private handlePictureSelection(picture: Position, modifier: boolean): void {
     const { toolState } = this.getState();
     const isSelected = isObjectSelected(picture, toolState.selectedPictures);
 
-    if (!isCtrlKey && !isSelected) {
+    if (!modifier && !isSelected) {
       this.clear();
     }
 
@@ -246,13 +248,13 @@ export class SelectTool extends Tool<SelectionToolState> {
     }
   }
 
-  private handlePolygonSelection(polygon: Polygon, isCtrlKey: boolean): void {
+  private handlePolygonSelection(polygon: Polygon, modifier: boolean): void {
     const { toolState } = this.getState();
     const isSelected = toolState.selectedVertices.some(
       (sv: VertexSelection) => sv.polygon === polygon
     );
 
-    if (!isCtrlKey && !isSelected) {
+    if (!modifier && !isSelected) {
       this.clear();
     }
 
@@ -277,8 +279,8 @@ export class SelectTool extends Tool<SelectionToolState> {
     ];
   }
 
-  private startMarqueeSelection(worldPos: Position, isCtrlKey: boolean): void {
-    if (!isCtrlKey) {
+  private startMarqueeSelection(worldPos: Position, modifier: boolean): void {
+    if (!modifier) {
       this.clear();
     }
     this.isMarqueeSelecting = true;
