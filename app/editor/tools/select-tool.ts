@@ -446,28 +446,30 @@ export class SelectTool extends Tool<SelectionToolState> {
     const { state, toolState, setToolState } = this.getState();
     if (!toolState) return;
 
-    const updatedPolygons = [...state.polygons];
-    const updatedSelectedVertices = [...toolState.selectedVertices];
-
-    // Update each selected vertex with its new position
-    toolState.selectedVertices.forEach((selection: VertexSelection, index) => {
-      const polygonIndex = updatedPolygons.findIndex(
-        (p) => p === selection.polygon
-      );
-      if (polygonIndex !== -1) {
-        const vertexIndex = updatedPolygons[polygonIndex].vertices.findIndex(
-          (v) => v === selection.vertex
+    const updatedPolygons = state.polygons.map((polygon) => {
+      let hasChanges = false;
+      const newVertices = polygon.vertices.map((vertex) => {
+        const selectionIndex = toolState.selectedVertices.findIndex(
+          (selection: VertexSelection) =>
+            selection.polygon === polygon && selection.vertex === vertex
         );
-        if (vertexIndex !== -1) {
-          updatedPolygons[polygonIndex].vertices[vertexIndex] =
-            newPositions[index];
-          updatedSelectedVertices[index] = {
-            polygon: updatedPolygons[polygonIndex],
-            vertex: newPositions[index],
-          };
+        if (selectionIndex !== -1) {
+          hasChanges = true;
+          return newPositions[selectionIndex];
         }
-      }
+        return vertex;
+      });
+
+      // Only create a new polygon object if vertices changed
+      return hasChanges ? { ...polygon, vertices: newVertices } : polygon;
     });
+
+    const updatedSelectedVertices = toolState.selectedVertices.map(
+      (selection: VertexSelection, index) => ({
+        polygon: updatedPolygons[state.polygons.indexOf(selection.polygon)],
+        vertex: newPositions[index],
+      })
+    );
 
     setToolState({ selectedVertices: updatedSelectedVertices });
 

@@ -33,7 +33,7 @@ export type EditorStore = UseBoundStore<StoreApi<EditorState>> & {
 export function createEditorStore({
   initialToolId = "select",
   defaultLevelTitle = "Untitled",
-  historyUpdateThrottle = 100,
+  historyUpdateThrottle = 50,
 }: CreateEditorStoreOptions = {}) {
   return create<EditorState>()(
     temporal(
@@ -230,6 +230,7 @@ export function createEditorStore({
           flowers: state.flowers,
           start: state.start,
           pictures: state.pictures,
+          activeToolId: state.activeToolId,
           toolState: state.toolState,
         }),
       }
