@@ -22,7 +22,7 @@ import {
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import {
-  levelFromFile,
+  editorLevelFromFile,
   elmaLevelFromEditorState,
 } from "~/editor/helpers/level-parser";
 import { useState } from "react";
@@ -54,7 +54,7 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
         : new File([fileContent], fileName);
 
     try {
-      const level = await levelFromFile(file);
+      const level = await editorLevelFromFile(file);
       activeTool?.clear?.();
       loadLevel(level);
       triggerFitToView();

@@ -4,7 +4,7 @@ import {
   Gravity,
   ObjectType,
   type Apple,
-  type Level,
+  type EditorLevel,
   type Position,
 } from "../elma-types";
 import type { EditorState } from "../editor-state";
@@ -16,11 +16,11 @@ import {
 
 export type ImportResult = {
   success: boolean;
-  data?: Level;
+  data?: EditorLevel;
   error?: string;
 };
 
-export const defaultLevel: Level = {
+export const defaultLevel: EditorLevel = {
   levelName: "",
   polygons: [
     {
@@ -40,7 +40,7 @@ export const defaultLevel: Level = {
   pictures: [],
 };
 
-export async function levelFromFile(file: File) {
+export async function editorLevelFromFile(file: File) {
   if (!file.name.toLowerCase().endsWith(".lev")) {
     throw new Error(
       `Invalid file type ${file.name}. Please upload a .lev file.`
@@ -48,7 +48,7 @@ export async function levelFromFile(file: File) {
   }
 
   const arrayBuffer = await file.arrayBuffer();
-  const level = await parseLevFile(arrayBuffer);
+  const level = await editorLevelFromBuffer(arrayBuffer);
   if (!level.levelName) {
     level.levelName = file.name.replace(".lev", "");
   }
@@ -59,7 +59,7 @@ export async function levelFromFile(file: File) {
 export async function getBuiltinLevel(filename: string) {
   const response = await fetch(`/assets/lev/${filename}`);
   const file = await response.arrayBuffer();
-  const level = await parseLevFile(file);
+  const level = await editorLevelFromBuffer(file);
   if (!level.levelName) {
     level.levelName = filename.replace(".lev", "");
   }
@@ -67,7 +67,7 @@ export async function getBuiltinLevel(filename: string) {
   return level;
 }
 
-async function parseLevFile(data: ArrayBuffer) {
+async function editorLevelFromBuffer(data: ArrayBuffer) {
   const elmaLevel = ElmaLevel.from(data);
 
   const apples: Apple[] = [];
@@ -94,7 +94,7 @@ async function parseLevFile(data: ArrayBuffer) {
     }
   });
 
-  const level: Level = {
+  const level: EditorLevel = {
     levelName: elmaLevel.name,
     polygons: elmaLevel.polygons,
     apples,

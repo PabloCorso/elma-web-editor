@@ -9,9 +9,9 @@ import { drawGravityArrow, drawObject } from "../draw-object";
 export type AppleToolState = { animation: AppleAnimation; gravity: Gravity };
 
 export const defaultAppleState: AppleToolState = {
-  animation: 1,
+  animation: 1 as AppleAnimation,
   gravity: Gravity.None,
-};
+} as const;
 
 export class AppleTool extends Tool<AppleToolState> {
   readonly meta = defaultTools.apple;

@@ -11,12 +11,37 @@ import { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject } from "./draw-object";
 import { drawPicture } from "./draw-picture";
 import { worldToScreen } from "./helpers/coordinate-helpers";
-import type { Level } from "./elma-types";
+import {
+  Clip,
+  type Apple,
+  type EditorLevel,
+  type Picture,
+  type Position,
+} from "./elma-types";
 import { defaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
+import { defaultAppleState } from "./tools/object-tools";
+
+enum RenderType {
+  Picture = "picture",
+  Killer = "killer",
+  Flower = "flower",
+  Start = "start",
+  Apple = "apple",
+}
+
+type RenderItem =
+  | (Picture & { type: RenderType.Picture })
+  | {
+      type: RenderType.Killer | RenderType.Flower | RenderType.Start;
+      position: Position;
+      distance: number;
+      clip: Clip;
+    }
+  | (Apple & { type: RenderType.Apple; distance: number; clip: Clip });
 
 type EditorEngineOptions = {
-  initialLevel?: Level;
+  initialLevel?: EditorLevel;
   initialToolId?: string;
   tools?: Array<new (store: EditorStore) => Tool>;
   widgets?: Array<new (store: EditorStore) => Widget>;
@@ -427,9 +452,25 @@ export class EditorEngine {
 
     this.ctx.save();
     this.applyCameraTransform(state);
+
+    const skyPath = this.buildSkyPath(state);
+    const groundPath = this.buildGroundPath(state, skyPath);
     this.drawPolygons();
-    this.drawPictures();
-    this.drawObjects();
+
+    const queue = this.getDrawItemQueue(state);
+    for (const item of queue) {
+      this.ctx.save();
+
+      if (item.clip === Clip.Sky) {
+        this.ctx.clip(skyPath);
+      } else if (item.clip === Clip.Ground) {
+        this.ctx.clip(groundPath, "evenodd");
+      }
+
+      this.drawItem(state, item);
+
+      this.ctx.restore();
+    }
 
     // Let active tool render on world-space canvas
     const activeTool = state.actions.getActiveTool();
@@ -439,14 +480,125 @@ export class EditorEngine {
 
     this.ctx.restore();
 
-    // Let active tool render overlay on screen-space UI
+    // Screen-space overlay (tools, UI)
     if (activeTool?.onRenderOverlay) {
       activeTool.onRenderOverlay(this.ctx, this.lgrAssets);
     }
 
     if (this.debugMode) {
+      this.drawDebugDistance(state, queue);
       this.drawDebugInfoPanel(state);
     }
+  }
+
+  private getDrawItemQueue(state: EditorState): RenderItem[] {
+    const objectProperties = { distance: 500, clip: Clip.Unclipped };
+    return [
+      ...state.pictures.map((picture) => ({
+        type: RenderType.Picture as const,
+        ...picture,
+      })),
+      ...state.killers.map((killer) => ({
+        type: RenderType.Killer as const,
+        ...objectProperties,
+        position: killer,
+      })),
+      ...state.apples.map((apple) => ({
+        ...apple,
+        type: RenderType.Apple as const,
+        ...objectProperties,
+      })),
+      ...state.flowers.map((flower) => ({
+        type: RenderType.Flower as const,
+        ...objectProperties,
+        position: flower,
+      })),
+      {
+        type: RenderType.Start as const,
+        ...objectProperties,
+        position: state.start,
+      },
+    ].sort((a, b) => b.distance - a.distance);
+  }
+
+  private drawItem(state: EditorState, item: RenderItem) {
+    const ctx = this.ctx;
+    const position = item.position;
+
+    if (item.type === "picture") {
+      const sprite = this.lgrAssets.getSprite(item.name);
+      if (!sprite) return;
+      drawPicture({ ctx, sprite, position });
+    } else if (item.type === "apple") {
+      const sprite = this.lgrAssets.getAppleSprite(
+        item.animation ?? defaultAppleState.animation
+      );
+      drawObject({ ctx, sprite, position, animate: state.animateSprites });
+      drawGravityArrow({ ctx, position, gravity: item.gravity });
+    } else if (item.type === "killer") {
+      const sprite = this.lgrAssets.getKillerSprite();
+      drawObject({ ctx, sprite, position, animate: state.animateSprites });
+    } else if (item.type === "flower") {
+      const sprite = this.lgrAssets.getFlowerSprite();
+      drawObject({ ctx, sprite, position, animate: state.animateSprites });
+    } else if (item.type === "start") {
+      const lgrSprites = this.lgrAssets.getKuskiSprites();
+      drawKuski({ ctx, lgrSprites, start: state.start });
+    }
+  }
+
+  private buildSkyPath(state: EditorState): Path2D {
+    // Union of all non-grass polygons with corrected winding
+    const activeTool = state.actions.getActiveTool();
+    const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
+    const allPolygons = [...state.polygons, ...draftPolygons];
+
+    const correctedPolygons = allPolygons.map((polygon) => {
+      if (polygon.vertices.length < 3 || polygon.grass) {
+        return polygon;
+      }
+      return correctPolygonWinding(polygon, allPolygons);
+    });
+
+    const path = new Path2D();
+    correctedPolygons.forEach((polygon) => {
+      if (polygon.vertices.length < 3 || polygon.grass) return;
+
+      path.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
+      for (let i = 1; i < polygon.vertices.length; i++) {
+        path.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
+      }
+      path.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
+    });
+
+    return path;
+  }
+
+  private buildGroundPath(state: EditorState, skyPath: Path2D): Path2D {
+    // Viewport rectangle in world coords (inverse transform)
+    const topLeft = {
+      x: -state.viewPortOffset.x / state.zoom,
+      y: -state.viewPortOffset.y / state.zoom,
+    };
+    const bottomRight = {
+      x: topLeft.x + this.canvas.width / state.zoom,
+      y: topLeft.y + this.canvas.height / state.zoom,
+    };
+
+    const path = new Path2D();
+
+    // Outer viewport rectangle (will be subtracted via even-odd)
+    path.rect(
+      topLeft.x,
+      topLeft.y,
+      bottomRight.x - topLeft.x,
+      bottomRight.y - topLeft.y
+    );
+
+    // Inner sky polygon (will be subtracted via even-odd)
+    path.addPath(skyPath);
+
+    return path;
   }
 
   private clearCanvas() {
@@ -525,75 +677,6 @@ export class EditorEngine {
     });
   }
 
-  private drawObjects() {
-    if (!this.lgrAssets.isReady()) return;
-
-    const state = this.store.getState();
-
-    drawKuski({
-      ctx: this.ctx,
-      lgrSprites: this.lgrAssets.getKuskiSprites(),
-      startX: state.start.x,
-      startY: state.start.y,
-    });
-
-    const animate = state.animateSprites;
-
-    state.apples.forEach((apple) => {
-      const sprite = this.lgrAssets.getAppleSprite(apple.animation);
-      if (sprite) {
-        drawObject({
-          ctx: this.ctx,
-          sprite,
-          position: apple.position,
-          animate,
-        });
-        drawGravityArrow({
-          ctx: this.ctx,
-          position: apple.position,
-          gravity: apple.gravity,
-        });
-      }
-    });
-
-    const killerSprite = this.lgrAssets.getKillerSprite();
-    state.killers.forEach((killer) => {
-      if (killerSprite) {
-        drawObject({
-          ctx: this.ctx,
-          sprite: killerSprite,
-          position: killer,
-          animate,
-        });
-      }
-    });
-
-    const exitSprite = this.lgrAssets.getFlowerSprite();
-    state.flowers.forEach((flower) => {
-      if (exitSprite) {
-        drawObject({
-          ctx: this.ctx,
-          sprite: exitSprite,
-          position: flower,
-          animate,
-        });
-      }
-    });
-  }
-
-  private drawPictures() {
-    if (!this.lgrAssets.isReady()) return;
-
-    const state = this.store.getState();
-
-    state.pictures.forEach((picture) => {
-      const sprite = this.lgrAssets.getSprite(picture.name);
-      if (sprite) {
-        drawPicture({ ctx: this.ctx, sprite, position: picture.position });
-      }
-    });
-  }
-
   public destroy() {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
@@ -611,6 +694,23 @@ export class EditorEngine {
   public toggleDebugMode() {
     this.debugMode = !this.debugMode;
     console.debug("Debug mode:", this.debugMode ? "ON" : "OFF");
+  }
+
+  private drawDebugDistance(state: EditorState, queue: RenderItem[]) {
+    queue.forEach(({ clip, distance, position }) => {
+      const screenPos = worldToScreen(
+        position,
+        state.viewPortOffset,
+        state.zoom
+      );
+
+      this.ctx.fillStyle = "#ffff00";
+      this.ctx.font = `12px monospace`;
+      this.ctx.textAlign = "left";
+      this.ctx.textBaseline = "bottom";
+      const label = `${distance} ${Clip[clip].charAt(0)}`;
+      this.ctx.fillText(label, screenPos.x, screenPos.y);
+    });
   }
 
   private drawDebugInfoPanel(state: EditorState) {

@@ -15,7 +15,7 @@ import { getBuiltinLevel } from "~/editor/helpers/level-parser";
 import { PictureTool } from "~/editor/tools/picture-tool";
 import { HandTool, type HandToolState } from "~/editor/tools/hand-tool";
 import { cn } from "~/utils/misc";
-import type { Level } from "~/editor/elma-types";
+import type { EditorLevel } from "~/editor/elma-types";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
 
@@ -162,13 +162,13 @@ export function useEditorView({
 }
 
 type InitialLevel = {
-  data: Level | undefined;
+  data: EditorLevel | undefined;
   status: "loading" | "done" | "error";
 };
 
 // TODO: should this move to FileSession or EditorStore?
 export function useInitialLevel(levelName?: string): InitialLevel {
-  const [data, setData] = useState<Level | undefined>(undefined);
+  const [data, setData] = useState<EditorLevel | undefined>(undefined);
   const [status, setStatus] = useState<"loading" | "done" | "error">(
     levelName ? "loading" : "done"
   );

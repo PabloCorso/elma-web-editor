@@ -169,11 +169,9 @@ const defaultBikeCoords = {
 type BikeRenderArgs = {
   ctx: CanvasRenderingContext2D;
   lgrSprites: Record<string, ImageBitmap>;
-  startX: number;
-  startY: number;
+  start: { x: number; y: number };
   shirt?: any;
-  x?: number;
-  y?: number;
+  position?: { x: number; y: number };
   scale?: number;
   coords?: typeof defaultBikeCoords;
 };
@@ -182,15 +180,16 @@ export function drawKuski({
   ctx,
   lgrSprites,
   shirt,
-  startX,
-  startY,
-  x = 0,
-  y = 0,
+  start,
+  position = { x: 0, y: 0 },
   scale = 1,
   coords = defaultBikeCoords,
 }: BikeRenderArgs) {
   ctx.save();
-  ctx.translate(scale * (-x + startX), scale * (-y + startY));
+  ctx.translate(
+    scale * (-position.x + start.x),
+    scale * (-position.y + start.y)
+  );
   ctx.scale(scale, scale);
   ctx.beginPath();
 

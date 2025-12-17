@@ -46,7 +46,7 @@ export type Apple = {
   gravity: Gravity;
 };
 
-export type Level = {
+export type EditorLevel = {
   levelName: string;
   polygons: Polygon[];
   apples: Apple[];

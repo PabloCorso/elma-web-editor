@@ -1,10 +1,10 @@
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { Apple, Level, Picture, Polygon, Position } from "./elma-types";
+import type { Apple, EditorLevel, Picture, Polygon, Position } from "./elma-types";
 import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 
-export type EditorState = Level & {
+export type EditorState = EditorLevel & {
   // Editor state
   activeToolId: string;
   mousePosition: Position;
@@ -75,7 +75,7 @@ export type EditorState = Level & {
     // View operations
     toggleAnimateSprites: () => void;
     toggleShowSprites: () => void;
-    loadLevel: (level: Level) => void;
+    loadLevel: (level: EditorLevel) => void;
     triggerFitToView: () => void;
   };
 };
