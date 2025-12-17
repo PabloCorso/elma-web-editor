@@ -14,7 +14,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import type { EditorEngine } from "~/editor/editor-engine";
 import { ToolButton, type ToolButtonProps } from "./tool";
-import { cn, getModifier } from "~/utils/misc";
+import { cn, useModifier } from "~/utils/misc";
 
 export function CanvasToolbar({
   engineRef,
@@ -60,11 +60,12 @@ export function CanvasToolbar({
 function UntoToolButton(props: ToolButtonProps) {
   const { undo } = useEditorHistory();
   const canUndo = useEditorCanUndo();
+  const modifier = useModifier();
   return (
     <CanvasToolButton
       id="undo"
       name="Undo"
-      shortcut={`${getModifier()} + Z`}
+      shortcut={`${modifier} + Z`}
       onClick={() => undo()}
       disabled={!canUndo}
       {...props}
@@ -77,11 +78,12 @@ function UntoToolButton(props: ToolButtonProps) {
 function RedoToolButton(props: ToolButtonProps) {
   const { redo } = useEditorHistory();
   const canRedo = useEditorCanRedo();
+  const modifier = useModifier();
   return (
     <CanvasToolButton
       id="redo"
       name="Redo"
-      shortcut={`${getModifier()} + Y`}
+      shortcut={`${modifier} + Y`}
       onClick={() => redo()}
       disabled={!canRedo}
       {...props}
