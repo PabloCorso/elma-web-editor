@@ -533,13 +533,16 @@ export class EditorEngine {
       const sprite = this.lgrAssets.getAppleSprite(
         item.animation ?? defaultAppleState.animation
       );
+      if (!sprite) return;
       drawObject({ ctx, sprite, position, animate: state.animateSprites });
       drawGravityArrow({ ctx, position, gravity: item.gravity });
     } else if (item.type === "killer") {
       const sprite = this.lgrAssets.getKillerSprite();
+      if (!sprite) return;
       drawObject({ ctx, sprite, position, animate: state.animateSprites });
     } else if (item.type === "flower") {
       const sprite = this.lgrAssets.getFlowerSprite();
+      if (!sprite) return;
       drawObject({ ctx, sprite, position, animate: state.animateSprites });
     } else if (item.type === "start") {
       const lgrSprites = this.lgrAssets.getKuskiSprites();

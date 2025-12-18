@@ -1,5 +1,7 @@
 // Original code at https://github.com/elmadev/recplayer
 
+import { standardSprites } from "~/components/standard-sprites";
+
 function hypot(a: number, b: number) {
   return Math.sqrt(a * a + b * b);
 }
@@ -185,6 +187,11 @@ export function drawKuski({
   scale = 1,
   coords = defaultBikeCoords,
 }: BikeRenderArgs) {
+  // Check if all required sprites are loaded
+  if (!standardSprites.kuski.every(sprite => lgrSprites[sprite])) {
+    return; // Skip rendering if assets aren't ready
+  }
+
   ctx.save();
   ctx.translate(
     scale * (-position.x + start.x),
