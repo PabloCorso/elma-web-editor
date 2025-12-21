@@ -2,6 +2,10 @@
 
 Ideas and plans for Elma Web Editor.
 
+## Issues
+
+- S shortcut overlaps on Gravity Down apple with Select tool. Either replace or remove apple shortcuts.
+
 ## Level correctness
 
 Topology validity
@@ -26,8 +30,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 ## Planned features
 
-- LGR support
-
 - Match features set of in-game editor:
   - General help dialog
   - Apple properties:
@@ -45,36 +47,9 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - Right click to select picture or mask with texture and left click to place.
     - Right click the picture or texture to set properties.
     - Normal picture
-      - barrel 380 S
-      - bridge 400 U
-      - bush1 550 S
-      - bush2 550 S
-      - bush3 440 S
-      - cliff 400 S
-      - edge 440 U
-      - flag 450 S
-      - hang 434 S
-      - log1 420 S
-      - log2 420 S
-      - mushroom 430 S
-      - plantain 450 U
-      - secret 550 S
-      - sedge 430 S
-      - st3top 740 S
-      - supphred 380 S
-      - support1 380 U
-      - support2 380 U
-      - support3 380 U
-      - suppvred 380 S
-      - susp 380 U
-      - suspdown 380 U
-      - suspup 380 U
-      - tree1 550 S
-      - tree2 540 S
-      - tree3 560 S
-      - tree4 600 S
-      - tree5 600 S
-      - OTHER: 999 G
+      - Show pictures ✅
+        - Show OTHER: 999 G
+      - Edit picture properties
     - Mask with texture
       - Masks: maskbig, maskhor, masklitt, masktop
       - brick 750 G
@@ -83,15 +58,11 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
       - stone1 750 G
       - stone2 750 G
       - stone3 750 S
-    - Picture properties info:
-      - Default: Distance Clipping
-      - Current: (1-999) (U, S, G)
-      - S = Sky: only those parts of the picture are drawn that are in the sky.
-      - G = Ground: only those parts of the picture are drawn that are in the ground.
-      - U = Unclipped.
   - Polygon properties:
-    - Grass
-    - A grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
+    - Show grass pictures
+      - Grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
+    - Create grass polygon
+    - Convert polygon to grass or normal polygon
   - Level properties:
     - Foreground (with distance?)
     - Background (with distance?)
@@ -101,28 +72,37 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - View Polygons
     - View Grass
     - View Pictures
-  - Check Topology
+  - Check Topology (see above section)
     - Error: Two lines are intersecting each others!
       After this dialog you will see the intersection.
-      Use Zoomout to see where it is located!
+      Use Zoom-out to see where it is located!
     - Everything seems to be all right.
   - Zoom level info.
   - Delete tool
     - Cannot delete Start object or last Exit object.
 
-- Help section / keyboard shortcuts reference
+- Show defaults for object, start and images while loading.
+
+- Better save changes affordance.
+  - Track latest downloaded state vs current state and show an alert on close if unsaved.
+  - Save state to local storage and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
 
 - Mobile support:
   - Touch gestures for pan/zoom
   - Erase tool
-  - Mobile toolbar
+  - Mobile toolbar (drawer)
+
+- Help section / keyboard shortcuts reference
 
 - AI Assistant
+- Custom LGR support
 
 ## Other
 
 - Zoom +/- should be linear (not relative to current zoom level)
 - Custom lev folder management with preview thumbnails
+- Multi-player level editor
+- Version history info
 - Export to SVG
 - Starter templates dropdown
   - Internal editor
