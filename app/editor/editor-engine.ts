@@ -20,7 +20,7 @@ import {
 } from "./elma-types";
 import { defaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
-import { defaultAppleState } from "./tools/object-tools";
+import { defaultAppleState } from "./tools/apple-tools";
 
 enum RenderType {
   Picture = "picture",

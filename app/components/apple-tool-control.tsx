@@ -10,7 +10,7 @@ import { useLgrSprite } from "./use-lgr-assets";
 import {
   defaultAppleState,
   type AppleToolState,
-} from "~/editor/tools/object-tools";
+} from "~/editor/tools/apple-tools";
 import { type AppleAnimation, Gravity } from "~/editor/elma-types";
 import { cn } from "~/utils/misc";
 import { type ButtonProps } from "./ui/button";

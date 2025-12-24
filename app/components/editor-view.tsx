@@ -8,7 +8,9 @@ import {
 } from "~/editor/use-editor-store";
 import { VertexTool } from "~/editor/tools/vertex-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
-import { AppleTool, KillerTool, FlowerTool } from "~/editor/tools/object-tools";
+import { AppleTool } from "~/editor/tools/apple-tools";
+import { KillerTool } from "~/editor/tools/killer-tool";
+import { FlowerTool } from "~/editor/tools/flower-tool";
 import { AIWidget } from "~/editor/widgets/ai-widget";
 import { useLgrAssets } from "./use-lgr-assets";
 import { getBuiltinLevel } from "~/editor/helpers/level-parser";
