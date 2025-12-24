@@ -72,9 +72,16 @@ export class SelectTool extends Tool<SelectionToolState> {
       (toolState.selectedVertices.length > 0 ||
         toolState.selectedObjects.length > 0 ||
         toolState.selectedPictures.length > 0);
-    if (!modifier && !hasSelectedItems) {
+    const isSingleSelect = !modifier;
+    if (isSingleSelect && !hasSelectedItems) {
       this.clear();
     }
+
+    const clearIfNewSingleSelect = (isSelected: boolean | undefined) => {
+      if (isSingleSelect && !isSelected) {
+        this.clear();
+      }
+    };
 
     const vertex = findVertexNearPosition(
       context.worldPos,
@@ -82,6 +89,12 @@ export class SelectTool extends Tool<SelectionToolState> {
       SELECT_VERTEX_THRESHOLD / state.zoom
     );
     if (vertex) {
+      const isSelected = isVertexSelected(
+        { polygon: vertex.polygon, vertex: vertex.vertex },
+        toolState?.selectedVertices ?? []
+      );
+
+      clearIfNewSingleSelect(isSelected);
       this.selectVertex(vertex.polygon, vertex.vertex);
       this.startDragging(context.worldPos);
       return true;
@@ -93,6 +106,15 @@ export class SelectTool extends Tool<SelectionToolState> {
       SELECT_POLYGON_EDGE_THRESHOLD / state.zoom
     );
     if (polygonEdge) {
+      const polygonSelectionCount = toolState
+        ? toolState.selectedVertices.filter(
+            (sv: VertexSelection) => sv.polygon === polygonEdge
+          ).length
+        : 0;
+      const isSelected =
+        polygonSelectionCount === polygonEdge.vertices.length &&
+        polygonSelectionCount > 0;
+      clearIfNewSingleSelect(isSelected);
       this.selectPolygon(polygonEdge);
       this.startDragging(context.worldPos);
       return true;
@@ -104,6 +126,8 @@ export class SelectTool extends Tool<SelectionToolState> {
       SELECT_OBJECT_THRESHOLD / state.zoom
     );
     if (picture) {
+      const isSelected = toolState?.selectedPictures.includes(picture);
+      clearIfNewSingleSelect(isSelected);
       this.selectPicture(picture);
       this.startDragging(context.worldPos);
       return true;
@@ -111,6 +135,11 @@ export class SelectTool extends Tool<SelectionToolState> {
 
     const object = this.findObjectNearPosition(context.worldPos);
     if (object) {
+      const isSelected = isObjectSelected(
+        object,
+        toolState?.selectedObjects ?? []
+      );
+      clearIfNewSingleSelect(isSelected);
       this.selectObject(object);
       this.startDragging(context.worldPos);
       return true;
