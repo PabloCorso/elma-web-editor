@@ -2,6 +2,11 @@
 
 Ideas and plans for Elma Web Editor.
 
+## Fix
+
+- Object select state can get out of sync with actual object.
+  - Reproduce: select an object and move it very fast, then undo.
+
 ## Level correctness
 
 Topology validity
