@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Ongoing]
+
+- Feedback from @Isty. Remove apple gravity shortcut which conflict with select tool on S (gravity down).
+
 ## 2025-12-11
 
 - Improved LGR support and added picture tool (only default distance and clipping for now).

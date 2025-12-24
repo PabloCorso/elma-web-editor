@@ -2,10 +2,6 @@
 
 Ideas and plans for Elma Web Editor.
 
-## Issues
-
-- S shortcut overlaps on Gravity Down apple with Select tool. Either replace or remove apple shortcuts.
-
 ## Level correctness
 
 Topology validity
