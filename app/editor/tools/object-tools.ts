@@ -38,19 +38,7 @@ export class AppleTool extends Tool<AppleToolState> {
   onKeyDown(event: KeyboardEvent) {
     const { setToolState } = this.getState();
     switch (event.key.toUpperCase()) {
-      case "W":
-        setToolState({ gravity: Gravity.Up });
-        return true;
-      case "A":
-        setToolState({ gravity: Gravity.Down });
-        return true;
-      case "S":
-        setToolState({ gravity: Gravity.Left });
-        return true;
-      case "D":
-        setToolState({ gravity: Gravity.Right });
-        return true;
-      case "E":
+      case "N":
         setToolState({ gravity: Gravity.None });
         return true;
       case "1":

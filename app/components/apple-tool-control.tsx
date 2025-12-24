@@ -62,30 +62,26 @@ export function AppleToolControl(props: ToolControlButtonProps) {
             />
             <ToolbarSeparator />
             <AppleButton
-              shortcut="E"
+              shortcut="N"
               iconBefore={<SpriteIcon src={apple.src} />}
               onClick={() => handleGravityChange(Gravity.None)}
             />
             <AppleButton
-              shortcut="W"
               onClick={() => handleGravityChange(Gravity.Down)}
               iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
             />
             <AppleButton
-              shortcut="A"
               onClick={() => handleGravityChange(Gravity.Left)}
               iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
             />
             <AppleButton
-              shortcut="S"
               onClick={() => handleGravityChange(Gravity.Up)}
               iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
             />
             <AppleButton
-              shortcut="D"
               onClick={() => handleGravityChange(Gravity.Right)}
               iconBefore={<SpriteIcon src={apple.src} />}
               iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}

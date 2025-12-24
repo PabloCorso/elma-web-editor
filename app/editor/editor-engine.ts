@@ -300,11 +300,7 @@ export class EditorEngine {
     // Let active tool handle the key first
     const activeTool = state.actions.getActiveTool();
     if (activeTool?.onKeyDown) {
-      const context = {
-        worldPos: { x: 0, y: 0 },
-        screenX: 0,
-        screenY: 0,
-      };
+      const context = { worldPos: { x: 0, y: 0 }, screenX: 0, screenY: 0 };
       const consumed = activeTool.onKeyDown(event, context);
       if (consumed) return;
     }
