@@ -20,7 +20,9 @@ import {
 } from "../helpers/coordinate-helpers";
 import { checkModifierKey } from "~/utils/misc";
 
-const SELECT_THRESHOLD = 15;
+const SELECT_OBJECT_THRESHOLD = 15;
+const SELECT_VERTEX_THRESHOLD = 10;
+const SELECT_POLYGON_EDGE_THRESHOLD = 8;
 
 export type SelectionToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -62,39 +64,54 @@ export class SelectTool extends Tool<SelectionToolState> {
   }
 
   onPointerDown(event: PointerEvent, context: EventContext): boolean {
-    const { state } = this.getState();
+    const { state, toolState } = this.getState();
+    const modifier = checkModifierKey(event);
+
+    const hasSelectedItems =
+      toolState &&
+      (toolState.selectedVertices.length > 0 ||
+        toolState.selectedObjects.length > 0 ||
+        toolState.selectedPictures.length > 0);
+    if (!modifier && !hasSelectedItems) {
+      this.clear();
+    }
+
     const vertex = findVertexNearPosition(
       context.worldPos,
       state.polygons,
-      10 / state.zoom
+      SELECT_VERTEX_THRESHOLD / state.zoom
     );
-    const picture = findObjectNearPosition(
-      context.worldPos,
-      state.pictures.map((p) => p.position),
-      SELECT_THRESHOLD / state.zoom
-    );
-    const object = this.findObjectNearPosition(context.worldPos);
+    if (vertex) {
+      this.selectVertex(vertex.polygon, vertex.vertex);
+      this.startDragging(context.worldPos);
+      return true;
+    }
+
     const polygonEdge = findPolygonEdgeNearPosition(
       context.worldPos,
       state.polygons,
-      8 / state.zoom
+      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom
     );
+    if (polygonEdge) {
+      this.selectPolygon(polygonEdge);
+      this.startDragging(context.worldPos);
+      return true;
+    }
 
-    const modifier = checkModifierKey(event);
-    if (vertex) {
-      this.handleVertexSelection(vertex, modifier);
+    const picture = findObjectNearPosition(
+      context.worldPos,
+      state.pictures.map((p) => p.position),
+      SELECT_OBJECT_THRESHOLD / state.zoom
+    );
+    if (picture) {
+      this.selectPicture(picture);
       this.startDragging(context.worldPos);
       return true;
-    } else if (picture) {
-      this.handlePictureSelection(picture, modifier);
-      this.startDragging(context.worldPos);
-      return true;
-    } else if (object) {
-      this.handleObjectSelection(object, modifier);
-      this.startDragging(context.worldPos);
-      return true;
-    } else if (polygonEdge) {
-      this.handlePolygonSelection(polygonEdge, modifier);
+    }
+
+    const object = this.findObjectNearPosition(context.worldPos);
+    if (object) {
+      this.selectObject(object);
       this.startDragging(context.worldPos);
       return true;
     }
@@ -179,97 +196,32 @@ export class SelectTool extends Tool<SelectionToolState> {
     const apple = findObjectNearPosition(
       position,
       state.apples.map((a) => a.position),
-      SELECT_THRESHOLD / state.zoom
+      SELECT_OBJECT_THRESHOLD / state.zoom
     );
     if (apple) return apple;
 
     const killer = findObjectNearPosition(
       position,
       state.killers,
-      SELECT_THRESHOLD / state.zoom
+      SELECT_OBJECT_THRESHOLD / state.zoom
     );
     if (killer) return killer;
 
     const flower = findObjectNearPosition(
       position,
       state.flowers,
-      SELECT_THRESHOLD / state.zoom
+      SELECT_OBJECT_THRESHOLD / state.zoom
     );
     if (flower) return flower;
 
     const start = isWithinThreshold(
       position,
       state.start,
-      SELECT_THRESHOLD / state.zoom
+      SELECT_OBJECT_THRESHOLD / state.zoom
     );
     if (start) return state.start;
 
     return null;
-  }
-
-  private handleVertexSelection(
-    vertex: VertexSelection,
-    modifier: boolean
-  ): void {
-    const { toolState } = this.getState();
-    if (!toolState) return;
-
-    const isSelected = isVertexSelected(vertex, toolState.selectedVertices);
-    if (!modifier && !isSelected) {
-      this.clear();
-    }
-
-    if (!isSelected) {
-      this.selectVertex(vertex.polygon, vertex.vertex);
-    }
-  }
-
-  private handleObjectSelection(
-    object: ObjectSelection,
-    modifier: boolean
-  ): void {
-    const { toolState } = this.getState();
-    if (!toolState) return;
-
-    const isSelected = isObjectSelected(object, toolState.selectedObjects);
-
-    if (!modifier && !isSelected) {
-      this.clear();
-    }
-
-    if (!isSelected) {
-      this.selectObject(object);
-    }
-  }
-
-  private handlePictureSelection(picture: Position, modifier: boolean): void {
-    const { toolState } = this.getState();
-    if (!toolState) return;
-
-    const isSelected = isObjectSelected(picture, toolState.selectedPictures);
-    if (!modifier && !isSelected) {
-      this.clear();
-    }
-
-    if (!isSelected) {
-      this.selectPicture(picture);
-    }
-  }
-
-  private handlePolygonSelection(polygon: Polygon, modifier: boolean): void {
-    const { toolState } = this.getState();
-    if (!toolState) return;
-
-    const isSelected = toolState.selectedVertices.some(
-      (sv: VertexSelection) => sv.polygon === polygon
-    );
-    if (!modifier && !isSelected) {
-      this.clear();
-    }
-
-    if (!isSelected) {
-      this.selectPolygon(polygon);
-    }
   }
 
   private startDragging(worldPos: Position): void {
@@ -379,10 +331,7 @@ export class SelectTool extends Tool<SelectionToolState> {
     );
     allObjects.forEach(({ obj }: { obj: Position }) => {
       if (isPointInRect(obj, bounds)) {
-        const isSelected = toolState.selectedObjects.includes(obj);
-        if (!isSelected) {
-          this.selectObject(obj);
-        }
+        this.selectObject(obj);
       }
     });
 
@@ -403,6 +352,12 @@ export class SelectTool extends Tool<SelectionToolState> {
     const { toolState, setToolState } = this.getState();
     if (!toolState) return;
 
+    const isSelected = isVertexSelected(
+      { polygon, vertex },
+      toolState.selectedVertices
+    );
+    if (isSelected) return;
+
     setToolState({
       selectedVertices: [...toolState.selectedVertices, { polygon, vertex }],
     });
@@ -411,6 +366,9 @@ export class SelectTool extends Tool<SelectionToolState> {
   private selectObject(object: ObjectSelection): void {
     const { toolState, setToolState } = this.getState();
     if (!toolState) return;
+
+    const isSelected = isObjectSelected(object, toolState.selectedObjects);
+    if (isSelected) return;
 
     setToolState({ selectedObjects: [...toolState.selectedObjects, object] });
   }

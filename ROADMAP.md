@@ -28,23 +28,12 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 - Match features set of in-game editor:
   - General help dialog
-  - Apple properties:
-    - Normal Food ✅
-    - Gravity Up ✅
-    - Gravity Down ✅
-    - Gravity Left ✅
-    - Gravity Right ✅
-    - Food anim number (1-9) ✅
-  - Food anim number:
-    - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
-  - Update food properties:
-    - In-game set right clicking apple with move tool
+  - Edit apple properties.
   - Pictures:
     - Right click to select picture or mask with texture and left click to place.
     - Right click the picture or texture to set properties.
     - Normal picture
-      - Show pictures ✅
-        - Show OTHER: 999 G
+      - Show OTHER: 999 G
       - Edit picture properties
     - Mask with texture
       - Masks: maskbig, maskhor, masklitt, masktop
@@ -69,13 +58,13 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - View Grass
     - View Pictures
   - Check Topology (see above section)
-    - Error: Two lines are intersecting each others!
+    - "Error: Two lines are intersecting each others!
       After this dialog you will see the intersection.
-      Use Zoom-out to see where it is located!
-    - Everything seems to be all right.
+      Use Zoom-out to see where it is located!"
+    - "Everything seems to be all right."
   - Zoom level info.
   - Delete tool
-    - Cannot delete Start object or last Exit object.
+    - In-game editor: "You cannot delete the Start object!", "You cannot delete the Exit object!" (last one maybe) and "This is the only polygon, so you cannot delete it." (last polygon can be grass).
 
 - Show defaults for object, start and images while loading.
 
@@ -91,7 +80,10 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 - Help section / keyboard shortcuts reference
 
 - AI Assistant
+
 - Custom LGR support
+  - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
+  - Level properties, set LGR file.
 
 ## Other
 
