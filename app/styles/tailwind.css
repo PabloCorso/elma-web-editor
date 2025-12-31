@@ -42,5 +42,5 @@
 }
 
 @utility focus-ring {
-  @apply focus-visible:ring-2 focus-visible:ring-tree-green focus-visible:outline-none;
+  @apply ring-2 ring-tree-green outline-none;
 }

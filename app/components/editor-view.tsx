@@ -33,7 +33,6 @@ export function EditorView({ className, ...props }: EditorViewProps) {
           "cursor-grabbing":
             activeTool?.meta.id === "hand" && handToolState?.isDragging,
         },
-
         className
       )}
       {...props}

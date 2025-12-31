@@ -4,7 +4,7 @@ import { Icon, type IconProps } from "./icon";
 
 export const buttonVariants = cva(
   [
-    "focus-ring inline-flex aria-expanded:bg-primary-hover/80 shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded-md text-sm font-bold transition-colors",
+    "focus-visible:focus-ring inline-flex aria-expanded:bg-primary-hover/80 shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded-md text-sm font-bold transition-colors",
     "disabled:pointer-events-none disabled:opacity-40",
   ],
   {
