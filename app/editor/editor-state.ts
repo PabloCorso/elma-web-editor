@@ -1,5 +1,11 @@
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { Apple, EditorLevel, Picture, Polygon, Position } from "./elma-types";
+import type {
+  Apple,
+  EditorLevel,
+  Picture,
+  Polygon,
+  Position,
+} from "./elma-types";
 import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
@@ -36,6 +42,7 @@ export type EditorState = EditorLevel & {
     // Level data operations
     setStart: (position: Position) => void;
     addApple: (apple: Apple) => void;
+    updateApple: (apple: Partial<Apple>) => void;
     removeApple: (apple: Apple) => void;
     addKiller: (killer: Position) => void;
     removeKiller: (killer: Position) => void;
@@ -53,7 +60,7 @@ export type EditorState = EditorLevel & {
 
     registerTool: (tool: Tool) => void;
     activateTool: (toolId: string) => void;
-    getActiveTool: () => Tool | undefined;
+    getActiveTool: <T extends Tool>() => T | undefined;
     getTool: (toolId: string) => Tool | undefined;
 
     // Tools

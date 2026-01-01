@@ -10,6 +10,7 @@ import { HeaderToolbar } from "~/components/header-toolbar";
 import { CanvasToolbar } from "~/components/canvas-toolbar";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { LgrAssetsProvider } from "~/components/use-lgr-assets";
+import { EditorContextMenu } from "~/editor/editor-context-menu";
 
 export function meta() {
   return [
@@ -52,6 +53,7 @@ function Editor({ initialLevelName, isOpenAIEnabled }: EditorProps) {
       <HeaderToolbar isLoading={initialLevel.status === "loading"} />
       <ControlToolbar />
       <CanvasToolbar engineRef={engineRef} />
+      <EditorContextMenu />
       <div className="flex-1">
         <EditorView ref={canvasRef} />
       </div>

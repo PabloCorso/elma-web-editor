@@ -1,7 +1,7 @@
 import { createContext, useContext, useRef } from "react";
 import { useStore as useZustand } from "zustand";
 import { createEditorStore, type EditorStore } from "./editor-store";
-import type { ToolState } from "./tools/tool-interface";
+import type { Tool, ToolState } from "./tools/tool-interface";
 import type { EditorState } from "./editor-state";
 
 const EditorContext = createContext<EditorStore | null>(null);
@@ -66,8 +66,8 @@ export function useEditorActions() {
   return useEditor((state) => state.actions);
 }
 
-export function useEditorActiveTool() {
-  return useEditor((state) => state.actions.getActiveTool());
+export function useEditorActiveTool<T extends Tool>(): T | undefined {
+  return useEditor((state) => state.actions.getActiveTool<T>());
 }
 
 export function useEditorToolState<T extends ToolState>(

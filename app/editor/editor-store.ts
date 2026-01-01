@@ -79,6 +79,15 @@ export function createEditorStore({
           setLevelName: (name) => set({ levelName: name }),
           setStart: (position) => set({ start: position }),
           addApple: (apple) => set({ apples: [...get().apples, apple] }),
+          updateApple: (values) =>
+            set({
+              apples: get().apples.map((apple) =>
+                apple.position.x === values?.position?.x &&
+                apple.position.y === values?.position?.y
+                  ? { ...apple, ...values }
+                  : apple
+              ),
+            }),
           removeApple: (apple) =>
             set({
               apples: get().apples.filter(

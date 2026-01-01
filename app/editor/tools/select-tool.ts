@@ -24,16 +24,17 @@ const SELECT_OBJECT_THRESHOLD = 15;
 const SELECT_VERTEX_THRESHOLD = 10;
 const SELECT_POLYGON_EDGE_THRESHOLD = 8;
 
-export type SelectionToolState = {
+export type SelectToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
   selectedObjects: Position[];
   selectedPictures: Position[];
+  contextMenuType?: "apple" | "killer" | "flower" | "picture";
 };
 
 type VertexSelection = { polygon: Polygon; vertex: Position };
 type ObjectSelection = Position;
 
-export class SelectTool extends Tool<SelectionToolState> {
+export class SelectTool extends Tool<SelectToolState> {
   readonly meta = defaultTools.select;
 
   constructor(store: EditorStore) {
@@ -57,22 +58,41 @@ export class SelectTool extends Tool<SelectionToolState> {
       selectedVertices: [],
       selectedObjects: [],
       selectedPictures: [],
+      contextMenuType: undefined,
     });
     this.isDragging = false;
     this.isMarqueeSelecting = false;
     this.dragOriginPositions = [];
   }
 
+  onRightClick(_event: MouseEvent, context: EventContext) {
+    const { state, setToolState } = this.getState();
+
+    const object = this.findObjectNearPosition(context.worldPos);
+    const isApple = object
+      ? state.apples.some((a) => a.position === object)
+      : false;
+    if (object && isApple) {
+      this.clear();
+      this.selectObject(object);
+      setToolState({ contextMenuType: "apple" });
+      return true;
+    }
+
+    return false;
+  }
+
   onPointerDown(event: PointerEvent, context: EventContext): boolean {
     const { state, toolState } = this.getState();
+
     const modifier = checkModifierKey(event);
+    const isSingleSelect = !modifier;
 
     const hasSelectedItems =
       toolState &&
       (toolState.selectedVertices.length > 0 ||
         toolState.selectedObjects.length > 0 ||
         toolState.selectedPictures.length > 0);
-    const isSingleSelect = !modifier;
     if (isSingleSelect && !hasSelectedItems) {
       this.clear();
     }
@@ -288,7 +308,7 @@ export class SelectTool extends Tool<SelectionToolState> {
 
     if (toolState.selectedVertices.length > 0) {
       const newVertexPositions = toolState.selectedVertices.map(
-        (sv: VertexSelection, index: number) => {
+        (_vertexSelection: VertexSelection, index: number) => {
           const originalPos = this.dragOriginPositions[index];
           return {
             x: originalPos.x + totalDeltaX,
@@ -302,7 +322,7 @@ export class SelectTool extends Tool<SelectionToolState> {
     if (toolState.selectedObjects.length > 0) {
       const vertexCount = toolState.selectedVertices.length;
       const newObjectPositions = toolState.selectedObjects.map(
-        (obj: ObjectSelection, index: number) => {
+        (_object: ObjectSelection, index: number) => {
           const originPos = this.dragOriginPositions[vertexCount + index];
           return {
             x: originPos.x + totalDeltaX,
@@ -317,7 +337,7 @@ export class SelectTool extends Tool<SelectionToolState> {
       const vertexCount = toolState.selectedVertices.length;
       const objectCount = toolState.selectedObjects.length;
       const newPicturePositions = toolState.selectedPictures.map(
-        (pic: Position, index: number) => {
+        (_picture: Position, index: number) => {
           const originPos =
             this.dragOriginPositions[vertexCount + objectCount + index];
           return {

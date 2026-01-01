@@ -14,7 +14,12 @@ import {
 import { type AppleAnimation, Gravity } from "~/editor/elma-types";
 import { cn } from "~/utils/misc";
 import { type ButtonProps } from "./ui/button";
-import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
+import {
+  Toolbar,
+  ToolbarButton,
+  ToolbarSeparator,
+  type ToolbarProps,
+} from "./toolbar";
 import { Portal } from "@radix-ui/react-portal";
 
 export function AppleToolControl(props: ToolControlButtonProps) {
@@ -49,47 +54,69 @@ export function AppleToolControl(props: ToolControlButtonProps) {
       </ToolControlButton>
       {isActive && (
         <Portal className="h-fit fixed max-h-[80vh] left-20 shadow-lg inset-y-4 my-auto overflow-y-auto">
-          <Toolbar orientation="vertical">
-            <AppleButton
-              shortcut="1"
-              iconBefore={<SpriteIcon src={apple1.src} />}
-              onClick={() => handleAppleAnimationChange(1)}
-            />
-            <AppleButton
-              shortcut="2"
-              iconBefore={<SpriteIcon src={apple2.src} />}
-              onClick={() => handleAppleAnimationChange(2)}
-            />
-            <ToolbarSeparator />
-            <AppleButton
-              shortcut="N"
-              iconBefore={<SpriteIcon src={apple.src} />}
-              onClick={() => handleGravityChange(Gravity.None)}
-            />
-            <AppleButton
-              onClick={() => handleGravityChange(Gravity.Down)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
-            />
-            <AppleButton
-              onClick={() => handleGravityChange(Gravity.Left)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
-            />
-            <AppleButton
-              onClick={() => handleGravityChange(Gravity.Up)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
-            />
-            <AppleButton
-              onClick={() => handleGravityChange(Gravity.Right)}
-              iconBefore={<SpriteIcon src={apple.src} />}
-              iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
-            />
-          </Toolbar>
+          <AppleToolbar
+            onAnimationChange={handleAppleAnimationChange}
+            onGravityChange={handleGravityChange}
+          />
         </Portal>
       )}
     </>
+  );
+}
+
+type AppleToolbarProps = ToolbarProps & {
+  onAnimationChange: (animation: AppleAnimation) => void;
+  onGravityChange: (gravity: Gravity) => void;
+};
+
+export function AppleToolbar({
+  onAnimationChange,
+  onGravityChange,
+  ...props
+}: AppleToolbarProps) {
+  const apple1 = useLgrSprite("qfood1");
+  const apple2 = useLgrSprite("qfood2");
+  const apple = useLgrSprite("qfood1");
+
+  return (
+    <Toolbar orientation="vertical" {...props}>
+      <AppleButton
+        shortcut="1"
+        iconBefore={<SpriteIcon src={apple1.src} />}
+        onClick={() => onAnimationChange(1)}
+      />
+      <AppleButton
+        shortcut="2"
+        iconBefore={<SpriteIcon src={apple2.src} />}
+        onClick={() => onAnimationChange(2)}
+      />
+      <ToolbarSeparator />
+      <AppleButton
+        shortcut="N"
+        iconBefore={<SpriteIcon src={apple.src} />}
+        onClick={() => onGravityChange(Gravity.None)}
+      />
+      <AppleButton
+        onClick={() => onGravityChange(Gravity.Down)}
+        iconBefore={<SpriteIcon src={apple.src} />}
+        iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
+      />
+      <AppleButton
+        onClick={() => onGravityChange(Gravity.Left)}
+        iconBefore={<SpriteIcon src={apple.src} />}
+        iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
+      />
+      <AppleButton
+        onClick={() => onGravityChange(Gravity.Up)}
+        iconBefore={<SpriteIcon src={apple.src} />}
+        iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
+      />
+      <AppleButton
+        onClick={() => onGravityChange(Gravity.Right)}
+        iconBefore={<SpriteIcon src={apple.src} />}
+        iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
+      />
+    </Toolbar>
   );
 }
 
