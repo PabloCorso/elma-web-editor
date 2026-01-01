@@ -1,8 +1,12 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../helpers/event-handler";
 import type { EditorState } from "../editor-state";
-import { isWithinThreshold, worldToScreen } from "../helpers/coordinate-helpers";
 import {
+  isWithinThreshold,
+  worldToScreen,
+} from "../helpers/coordinate-helpers";
+import {
+  findPolygonEdgeNearPosition,
   findPolygonLineForEditing,
   findPolygonVertexForEditing,
 } from "../helpers/selection-helpers";
@@ -10,12 +14,17 @@ import { colors } from "../constants";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { Polygon, Position } from "../elma-types";
+import { SELECT_POLYGON_EDGE_THRESHOLD } from "./select-tool";
 
 const VERTEX_THRESHOLD = 15;
 
 export type VertexToolState = {
-  drawingPolygon: Position[];
-  originalPolygon?: Polygon; // The polygon being edited (if any)
+  drawingPolygon: Polygon;
+  editingPolygon?: Polygon;
+};
+
+const defaultVertexToolState: VertexToolState = {
+  drawingPolygon: { vertices: [], grass: false },
 };
 
 export class VertexTool extends Tool<VertexToolState> {
@@ -23,6 +32,10 @@ export class VertexTool extends Tool<VertexToolState> {
 
   constructor(store: EditorStore) {
     super(store);
+  }
+
+  onActivate(): void {
+    this.clear();
   }
 
   onDeactivate(): void {
@@ -34,19 +47,24 @@ export class VertexTool extends Tool<VertexToolState> {
 
   clear(): void {
     const { setToolState } = this.getState();
-    setToolState({ drawingPolygon: [], originalPolygon: undefined });
+    setToolState(defaultVertexToolState);
   }
 
   getDrafts() {
     const { state, toolState } = this.getState();
     if (!toolState) return { polygons: [] };
-    const drawingPolygon = toolState.drawingPolygon;
 
-    if (drawingPolygon.length >= 3) {
+    if (toolState.drawingPolygon.vertices.length >= 3) {
       // Create a draft polygon that includes the current mouse position
       return {
         polygons: [
-          { vertices: [...drawingPolygon, state.mousePosition], grass: false },
+          {
+            vertices: [
+              ...toolState.drawingPolygon.vertices,
+              state.mousePosition,
+            ],
+            grass: toolState.drawingPolygon.grass,
+          },
         ],
       };
     }
@@ -60,16 +78,16 @@ export class VertexTool extends Tool<VertexToolState> {
     if (!toolState) return false;
 
     // If we're already drawing a polygon, continue with normal drawing behavior
-    if (toolState.drawingPolygon.length > 0) {
+    if (toolState.drawingPolygon.vertices.length > 0) {
       // Check if clicking near the first point to close the polygon
-      if (toolState.drawingPolygon.length >= 3) {
-        const firstPoint = toolState.drawingPolygon[0];
+      if (toolState.drawingPolygon.vertices.length >= 3) {
+        const firstPoint = toolState.drawingPolygon.vertices[0];
         if (
           isWithinThreshold(worldPos, firstPoint, VERTEX_THRESHOLD / state.zoom)
         ) {
           const newPolygon = {
-            vertices: [...toolState.drawingPolygon],
-            grass: false,
+            vertices: [...toolState.drawingPolygon.vertices],
+            grass: toolState.drawingPolygon.grass,
           };
           this.addPolygon(newPolygon);
           this.clear();
@@ -78,8 +96,10 @@ export class VertexTool extends Tool<VertexToolState> {
       }
 
       // Continue drawing the current polygon
-      const newVertices = [...toolState.drawingPolygon, worldPos];
-      setToolState({ drawingPolygon: newVertices });
+      const newVertices = [...toolState.drawingPolygon.vertices, worldPos];
+      setToolState({
+        drawingPolygon: { ...toolState.drawingPolygon, vertices: newVertices },
+      });
       return true;
     }
 
@@ -111,7 +131,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // Start a new polygon
     const newVertices = [worldPos];
-    state.actions.setToolState(this.meta.id, { drawingPolygon: newVertices });
+    setToolState({ drawingPolygon: { vertices: newVertices, grass: false } });
     return true;
   }
 
@@ -121,15 +141,15 @@ export class VertexTool extends Tool<VertexToolState> {
 
     if (event.key === "Escape") {
       // If we're editing an existing polygon, restore it
-      if (toolState.originalPolygon) {
+      if (toolState.editingPolygon) {
         state.actions.setPolygons([
           ...state.polygons,
-          toolState.originalPolygon,
+          toolState.editingPolygon,
         ]);
         this.clear();
       } else {
         // If we're creating a new polygon, just clear the drawing
-        setToolState({ drawingPolygon: [] });
+        setToolState({ drawingPolygon: { vertices: [], grass: false } });
       }
       return true;
     }
@@ -140,40 +160,90 @@ export class VertexTool extends Tool<VertexToolState> {
 
     if (event.key === " " || event.key === "Space") {
       // Reverse the direction of the polygon by reversing the vertices array
-      if (toolState.drawingPolygon.length > 1) {
-        const reversedVertices = [...toolState.drawingPolygon].reverse();
-        setToolState({ drawingPolygon: reversedVertices });
+      if (toolState.drawingPolygon.vertices.length > 1) {
+        const reversedVertices = [
+          ...toolState.drawingPolygon.vertices,
+        ].reverse();
+        setToolState({
+          drawingPolygon: {
+            ...toolState.drawingPolygon,
+            vertices: reversedVertices,
+          },
+        });
       }
+      return true;
+    }
+
+    const isDrawing = (toolState?.drawingPolygon.vertices.length ?? 0) > 0;
+    if (event.key.toUpperCase() === "G" && isDrawing) {
+      setToolState({
+        drawingPolygon: {
+          ...toolState.drawingPolygon,
+          grass: !toolState.drawingPolygon.grass,
+        },
+      });
+    }
+
+    return false;
+  }
+
+  onRightClick(_event: MouseEvent, context: EventContext): boolean {
+    const { state, toolState } = this.getState();
+    const isDrawing = (toolState?.drawingPolygon.vertices.length ?? 0) > 0;
+    if (isDrawing) {
+      this.finalizeDrawingOrRestore();
+      return true;
+    }
+
+    const polygon = findPolygonEdgeNearPosition(
+      context.worldPos,
+      state.polygons,
+      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom
+    );
+    if (polygon) {
+      this.updatePolygon(state.polygons.indexOf(polygon), {
+        ...polygon,
+        grass: !polygon.grass,
+      });
       return true;
     }
 
     return false;
   }
 
-  onRightClick(_event: MouseEvent, _context: EventContext): boolean {
-    this.finalizeDrawingOrRestore();
-    return true;
+  private updatePolygon(index: number, polygon: Polygon): void {
+    const { state } = this.getState();
+    state.actions.setPolygons(
+      state.polygons.map((p, i) => (i === index ? polygon : p))
+    );
   }
 
   onRender(ctx: CanvasRenderingContext2D): void {
     const { state, toolState } = this.getState();
-    if (!toolState || toolState.drawingPolygon.length === 0) return;
+    if (!toolState || toolState.drawingPolygon.vertices.length === 0) return;
 
-    ctx.strokeStyle = colors.edges;
+    const isGrass = toolState.drawingPolygon.grass;
+    ctx.strokeStyle = isGrass ? colors.grass : colors.edges;
     ctx.lineWidth = 1 / state.zoom;
 
     ctx.beginPath();
-    ctx.moveTo(toolState.drawingPolygon[0].x, toolState.drawingPolygon[0].y);
+    ctx.moveTo(
+      toolState.drawingPolygon.vertices[0].x,
+      toolState.drawingPolygon.vertices[0].y
+    );
 
-    for (let i = 1; i < toolState.drawingPolygon.length; i++) {
-      ctx.lineTo(toolState.drawingPolygon[i].x, toolState.drawingPolygon[i].y);
+    for (let i = 1; i < toolState.drawingPolygon.vertices.length; i++) {
+      ctx.lineTo(
+        toolState.drawingPolygon.vertices[i].x,
+        toolState.drawingPolygon.vertices[i].y
+      );
     }
 
     ctx.stroke();
 
     // Draw vertices
     ctx.fillStyle = colors.edges;
-    toolState.drawingPolygon.forEach((vertex) => {
+    toolState.drawingPolygon.vertices.forEach((vertex) => {
       ctx.beginPath();
       ctx.arc(vertex.x, vertex.y, 2 / state.zoom, 0, 2 * Math.PI);
       ctx.fill();
@@ -182,10 +252,12 @@ export class VertexTool extends Tool<VertexToolState> {
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
     const { state, toolState } = this.getState();
-    if (!toolState || toolState.drawingPolygon.length === 0) return;
+    if (!toolState || toolState.drawingPolygon.vertices.length === 0) return;
 
     const lastPoint =
-      toolState.drawingPolygon[toolState.drawingPolygon.length - 1];
+      toolState.drawingPolygon.vertices[
+        toolState.drawingPolygon.vertices.length - 1
+      ];
 
     // Convert world coordinates to screen coordinates
     const lastScreen = worldToScreen(
@@ -200,7 +272,8 @@ export class VertexTool extends Tool<VertexToolState> {
     );
 
     // Draw preview line from last point to mouse cursor (solid)
-    ctx.strokeStyle = colors.edges;
+    const isGrass = toolState.drawingPolygon.grass;
+    ctx.strokeStyle = isGrass ? colors.grass : colors.edges;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(lastScreen.x, lastScreen.y);
@@ -208,15 +281,17 @@ export class VertexTool extends Tool<VertexToolState> {
     ctx.stroke();
 
     // Draw potential closing line from first point to mouse cursor when we have 3+ vertices (dashed)
-    if (toolState.drawingPolygon.length >= 3) {
-      const firstPoint = toolState.drawingPolygon[0];
+    if (toolState.drawingPolygon.vertices.length >= 3) {
+      const firstPoint = toolState.drawingPolygon.vertices[0];
       const firstScreen = worldToScreen(
         firstPoint,
         state.viewPortOffset,
         state.zoom
       );
 
-      ctx.strokeStyle = colors.edges;
+      // Workaround to draw dashed line on top of solid line
+      // There is a solid line being drawn by EditorEngine already at drawPolygons stage
+      ctx.strokeStyle = colors.ground;
       ctx.lineWidth = 1;
       ctx.setLineDash([5, 5]); // Dashed line for closing edge
       ctx.beginPath();
@@ -236,20 +311,20 @@ export class VertexTool extends Tool<VertexToolState> {
     const { state, toolState } = this.getState();
     if (!toolState) return false;
 
-    if (toolState.drawingPolygon.length >= 3) {
+    if (toolState.drawingPolygon.vertices.length >= 3) {
       this.addPolygon({
-        vertices: [...toolState.drawingPolygon],
-        grass: false,
+        vertices: [...toolState.drawingPolygon.vertices],
+        grass: toolState.drawingPolygon.grass,
       });
       this.clear();
       return true;
     }
 
-    if (toolState.drawingPolygon.length > 0) {
-      if (toolState.originalPolygon) {
+    if (toolState.drawingPolygon.vertices.length > 0) {
+      if (toolState.editingPolygon) {
         state.actions.setPolygons([
           ...state.polygons,
-          toolState.originalPolygon,
+          toolState.editingPolygon,
         ]);
       }
       this.clear();
@@ -267,10 +342,11 @@ export class VertexTool extends Tool<VertexToolState> {
       vertex: Position;
     }
   ): void {
+    const { setToolState } = this.getState();
     const { polygon, vertexIndex } = vertexResult;
 
     // Store the original polygon for potential restoration on ESCAPE
-    const originalPolygon = polygon;
+    const editingPolygon = polygon;
 
     // Remove the original polygon from the store
     state.actions.setPolygons(state.polygons.filter((p) => p !== polygon));
@@ -284,9 +360,9 @@ export class VertexTool extends Tool<VertexToolState> {
     ];
 
     // Set this as the current drawing polygon and store the original
-    state.actions.setToolState(this.meta.id, {
-      drawingPolygon: drawingVertices,
-      originalPolygon: originalPolygon,
+    setToolState({
+      drawingPolygon: { vertices: drawingVertices, grass: false },
+      editingPolygon: editingPolygon,
     });
   }
 
@@ -298,10 +374,11 @@ export class VertexTool extends Tool<VertexToolState> {
       insertionPoint: Position;
     }
   ): void {
+    const { setToolState } = this.getState();
     const { polygon, insertionIndex, insertionPoint } = lineResult;
 
     // Store the original polygon for potential restoration on ESCAPE
-    const originalPolygon = polygon;
+    const editingPolygon = polygon;
 
     // Remove the original polygon from the store
     state.actions.setPolygons(state.polygons.filter((p) => p !== polygon));
@@ -316,9 +393,9 @@ export class VertexTool extends Tool<VertexToolState> {
     ];
 
     // Set this as the current drawing polygon and store the original
-    state.actions.setToolState(this.meta.id, {
-      drawingPolygon: drawingVertices,
-      originalPolygon: originalPolygon,
+    setToolState({
+      drawingPolygon: { vertices: drawingVertices, grass: false },
+      editingPolygon: editingPolygon,
     });
   }
 }

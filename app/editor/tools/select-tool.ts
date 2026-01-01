@@ -22,7 +22,7 @@ import { checkModifierKey } from "~/utils/misc";
 
 const SELECT_OBJECT_THRESHOLD = 15;
 const SELECT_VERTEX_THRESHOLD = 10;
-const SELECT_POLYGON_EDGE_THRESHOLD = 8;
+export const SELECT_POLYGON_EDGE_THRESHOLD = 8;
 
 export type SelectToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -76,6 +76,19 @@ export class SelectTool extends Tool<SelectToolState> {
       this.clear();
       this.selectObject(object);
       setToolState({ contextMenuType: "apple" });
+      return true;
+    }
+
+    const polygon = findPolygonEdgeNearPosition(
+      context.worldPos,
+      state.polygons,
+      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom
+    );
+    if (polygon) {
+      this.updatePolygon(state.polygons.indexOf(polygon), {
+        ...polygon,
+        grass: !polygon.grass,
+      });
       return true;
     }
 
