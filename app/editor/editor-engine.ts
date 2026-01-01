@@ -652,26 +652,42 @@ export class EditorEngine {
       if (polygon.grass) {
         this.ctx.strokeStyle = colors.grass;
         this.ctx.lineWidth = 1 / state.zoom;
-        this.ctx.beginPath();
-        this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
-        for (let i = 1; i < polygon.vertices.length; i++) {
-          this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
+        const n = polygon.vertices.length;
+        if (n < 2) return;
+        // Find longest edge
+        let maxLen = -1;
+        let skipIdx = -1;
+        for (let i = 0; i < n; i++) {
+          const a = polygon.vertices[i];
+          const b = polygon.vertices[(i + 1) % n];
+          const len = Math.hypot(b.x - a.x, b.y - a.y);
+          if (len > maxLen) {
+            maxLen = len;
+            skipIdx = i;
+          }
         }
-        this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
+        // Draw all edges except the longest
+        this.ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const a = polygon.vertices[i];
+          const b = polygon.vertices[(i + 1) % n];
+          if (i === skipIdx) continue; // skip longest edge
+          this.ctx.moveTo(a.x, a.y);
+          this.ctx.lineTo(b.x, b.y);
+        }
         this.ctx.stroke();
         return;
       }
 
-      const vertices = polygon.vertices;
       this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom;
 
       this.ctx.beginPath();
-      this.ctx.moveTo(vertices[0].x, vertices[0].y);
-      for (let i = 1; i < vertices.length; i++) {
-        this.ctx.lineTo(vertices[i].x, vertices[i].y);
+      this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
+      for (let i = 1; i < polygon.vertices.length; i++) {
+        this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
       }
-      this.ctx.lineTo(vertices[0].x, vertices[0].y);
+      this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
       this.ctx.stroke();
     });
   }
