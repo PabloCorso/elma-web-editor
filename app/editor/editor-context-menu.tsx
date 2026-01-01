@@ -50,6 +50,7 @@ export function EditorContextMenu() {
       {contextMenuType === "apple" && (
         <AppleToolbar
           tabIndex={-1}
+          withShortcuts={false}
           orientation="horizontal"
           className="absolute"
           style={{ left: position.x, top: position.y }}

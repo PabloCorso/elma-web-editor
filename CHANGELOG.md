@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Ongoing]
 
 - Feedback from @Isty. Remove apple gravity shortcut which conflict with select tool on S (gravity down).
+- Edit apple properties on right click.
 
 ## 2025-12-11
 

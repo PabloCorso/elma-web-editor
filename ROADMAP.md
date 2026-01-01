@@ -33,7 +33,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 - Match features set of in-game editor:
   - General help dialog
-  - Edit apple properties.
   - Pictures:
     - Right click to select picture or mask with texture and left click to place.
     - Right click the picture or texture to set properties.

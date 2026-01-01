@@ -60,7 +60,7 @@ export type EditorState = EditorLevel & {
 
     registerTool: (tool: Tool) => void;
     activateTool: (toolId: string) => void;
-    getActiveTool: <T extends Tool>() => T | undefined;
+    getActiveTool: <T extends Tool>(toolId?: string) => T | undefined;
     getTool: (toolId: string) => Tool | undefined;
 
     // Tools

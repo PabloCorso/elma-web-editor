@@ -65,11 +65,13 @@ export function AppleToolControl(props: ToolControlButtonProps) {
 }
 
 type AppleToolbarProps = ToolbarProps & {
+  withShortcuts?: boolean;
   onAnimationChange: (animation: AppleAnimation) => void;
   onGravityChange: (gravity: Gravity) => void;
 };
 
 export function AppleToolbar({
+  withShortcuts = true,
   onAnimationChange,
   onGravityChange,
   ...props
@@ -81,18 +83,18 @@ export function AppleToolbar({
   return (
     <Toolbar orientation="vertical" {...props}>
       <AppleButton
-        shortcut="1"
+        shortcut={withShortcuts ? "1" : undefined}
         iconBefore={<SpriteIcon src={apple1.src} />}
         onClick={() => onAnimationChange(1)}
       />
       <AppleButton
-        shortcut="2"
+        shortcut={withShortcuts ? "2" : undefined}
         iconBefore={<SpriteIcon src={apple2.src} />}
         onClick={() => onAnimationChange(2)}
       />
       <ToolbarSeparator />
       <AppleButton
-        shortcut="N"
+        shortcut={withShortcuts ? "N" : undefined}
         iconBefore={<SpriteIcon src={apple.src} />}
         onClick={() => onGravityChange(Gravity.None)}
       />

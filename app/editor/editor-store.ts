@@ -157,7 +157,13 @@ export function createEditorStore({
             tool?.onActivate?.();
           },
           getTool: (toolId) => get().toolsMap.get(toolId),
-          getActiveTool: () => get().toolsMap.get(get().activeToolId),
+          getActiveTool: <T extends Tool>(toolId?: string) => {
+            const activeTool = get().toolsMap.get(get().activeToolId) as
+              | T
+              | undefined;
+            if (!toolId) return activeTool;
+            return activeTool?.meta.id === toolId ? activeTool : undefined;
+          },
 
           getToolState: <T extends ToolState>(toolId: string) =>
             get().toolState[toolId] as T | undefined,
