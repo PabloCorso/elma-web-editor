@@ -94,19 +94,14 @@ function RedoToolButton(props: ToolButtonProps) {
 }
 
 function CanvasBar(props: ToolbarProps) {
-  return (
-    <Toolbar
-      className="p-0 gap-0 rounded-full divide-separator/40 divide-x-[1px]"
-      {...props}
-    />
-  );
+  return <Toolbar className="p-0 gap-0 rounded-full" {...props} />;
 }
 
 function CanvasToolButton({ className, ...props }: ToolButtonProps) {
   return (
     <ToolButton
       className={cn(
-        "rounded-none",
+        "rounded-none peer peer-[button]:border-l peer-[button]:border-separator/40",
         "first-of-type:rounded-l-full last-of-type:rounded-r-full only-of-type:rounded-full",
         // Visually center icons
         "first-of-type:*:translate-x-px last-of-type:*:-translate-x-px only-of-type:*:translate-x-0",
