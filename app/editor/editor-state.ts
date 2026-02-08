@@ -59,15 +59,15 @@ export type EditorState = EditorLevel & {
     setPolygons: (polygons: Polygon[]) => void;
 
     registerTool: (tool: Tool) => void;
-    activateTool: (toolId: string) => void;
+    activateTool: (toolId: string, variant?: string) => void;
     getActiveTool: <T extends Tool>(toolId?: string) => T | undefined;
-    getTool: (toolId: string) => Tool | undefined;
+    getTool: <T extends Tool>(toolId: string) => T | undefined;
 
     // Tools
     getToolState: <T extends ToolState>(toolId: string) => T | undefined;
     setToolState: <T extends ToolState>(
       toolId: string,
-      state: Partial<T>
+      state: Partial<T>,
     ) => void;
 
     // Widgets

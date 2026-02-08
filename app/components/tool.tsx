@@ -58,10 +58,14 @@ export function ToolButton({
   );
 }
 
-export type ToolControlButtonProps = ToolButtonProps & { id?: string };
+export type ToolControlButtonProps = ToolButtonProps & {
+  id?: string;
+  isActive?: boolean;
+};
 
 export function ToolControlButton({
   id,
+  isActive: isActiveProp,
   className,
   children,
   onClick,
@@ -69,7 +73,7 @@ export function ToolControlButton({
 }: ToolControlButtonProps) {
   const activeTool = useEditorActiveTool();
   const { activateTool } = useEditorActions();
-  const isActive = id ? activeTool?.meta.id === id : false;
+  const isActive = isActiveProp ?? (id ? activeTool?.meta.id === id : false);
   return (
     <ToolButton
       className={cn({ "bg-primary-hover/50": isActive }, className)}

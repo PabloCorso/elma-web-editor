@@ -85,7 +85,7 @@ export function createEditorStore({
                 apple.position.x === values?.position?.x &&
                 apple.position.y === values?.position?.y
                   ? { ...apple, ...values }
-                  : apple
+                  : apple,
               ),
             }),
           removeApple: (apple) =>
@@ -93,21 +93,21 @@ export function createEditorStore({
               apples: get().apples.filter(
                 (a) =>
                   a.position.x !== apple.position.x ||
-                  a.position.y !== apple.position.y
+                  a.position.y !== apple.position.y,
               ),
             }),
           addKiller: (killer) => set({ killers: [...get().killers, killer] }),
           removeKiller: (killer) =>
             set({
               killers: get().killers.filter(
-                (k) => k.x !== killer.x || k.y !== killer.y
+                (k) => k.x !== killer.x || k.y !== killer.y,
               ),
             }),
           addFlower: (flower) => set({ flowers: [...get().flowers, flower] }),
           removeFlower: (flower) =>
             set({
               flowers: get().flowers.filter(
-                (f) => f.x !== flower.x || f.y !== flower.y
+                (f) => f.x !== flower.x || f.y !== flower.y,
               ),
             }),
           addPicture: (picture) =>
@@ -117,7 +117,7 @@ export function createEditorStore({
               pictures: (get().pictures || []).filter(
                 (p) =>
                   p.position.x !== picture.position.x ||
-                  p.position.y !== picture.position.y
+                  p.position.y !== picture.position.y,
               ),
             }),
 
@@ -134,12 +134,12 @@ export function createEditorStore({
               toolsMap.set(tool.meta.id, tool);
               return { toolsMap };
             }),
-          activateTool: (toolId: string) => {
+          activateTool: (toolId: string, variant?: string) => {
             // Validate that toolId is registered
             const state = get();
             if (!state.toolsMap.has(toolId)) {
               console.warn(
-                `Tool '${toolId}' is not registered. Available tools: ${Array.from(state.toolsMap.keys()).join(", ")}`
+                `Tool '${toolId}' is not registered. Available tools: ${Array.from(state.toolsMap.keys()).join(", ")}`,
               );
               return;
             }
@@ -154,9 +154,10 @@ export function createEditorStore({
             // Update store with new tool
             set({ activeToolId: toolId });
             const tool = state.toolsMap.get(toolId);
-            tool?.onActivate?.();
+            tool?.onActivate?.(variant);
           },
-          getTool: (toolId) => get().toolsMap.get(toolId),
+          getTool: <T extends Tool>(toolId: string) =>
+            get().toolsMap.get(toolId) as T | undefined,
           getActiveTool: <T extends Tool>(toolId?: string) => {
             const activeTool = get().toolsMap.get(get().activeToolId) as
               | T
@@ -169,7 +170,7 @@ export function createEditorStore({
             get().toolState[toolId] as T | undefined,
           setToolState: <T extends ToolState>(
             toolId: string,
-            state: Partial<T>
+            state: Partial<T>,
           ) =>
             set((prev) => ({
               toolState: {
@@ -190,7 +191,7 @@ export function createEditorStore({
             const widget = state.widgetsMap.get(widgetId);
             if (!widget) {
               console.warn(
-                `Widget '${widgetId}' is not registered. Available widgets: ${Array.from(state.widgetsMap.keys()).join(", ")}`
+                `Widget '${widgetId}' is not registered. Available widgets: ${Array.from(state.widgetsMap.keys()).join(", ")}`,
               );
               return;
             }
@@ -201,7 +202,7 @@ export function createEditorStore({
             const widget = state.widgetsMap.get(widgetId);
             if (!widget) {
               console.warn(
-                `Widget '${widgetId}' is not registered. Available widgets: ${Array.from(state.widgetsMap.keys()).join(", ")}`
+                `Widget '${widgetId}' is not registered. Available widgets: ${Array.from(state.widgetsMap.keys()).join(", ")}`,
               );
               return;
             }
@@ -248,7 +249,7 @@ export function createEditorStore({
           activeToolId: state.activeToolId,
           toolState: state.toolState,
         }),
-      }
-    )
+      },
+    ),
   );
 }

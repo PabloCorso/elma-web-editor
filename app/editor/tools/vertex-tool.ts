@@ -23,18 +23,37 @@ export type VertexToolState = {
   editingPolygon?: Polygon;
 };
 
-const defaultVertexToolState: VertexToolState = {
-  drawingPolygon: { vertices: [], grass: false },
-};
+const getDefaultVertexState = (grass: boolean): VertexToolState => ({
+  drawingPolygon: { vertices: [], grass },
+});
 
 export class VertexTool extends Tool<VertexToolState> {
   readonly meta = defaultTools.vertex;
+  public defaultGrass = false;
 
   constructor(store: EditorStore) {
     super(store);
   }
 
-  onActivate(): void {
+  private subscribers: Array<(value: boolean) => void> = [];
+
+  public subscribeDefaultGrass(callback: (value: boolean) => void) {
+    this.subscribers.push(callback);
+    callback(this.defaultGrass);
+    return () => {
+      this.subscribers = this.subscribers.filter((fn) => fn !== callback);
+    };
+  }
+
+  public setDefaultGrass(value: boolean) {
+    this.defaultGrass = value;
+    this.subscribers.forEach((callback) => callback(value));
+  }
+
+  onActivate(variant: string): void {
+    if (variant === "grass") {
+      this.setDefaultGrass(true);
+    }
     this.clear();
   }
 
@@ -47,7 +66,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
   clear(): void {
     const { setToolState } = this.getState();
-    setToolState(defaultVertexToolState);
+    setToolState(getDefaultVertexState(this.defaultGrass));
   }
 
   getDrafts() {
@@ -108,7 +127,7 @@ export class VertexTool extends Tool<VertexToolState> {
       worldPos,
       state.polygons,
       10,
-      state.zoom
+      state.zoom,
     );
     if (vertexResult) {
       // Start editing this polygon from the clicked vertex (without adding a new point)
@@ -121,7 +140,7 @@ export class VertexTool extends Tool<VertexToolState> {
       worldPos,
       state.polygons,
       8,
-      state.zoom
+      state.zoom,
     );
     if (lineResult) {
       // Start editing this polygon from the clicked line
@@ -131,7 +150,9 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // Start a new polygon
     const newVertices = [worldPos];
-    setToolState({ drawingPolygon: { vertices: newVertices, grass: false } });
+    setToolState({
+      drawingPolygon: { vertices: newVertices, grass: this.defaultGrass },
+    });
     return true;
   }
 
@@ -148,8 +169,7 @@ export class VertexTool extends Tool<VertexToolState> {
         ]);
         this.clear();
       } else {
-        // If we're creating a new polygon, just clear the drawing
-        setToolState({ drawingPolygon: { vertices: [], grass: false } });
+        this.clear();
       }
       return true;
     }
@@ -174,14 +194,17 @@ export class VertexTool extends Tool<VertexToolState> {
       return true;
     }
 
-    const isDrawing = (toolState?.drawingPolygon.vertices.length ?? 0) > 0;
-    if (event.key.toUpperCase() === "G" && isDrawing) {
-      setToolState({
-        drawingPolygon: {
-          ...toolState.drawingPolygon,
-          grass: !toolState.drawingPolygon.grass,
-        },
-      });
+    if (event.key.toUpperCase() === "G" || event.key.toUpperCase() === "V") {
+      const targetGrass = event.key.toUpperCase() === "G";
+
+      // Only switch if not already in target mode
+      if (toolState.drawingPolygon.grass !== targetGrass) {
+        setToolState({
+          drawingPolygon: { ...toolState.drawingPolygon, grass: targetGrass },
+        });
+        this.setDefaultGrass(targetGrass);
+      }
+      return true;
     }
 
     return false;
@@ -198,7 +221,7 @@ export class VertexTool extends Tool<VertexToolState> {
     const polygon = findPolygonEdgeNearPosition(
       context.worldPos,
       state.polygons,
-      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom
+      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
     );
     if (polygon) {
       this.updatePolygon(state.polygons.indexOf(polygon), {
@@ -214,7 +237,7 @@ export class VertexTool extends Tool<VertexToolState> {
   private updatePolygon(index: number, polygon: Polygon): void {
     const { state } = this.getState();
     state.actions.setPolygons(
-      state.polygons.map((p, i) => (i === index ? polygon : p))
+      state.polygons.map((p, i) => (i === index ? polygon : p)),
     );
   }
 
@@ -229,13 +252,13 @@ export class VertexTool extends Tool<VertexToolState> {
     ctx.beginPath();
     ctx.moveTo(
       toolState.drawingPolygon.vertices[0].x,
-      toolState.drawingPolygon.vertices[0].y
+      toolState.drawingPolygon.vertices[0].y,
     );
 
     for (let i = 1; i < toolState.drawingPolygon.vertices.length; i++) {
       ctx.lineTo(
         toolState.drawingPolygon.vertices[i].x,
-        toolState.drawingPolygon.vertices[i].y
+        toolState.drawingPolygon.vertices[i].y,
       );
     }
 
@@ -263,12 +286,12 @@ export class VertexTool extends Tool<VertexToolState> {
     const lastScreen = worldToScreen(
       lastPoint,
       state.viewPortOffset,
-      state.zoom
+      state.zoom,
     );
     const mouseScreen = worldToScreen(
       state.mousePosition,
       state.viewPortOffset,
-      state.zoom
+      state.zoom,
     );
 
     // Draw preview line from last point to mouse cursor (solid)
@@ -286,7 +309,7 @@ export class VertexTool extends Tool<VertexToolState> {
       const firstScreen = worldToScreen(
         firstPoint,
         state.viewPortOffset,
-        state.zoom
+        state.zoom,
       );
 
       // Workaround to draw dashed line on top of solid line
@@ -340,7 +363,7 @@ export class VertexTool extends Tool<VertexToolState> {
       polygon: Polygon;
       vertexIndex: number;
       vertex: Position;
-    }
+    },
   ): void {
     const { setToolState } = this.getState();
     const { polygon, vertexIndex } = vertexResult;
@@ -361,9 +384,14 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // Set this as the current drawing polygon and store the original
     setToolState({
-      drawingPolygon: { vertices: drawingVertices, grass: false },
+      drawingPolygon: {
+        vertices: drawingVertices,
+        grass: editingPolygon.grass,
+      },
       editingPolygon: editingPolygon,
     });
+
+    this.setDefaultGrass(editingPolygon.grass);
   }
 
   private startEditingFromLine(
@@ -372,7 +400,7 @@ export class VertexTool extends Tool<VertexToolState> {
       polygon: Polygon;
       insertionIndex: number;
       insertionPoint: Position;
-    }
+    },
   ): void {
     const { setToolState } = this.getState();
     const { polygon, insertionIndex, insertionPoint } = lineResult;
@@ -394,8 +422,13 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // Set this as the current drawing polygon and store the original
     setToolState({
-      drawingPolygon: { vertices: drawingVertices, grass: false },
+      drawingPolygon: {
+        vertices: drawingVertices,
+        grass: editingPolygon.grass,
+      },
       editingPolygon: editingPolygon,
     });
+
+    this.setDefaultGrass(editingPolygon.grass);
   }
 }

@@ -6,16 +6,25 @@ export type DefaultToolId =
   | "killer"
   | "flower"
   | "picture";
+
+type DefaultToolVariant = { name: string; shortcut: string };
+
 export type DefaultToolMeta = {
   id: DefaultToolId;
   name: string;
-  shortcut?: string;
+  shortcut: string;
+  variants?: Record<string, DefaultToolVariant>;
 };
 
 export const defaultTools: Record<DefaultToolId, DefaultToolMeta> = {
   select: { id: "select", name: "Select tool", shortcut: "S" },
   hand: { id: "hand", name: "Hand tool", shortcut: "H" },
-  vertex: { id: "vertex", name: "Vertex tool", shortcut: "V" },
+  vertex: {
+    id: "vertex",
+    name: "Vertex",
+    shortcut: "V",
+    variants: { grass: { name: "Grass", shortcut: "G" } },
+  },
   apple: { id: "apple", name: "Apple", shortcut: "A" },
   killer: { id: "killer", name: "Killer", shortcut: "K" },
   flower: { id: "flower", name: "Flower", shortcut: "F" },

@@ -72,6 +72,10 @@ export function useEditorActiveTool<T extends Tool>(
   return useEditor((state) => state.actions.getActiveTool<T>(toolId));
 }
 
+export function useEditorTool<T extends Tool>(toolId: string): T | undefined {
+  return useEditor((state) => state.actions.getTool<T>(toolId));
+}
+
 export function useEditorToolState<T extends ToolState>(
   toolId: string
 ): T | undefined {

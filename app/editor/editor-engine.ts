@@ -85,7 +85,7 @@ export class EditorEngine {
       zoomStep = 5,
       store,
       lgrAssets,
-    }: EditorEngineOptions = {}
+    }: EditorEngineOptions = {},
   ) {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas context missing");
@@ -110,7 +110,7 @@ export class EditorEngine {
     state.actions.activateTool(initialToolId);
 
     widgets.forEach((widget) =>
-      state.actions.registerWidget(new widget(this.store))
+      state.actions.registerWidget(new widget(this.store)),
     );
 
     this.setupEventListeners();
@@ -150,13 +150,13 @@ export class EditorEngine {
         event,
         this.canvas,
         state.viewPortOffset,
-        state.zoom
+        state.zoom,
       );
       const activeTool = state.actions.getActiveTool();
       if (activeTool?.onPointerDown) {
         const consumed = activeTool.onPointerDown(
           event as PointerEvent,
-          context
+          context,
         );
         if (consumed) return;
       }
@@ -190,7 +190,7 @@ export class EditorEngine {
       event,
       this.canvas,
       state.viewPortOffset,
-      state.zoom
+      state.zoom,
     );
     const activeTool = state.actions.getActiveTool();
     if (activeTool?.onPointerMove) {
@@ -216,7 +216,7 @@ export class EditorEngine {
           event,
           this.canvas,
           state.viewPortOffset,
-          state.zoom
+          state.zoom,
         );
         activeTool.onPointerUp(event as PointerEvent, context);
       }
@@ -238,7 +238,7 @@ export class EditorEngine {
         event,
         this.canvas,
         state.viewPortOffset,
-        state.zoom
+        state.zoom,
       );
       const consumed = activeTool.onRightClick(event, context);
       if (consumed) return;
@@ -306,12 +306,25 @@ export class EditorEngine {
     }
 
     const key = event.key.toUpperCase();
-    const tool = Array.from(state.toolsMap.values()).find(
-      (tool) => tool.meta.shortcut?.toUpperCase() === key
-    );
-    if (tool) {
-      state.actions.activateTool(tool.meta.id);
-      return;
+
+    for (const tool of state.toolsMap.values()) {
+      if (tool.meta.shortcut.toUpperCase() === key) {
+        state.actions.activateTool(tool.meta.id);
+        return;
+      }
+
+      for (const [variantKey, variantMeta] of Object.entries(
+        tool.meta.variants || {},
+      )) {
+        if (variantMeta.shortcut.toUpperCase() === key) {
+          // If tool is already active, let onKeyDown handle it (toggle)
+          if (state.activeToolId === tool.meta.id) {
+            return; // Falls through to tool's onKeyDown
+          }
+          state.actions.activateTool(tool.meta.id, variantKey);
+          return;
+        }
+      }
     }
 
     const modifier = checkModifierKey(event);
@@ -527,7 +540,7 @@ export class EditorEngine {
       drawPicture({ ctx, sprite, position });
     } else if (item.type === "apple") {
       const sprite = this.lgrAssets.getAppleSprite(
-        item.animation ?? defaultAppleState.animation
+        item.animation ?? defaultAppleState.animation,
       );
       if (!sprite) return;
       drawObject({ ctx, sprite, position, animate: state.animateSprites });
@@ -591,7 +604,7 @@ export class EditorEngine {
       topLeft.x,
       topLeft.y,
       bottomRight.x - topLeft.x,
-      bottomRight.y - topLeft.y
+      bottomRight.y - topLeft.y,
     );
 
     // Inner sky polygon (will be subtracted via even-odd)
@@ -716,7 +729,7 @@ export class EditorEngine {
       const screenPos = worldToScreen(
         position,
         state.viewPortOffset,
-        state.zoom
+        state.zoom,
       );
 
       this.ctx.fillStyle = "#ffff00";
@@ -737,7 +750,7 @@ export class EditorEngine {
     const screenMouse = worldToScreen(
       state.mousePosition,
       state.viewPortOffset,
-      state.zoom
+      state.zoom,
     );
 
     const lines = [
@@ -752,7 +765,7 @@ export class EditorEngine {
     const padding = 10;
     const lineHeight = 20;
     const maxTextWidth = Math.max(
-      ...lines.map((line) => this.ctx.measureText(line).width)
+      ...lines.map((line) => this.ctx.measureText(line).width),
     );
 
     const panelWidth = maxTextWidth + padding * 2;
@@ -768,7 +781,7 @@ export class EditorEngine {
       this.ctx.fillText(
         line,
         panelX + padding,
-        panelY + padding + index * lineHeight
+        panelY + padding + index * lineHeight,
       );
     });
   }

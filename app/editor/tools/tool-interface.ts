@@ -21,7 +21,7 @@ export abstract class Tool<T extends ToolState = ToolState> {
   }
 
   // Lifecycle
-  onActivate?(): void;
+  onActivate?(variant?: string): void;
   onDeactivate?(): void;
   clear?(): void;
 
