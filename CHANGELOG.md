@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Ongoing]
+## 2026-02-08
 
 - Feedback from @Isty. Remove apple gravity shortcut which conflict with select tool on S (gravity down).
 - Edit apple properties on right click.
+- Add grass variant to vertex tool (G shortcut).
 
 ## 2025-12-11
 
