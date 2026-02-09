@@ -43,7 +43,7 @@ export function SettingsDialog(props: DialogProps) {
           </p>
 
           <div className="mt-4 border border-gray-800 rounded-lg p-3">
-            {!supportsFilePickers() ? (
+            {supportsFilePickers() ? (
               <div className="flex items-center justify-between">
                 <div>
                   <span>
@@ -85,9 +85,9 @@ export function SettingsDialog(props: DialogProps) {
               </div>
             ) : (
               <p className="text-sm">
-                For the best experience, use Chrome: you can set your level
-                folder here and the editor will save files directly. In other
-                browsers, files will be downloaded instead of saved in place.
+                {`Your browser doesn't support direct folder save. Files will be
+                downloaded instead of saved in place. Currently supported in
+                Chrome and Edge.`}
               </p>
             )}
           </div>
