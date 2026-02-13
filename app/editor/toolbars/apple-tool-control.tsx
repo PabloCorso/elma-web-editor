@@ -1,11 +1,10 @@
 import {
   useEditorActions,
-  useEditorActiveTool,
   useEditorToolState,
 } from "~/editor/use-editor-store";
 import { SpriteIcon } from "~/components/sprite-icon";
 import {
-  ToolMenuPortal,
+  ToolMenu,
   ToolControlButton,
   type ToolControlButtonProps,
 } from "./tool";
@@ -46,8 +45,6 @@ export function AppleToolControl(props: ToolControlButtonProps) {
   const currentGravity = appleToolState?.gravity ?? defaultAppleState.gravity;
   const apple = { 1: apple1, 2: apple2 }[currentAnimation];
 
-  const activeTool = useEditorActiveTool();
-  const isActive = activeTool?.meta.id === defaultTools.apple.id;
   return (
     <>
       <ToolControlButton
@@ -58,14 +55,12 @@ export function AppleToolControl(props: ToolControlButtonProps) {
       >
         <SpriteIcon src={apple.src} />
       </ToolControlButton>
-      {isActive && (
-        <ToolMenuPortal>
-          <AppleToolbar
-            onAnimationChange={handleAppleAnimationChange}
-            onGravityChange={handleGravityChange}
-          />
-        </ToolMenuPortal>
-      )}
+      <ToolMenu id={defaultTools.apple.id}>
+        <AppleToolbar
+          onAnimationChange={handleAppleAnimationChange}
+          onGravityChange={handleGravityChange}
+        />
+      </ToolMenu>
     </>
   );
 }

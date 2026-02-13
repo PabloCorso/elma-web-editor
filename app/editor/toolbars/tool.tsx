@@ -89,7 +89,10 @@ export function ToolControlButton({
   );
 }
 
-export function ToolMenuPortal({ className, ...props }: PortalProps) {
+export function ToolMenu({ id, className, ...props }: PortalProps) {
+  const activeTool = useEditorActiveTool();
+  const isActive = activeTool?.meta.id === id;
+  if (!isActive) return null;
   return (
     <Portal
       className={cn(

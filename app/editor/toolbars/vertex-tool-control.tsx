@@ -1,13 +1,12 @@
 import { LineSegmentsIcon } from "@phosphor-icons/react/dist/ssr";
 import {
-  ToolMenuPortal,
+  ToolMenu,
   ToolControlButton,
   type ToolControlButtonProps,
 } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import {
   useEditorActions,
-  useEditorActiveTool,
   useEditorToolState,
 } from "~/editor/use-editor-store";
 import {
@@ -19,33 +18,25 @@ import type { IconProps } from "@phosphor-icons/react";
 import { cn } from "~/utils/misc";
 
 export function VertexToolControl(props: ToolControlButtonProps) {
-  const activeTool = useEditorActiveTool();
   const vertexToolState = useEditorToolState<VertexToolState>(
     defaultTools.vertex.id,
   );
   const { setToolState } = useEditorActions();
 
-  const isActive = activeTool?.meta.id === defaultTools.vertex.id;
   return (
     <>
-      <ToolControlButton
-        isActive={isActive}
-        {...defaultTools.vertex}
-        {...props}
-      >
+      <ToolControlButton {...defaultTools.vertex} {...props}>
         <VertexIcon variant={vertexToolState?.variant} />
       </ToolControlButton>
-      {isActive && (
-        <ToolMenuPortal>
-          <VertexToolbar
-            onVariantChange={(variant: VertexToolVariant) => {
-              setToolState<VertexToolState>(defaultTools.vertex.id, {
-                variant,
-              });
-            }}
-          />
-        </ToolMenuPortal>
-      )}
+      <ToolMenu id={defaultTools.vertex.id}>
+        <VertexToolbar
+          onVariantChange={(variant: VertexToolVariant) => {
+            setToolState<VertexToolState>(defaultTools.vertex.id, {
+              variant,
+            });
+          }}
+        />
+      </ToolMenu>
     </>
   );
 }
