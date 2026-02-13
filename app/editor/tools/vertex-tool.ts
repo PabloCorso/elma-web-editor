@@ -34,11 +34,12 @@ export class VertexTool extends Tool<VertexToolState> {
     super(store);
   }
 
-  onActivate(variant: VertexToolVariant = DEFAULT_VARIANT): void {
-    const { setToolState } = this.getState();
+  onActivate(variant?: VertexToolVariant): void {
+    const { toolState, setToolState } = this.getState();
+    const nextVariant = variant ?? toolState?.variant ?? DEFAULT_VARIANT;
     setToolState({
-      drawingPolygon: { vertices: [], grass: variant === "grass" },
-      variant,
+      drawingPolygon: { vertices: [], grass: nextVariant === "grass" },
+      variant: nextVariant,
     });
   }
 
