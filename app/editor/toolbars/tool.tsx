@@ -13,18 +13,6 @@ import {
 import type { ButtonProps } from "~/components/ui/button";
 import { Portal, type PortalProps } from "@radix-ui/react-portal";
 
-export function Tool({
-  className,
-  children,
-  ...props
-}: React.ComponentPropsWithRef<"div">) {
-  return (
-    <div className={cn("flex gap-px items-center", className)} {...props}>
-      {children}
-    </div>
-  );
-}
-
 export type ToolButtonProps = ButtonProps & {
   name?: string;
   shortcut?: string;
