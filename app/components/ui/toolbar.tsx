@@ -1,5 +1,5 @@
 import { cn } from "~/utils/misc";
-import { IconButton, type ButtonProps } from "./ui/button";
+import { IconButton, type ButtonProps } from "./button";
 import { createContext, useContext } from "react";
 
 type ToolbarOrientation = "horizontal" | "vertical";

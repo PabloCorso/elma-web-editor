@@ -5,9 +5,9 @@ import {
   useInitialLevel,
 } from "../components/editor-view";
 import { EditorProvider } from "../editor/use-editor-store";
-import { ControlToolbar } from "~/components/control-toolbar";
-import { HeaderToolbar } from "~/components/header-toolbar";
-import { CanvasToolbar } from "~/components/canvas-toolbar";
+import { ControlToolbar } from "~/editor/toolbars/control-toolbar";
+import { HeaderToolbar } from "~/editor/toolbars/header-toolbar";
+import { CanvasToolbar } from "~/editor/toolbars/canvas-toolbar";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { LgrAssetsProvider } from "~/components/use-lgr-assets";
 import { EditorContextMenu } from "~/editor/editor-context-menu";

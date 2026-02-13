@@ -3,10 +3,10 @@ import {
   useEditorActiveTool,
   useEditorToolState,
 } from "~/editor/use-editor-store";
-import { PictureIcon } from "./sprite-icon";
+import { PictureIcon } from "~/components/sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
-import { useLgrSprite, usePictureSprites } from "./use-lgr-assets";
+import { useLgrSprite, usePictureSprites } from "~/components/use-lgr-assets";
 import {
   defaultPictureState,
   type PictureToolState,

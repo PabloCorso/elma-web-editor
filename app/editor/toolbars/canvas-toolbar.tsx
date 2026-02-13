@@ -4,7 +4,7 @@ import {
   useEditorCanUndo,
   useEditorHistory,
 } from "~/editor/use-editor-store";
-import { Toolbar, type ToolbarProps } from "./toolbar";
+import { Toolbar, type ToolbarProps } from "~/components/ui/toolbar";
 import {
   ArrowArcLeftIcon,
   ArrowArcRightIcon,

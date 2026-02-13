@@ -93,6 +93,7 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 
 - Zoom +/- should be linear (not relative to current zoom level)
 - Custom lev folder management with preview thumbnails
+- Switch Level and Graphics design modes (toggle pics/grass visibility and show different toolbar)
 - Multi-player level editor
 - Version history info
 - Export to SVG

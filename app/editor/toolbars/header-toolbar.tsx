@@ -6,13 +6,13 @@ import {
   useLevelName,
 } from "~/editor/use-editor-store";
 import logo from "../assets/bear-helmet.png";
-import { Toolbar, ToolbarButton } from "./toolbar";
+import { Toolbar, ToolbarButton } from "../../components/ui/toolbar";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu";
 import { DropdownMenu, DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 import {
   CaretDownIcon,
@@ -27,8 +27,8 @@ import {
 } from "~/editor/helpers/level-parser";
 import { useState } from "react";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
-import { SettingsDialog } from "./settings";
-import { Icon } from "./ui/icon";
+import { SettingsDialog } from "../../components/settings";
+import { Icon } from "../../components/ui/icon";
 import { cn } from "~/utils/misc";
 
 export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {

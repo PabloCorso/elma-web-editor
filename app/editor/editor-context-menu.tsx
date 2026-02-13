@@ -8,7 +8,7 @@ import { SelectTool, type SelectToolState } from "./tools/select-tool";
 import { defaultTools } from "./tools/default-tools";
 import { worldToScreen } from "./helpers/coordinate-helpers";
 import { OBJECT_DIAMETER } from "elmajs";
-import { AppleToolbar } from "~/components/apple-tool-control";
+import { AppleToolbar } from "~/editor/toolbars/apple-tool-control";
 import { OBJECT_FRAME_PX } from "./constants";
 
 export function EditorContextMenu() {

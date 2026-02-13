@@ -3,14 +3,14 @@ import {
   useEditorActions,
 } from "~/editor/use-editor-store";
 import { cn } from "~/utils/misc";
-import { ToolbarButton } from "./toolbar";
+import { ToolbarButton } from "~/components/ui/toolbar";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   type TooltipContentProps,
-} from "./ui/tooltip";
-import type { ButtonProps } from "./ui/button";
+} from "~/components/ui/tooltip";
+import type { ButtonProps } from "~/components/ui/button";
 
 export function Tool({
   className,

@@ -4,11 +4,11 @@ import {
   LineSegmentsIcon,
   SparkleIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { SpriteIcon } from "./sprite-icon";
+import { SpriteIcon } from "~/components/sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
-import { Toolbar, ToolbarSeparator } from "./toolbar";
-import { useLgrSprite } from "./use-lgr-assets";
+import { Toolbar, ToolbarSeparator } from "~/components/ui/toolbar";
+import { useLgrSprite } from "~/components/use-lgr-assets";
 import { AppleToolControl } from "./apple-tool-control";
 import { PictureToolControl } from "./picture-tool-control";
 import { useEffect, useState } from "react";

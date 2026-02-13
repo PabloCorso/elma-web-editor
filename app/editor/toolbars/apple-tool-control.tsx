@@ -3,23 +3,23 @@ import {
   useEditorActiveTool,
   useEditorToolState,
 } from "~/editor/use-editor-store";
-import { SpriteIcon } from "./sprite-icon";
+import { SpriteIcon } from "~/components/sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
-import { useLgrSprite } from "./use-lgr-assets";
+import { useLgrSprite } from "~/components/use-lgr-assets";
 import {
   defaultAppleState,
   type AppleToolState,
 } from "~/editor/tools/apple-tools";
 import { type AppleAnimation, Gravity } from "~/editor/elma-types";
 import { cn } from "~/utils/misc";
-import { type ButtonProps } from "./ui/button";
+import { type ButtonProps } from "~/components/ui/button";
 import {
   Toolbar,
   ToolbarButton,
   ToolbarSeparator,
   type ToolbarProps,
-} from "./toolbar";
+} from "~/components/ui/toolbar";
 import { Portal } from "@radix-ui/react-portal";
 
 export function AppleToolControl(props: ToolControlButtonProps) {
@@ -185,7 +185,7 @@ function ShortcutIndicator({
     <span
       className={cn(
         "absolute bottom-1 max-w-2 max-h-2 right-1 text-[8px] text-white/75 font-medium px-0.5 bg-background/80 rounded-sm leading-none",
-        className
+        className,
       )}
       {...props}
     />
