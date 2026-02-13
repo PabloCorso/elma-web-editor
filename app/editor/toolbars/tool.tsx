@@ -11,6 +11,7 @@ import {
   type TooltipContentProps,
 } from "~/components/ui/tooltip";
 import type { ButtonProps } from "~/components/ui/button";
+import { Portal, type PortalProps } from "@radix-ui/react-portal";
 
 export function Tool({
   className,
@@ -85,5 +86,17 @@ export function ToolControlButton({
     >
       {children}
     </ToolButton>
+  );
+}
+
+export function ToolMenuPortal({ className, ...props }: PortalProps) {
+  return (
+    <Portal
+      className={cn(
+        "h-fit fixed max-h-[80vh] left-20 shadow-lg inset-y-4 my-auto overflow-y-auto",
+        className,
+      )}
+      {...props}
+    />
   );
 }

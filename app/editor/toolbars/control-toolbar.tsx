@@ -1,7 +1,6 @@
 import {
   CursorIcon,
   HandIcon,
-  LineSegmentsIcon,
   SparkleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { SpriteIcon } from "~/components/sprite-icon";
@@ -11,9 +10,7 @@ import { Toolbar, ToolbarSeparator } from "~/components/ui/toolbar";
 import { useLgrSprite } from "~/components/use-lgr-assets";
 import { AppleToolControl } from "./apple-tool-control";
 import { PictureToolControl } from "./picture-tool-control";
-import { useEffect, useState } from "react";
-import { useEditorActiveTool, useEditorTool } from "~/editor/use-editor-store";
-import { VertexTool } from "~/editor/tools/vertex-tool";
+import { VertexToolControl } from "./vertex-tool-control";
 
 export function ControlToolbar({
   isOpenAIEnabled,
@@ -31,7 +28,6 @@ export function ControlToolbar({
       <ToolbarSeparator />
 
       <VertexToolControl tooltipSide="right" />
-      <GrassToolControl tooltipSide="right" />
       <AppleToolControl tooltipSide="right" />
       <KillerToolControl tooltipSide="right" />
       <FlowerToolControl tooltipSide="right" />
@@ -53,71 +49,6 @@ function HandToolControl(props: ToolControlButtonProps) {
   return (
     <ToolControlButton {...defaultTools.hand} {...props}>
       <HandIcon weight="light" />
-    </ToolControlButton>
-  );
-}
-
-function VertexToolControl(props: ToolControlButtonProps) {
-  const activeTool = useEditorActiveTool();
-  const vertexTool = useEditorTool<VertexTool>(defaultTools.vertex.id);
-  const [isGrass, setIsGrass] = useState(vertexTool?.defaultGrass ?? false);
-
-  useEffect(
-    function subscribeToDefaultGrass() {
-      if (!vertexTool) return;
-      const unsubscribe = vertexTool.subscribeDefaultGrass(setIsGrass);
-      return unsubscribe;
-    },
-    [vertexTool],
-  );
-
-  const isVertexActive =
-    activeTool?.meta.id === defaultTools.vertex.id && !isGrass;
-
-  return (
-    <ToolControlButton
-      {...defaultTools.vertex}
-      name="Vertex"
-      isActive={isVertexActive}
-      onClick={() => {
-        if (!vertexTool) return;
-        vertexTool.setDefaultGrass(false);
-      }}
-      {...props}
-    >
-      <LineSegmentsIcon weight="light" />
-    </ToolControlButton>
-  );
-}
-
-function GrassToolControl(props: ToolControlButtonProps) {
-  const activeTool = useEditorActiveTool();
-  const vertexTool = useEditorTool<VertexTool>(defaultTools.vertex.id);
-  const [isGrass, setIsGrass] = useState(vertexTool?.defaultGrass ?? false);
-
-  useEffect(
-    function subscribeToDefaultGrass() {
-      if (!vertexTool) return;
-      const unsubscribe = vertexTool.subscribeDefaultGrass(setIsGrass);
-      return unsubscribe;
-    },
-    [vertexTool],
-  );
-
-  const isGrassActive =
-    activeTool?.meta.id === defaultTools.vertex.id && isGrass;
-
-  return (
-    <ToolControlButton
-      {...defaultTools.vertex.variants?.grass}
-      isActive={isGrassActive}
-      onClick={() => {
-        if (!vertexTool) return;
-        vertexTool.setDefaultGrass(true);
-      }}
-      {...props}
-    >
-      <LineSegmentsIcon weight="light" className="text-green-600" />
     </ToolControlButton>
   );
 }

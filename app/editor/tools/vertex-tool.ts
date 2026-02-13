@@ -17,44 +17,29 @@ import type { Polygon, Position } from "../elma-types";
 import { SELECT_POLYGON_EDGE_THRESHOLD } from "./select-tool";
 
 const VERTEX_THRESHOLD = 15;
+const DEFAULT_VARIANT: VertexToolVariant = "default";
+
+export type VertexToolVariant = "default" | "grass";
 
 export type VertexToolState = {
   drawingPolygon: Polygon;
   editingPolygon?: Polygon;
+  variant?: VertexToolVariant;
 };
-
-const getDefaultVertexState = (grass: boolean): VertexToolState => ({
-  drawingPolygon: { vertices: [], grass },
-});
 
 export class VertexTool extends Tool<VertexToolState> {
   readonly meta = defaultTools.vertex;
-  public defaultGrass = false;
 
   constructor(store: EditorStore) {
     super(store);
   }
 
-  private subscribers: Array<(value: boolean) => void> = [];
-
-  public subscribeDefaultGrass(callback: (value: boolean) => void) {
-    this.subscribers.push(callback);
-    callback(this.defaultGrass);
-    return () => {
-      this.subscribers = this.subscribers.filter((fn) => fn !== callback);
-    };
-  }
-
-  public setDefaultGrass(value: boolean) {
-    this.defaultGrass = value;
-    this.subscribers.forEach((callback) => callback(value));
-  }
-
-  onActivate(variant: string): void {
-    if (variant === "grass") {
-      this.setDefaultGrass(true);
-    }
-    this.clear();
+  onActivate(variant: VertexToolVariant = DEFAULT_VARIANT): void {
+    const { setToolState } = this.getState();
+    setToolState({
+      drawingPolygon: { vertices: [], grass: variant === "grass" },
+      variant,
+    });
   }
 
   onDeactivate(): void {
@@ -65,8 +50,14 @@ export class VertexTool extends Tool<VertexToolState> {
   }
 
   clear(): void {
-    const { setToolState } = this.getState();
-    setToolState(getDefaultVertexState(this.defaultGrass));
+    const { toolState, setToolState } = this.getState();
+    // Preserve the current variant when clearing
+    const currentVariant = toolState?.variant ?? DEFAULT_VARIANT;
+    setToolState({
+      drawingPolygon: { vertices: [], grass: currentVariant === "grass" },
+      editingPolygon: undefined,
+      variant: currentVariant,
+    });
   }
 
   getDrafts() {
@@ -151,7 +142,10 @@ export class VertexTool extends Tool<VertexToolState> {
     // Start a new polygon
     const newVertices = [worldPos];
     setToolState({
-      drawingPolygon: { vertices: newVertices, grass: this.defaultGrass },
+      drawingPolygon: {
+        vertices: newVertices,
+        grass: toolState.variant === "grass",
+      },
     });
     return true;
   }
@@ -196,13 +190,14 @@ export class VertexTool extends Tool<VertexToolState> {
 
     if (event.key.toUpperCase() === "G" || event.key.toUpperCase() === "V") {
       const targetGrass = event.key.toUpperCase() === "G";
+      const targetVariant = targetGrass ? "grass" : "default";
 
       // Only switch if not already in target mode
       if (toolState.drawingPolygon.grass !== targetGrass) {
         setToolState({
           drawingPolygon: { ...toolState.drawingPolygon, grass: targetGrass },
+          variant: targetVariant,
         });
-        this.setDefaultGrass(targetGrass);
       }
       return true;
     }
@@ -389,9 +384,8 @@ export class VertexTool extends Tool<VertexToolState> {
         grass: editingPolygon.grass,
       },
       editingPolygon: editingPolygon,
+      variant: editingPolygon.grass ? "grass" : "default",
     });
-
-    this.setDefaultGrass(editingPolygon.grass);
   }
 
   private startEditingFromLine(
@@ -427,8 +421,7 @@ export class VertexTool extends Tool<VertexToolState> {
         grass: editingPolygon.grass,
       },
       editingPolygon: editingPolygon,
+      variant: editingPolygon.grass ? "grass" : "default",
     });
-
-    this.setDefaultGrass(editingPolygon.grass);
   }
 }

@@ -4,7 +4,11 @@ import {
   useEditorToolState,
 } from "~/editor/use-editor-store";
 import { SpriteIcon } from "~/components/sprite-icon";
-import { ToolControlButton, type ToolControlButtonProps } from "./tool";
+import {
+  ToolMenuPortal,
+  ToolControlButton,
+  type ToolControlButtonProps,
+} from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
 import { useLgrSprite } from "~/components/use-lgr-assets";
 import {
@@ -20,10 +24,11 @@ import {
   ToolbarSeparator,
   type ToolbarProps,
 } from "~/components/ui/toolbar";
-import { Portal } from "@radix-ui/react-portal";
 
 export function AppleToolControl(props: ToolControlButtonProps) {
-  const appleTool = useEditorToolState<AppleToolState>(defaultTools.apple.id);
+  const appleToolState = useEditorToolState<AppleToolState>(
+    defaultTools.apple.id,
+  );
   const { setToolState } = useEditorActions();
 
   const handleAppleAnimationChange = (animation: AppleAnimation) => {
@@ -36,8 +41,9 @@ export function AppleToolControl(props: ToolControlButtonProps) {
 
   const apple1 = useLgrSprite("qfood1");
   const apple2 = useLgrSprite("qfood2");
-  const currentAnimation = appleTool?.animation || defaultAppleState.animation;
-  const currentGravity = appleTool?.gravity ?? defaultAppleState.gravity;
+  const currentAnimation =
+    appleToolState?.animation || defaultAppleState.animation;
+  const currentGravity = appleToolState?.gravity ?? defaultAppleState.gravity;
   const apple = { 1: apple1, 2: apple2 }[currentAnimation];
 
   const activeTool = useEditorActiveTool();
@@ -53,12 +59,12 @@ export function AppleToolControl(props: ToolControlButtonProps) {
         <SpriteIcon src={apple.src} />
       </ToolControlButton>
       {isActive && (
-        <Portal className="h-fit fixed max-h-[80vh] left-20 shadow-lg inset-y-4 my-auto overflow-y-auto">
+        <ToolMenuPortal>
           <AppleToolbar
             onAnimationChange={handleAppleAnimationChange}
             onGravityChange={handleGravityChange}
           />
-        </Portal>
+        </ToolMenuPortal>
       )}
     </>
   );

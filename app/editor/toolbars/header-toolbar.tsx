@@ -5,14 +5,14 @@ import {
   useEditorStore,
   useLevelName,
 } from "~/editor/use-editor-store";
-import logo from "../assets/bear-helmet.png";
+import logo from "../../assets/bear-helmet.png";
 import { Toolbar, ToolbarButton } from "../../components/ui/toolbar";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "~/components/ui/dropdown-menu";
 import { DropdownMenu, DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 import {
   CaretDownIcon,
@@ -150,7 +150,7 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
               value={levelName}
               onChange={(e) => setLevelName(e.target.value)}
               className={cn(
-                "focus-visible:focus-ring w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 text-sm"
+                "focus-visible:focus-ring w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 text-sm",
               )}
               placeholder="Enter level name…"
             />
