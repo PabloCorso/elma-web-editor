@@ -2,7 +2,7 @@ import { type EditorState } from "./editor-state";
 import { getEventContext, isUserTyping } from "./helpers/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./helpers/camera-helpers";
 import { correctPolygonWinding } from "./helpers/polygon-helpers";
-import { colors } from "./constants";
+import { colors, GRASS_FILL_DEPTH_PX } from "./constants";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
@@ -464,7 +464,7 @@ export class EditorEngine {
 
     const skyPath = this.buildSkyPath(state);
     const groundPath = this.buildGroundPath(state, skyPath);
-    this.drawPolygons();
+    this.drawPolygons(groundPath);
 
     const queue = this.getDrawItemQueue(state);
     for (const item of queue) {
@@ -623,7 +623,145 @@ export class EditorEngine {
     this.ctx.scale(state.zoom, state.zoom);
   }
 
-  private drawPolygons() {
+  private getGrassEdgeIndices(vertices: Position[]): number[] {
+    const n = vertices.length;
+    if (n < 2) return [];
+
+    let longestEdgeIndex = -1;
+    let longestEdgeLength = -1;
+    for (let i = 0; i < n; i++) {
+      const from = vertices[i];
+      const to = vertices[(i + 1) % n];
+      const length = Math.hypot(to.x - from.x, to.y - from.y);
+      if (length > longestEdgeLength) {
+        longestEdgeLength = length;
+        longestEdgeIndex = i;
+      }
+    }
+    return [...Array(n).keys()].filter((i) => i !== longestEdgeIndex);
+  }
+
+  private drawGrassFill(
+    polygon: { vertices: Position[] },
+    groundPath: Path2D,
+    zoom: number,
+  ) {
+    const depth = GRASS_FILL_DEPTH_PX;
+    const joinOverlap = 1 / 48; // 1 Elma pixel in world units to hide AA seams
+    const tinyCanvasUnitPx = 1;
+    const tinyCanvasUnit = tinyCanvasUnitPx / Math.max(zoom, 0.0001);
+    const minTwoSidedOvershoot = tinyCanvasUnit;
+    const verticalGapFix = tinyCanvasUnit;
+    const verticalThreshold = 0.05;
+    const collinearDotThreshold = 0.98;
+    const n = polygon.vertices.length;
+    const grassEdgeIndices = this.getGrassEdgeIndices(polygon.vertices);
+    const grassEdgesSet = new Set(grassEdgeIndices);
+
+    this.ctx.save();
+    this.ctx.clip(groundPath, "evenodd");
+    this.ctx.fillStyle = colors.grass;
+
+    for (const i of grassEdgeIndices) {
+      const from = polygon.vertices[i];
+      const to = polygon.vertices[(i + 1) % n];
+      const length = Math.hypot(to.x - from.x, to.y - from.y);
+      if (length === 0) continue;
+
+      const prevEdgeIndex = (i - 1 + n) % n;
+      const nextEdgeIndex = (i + 1) % n;
+      const hasPrevGrass = grassEdgesSet.has(prevEdgeIndex);
+      const hasNextGrass = grassEdgesSet.has(nextEdgeIndex);
+      const edgeDir = {
+        x: (to.x - from.x) / length,
+        y: (to.y - from.y) / length,
+      };
+      const edgeOverlap = Math.min(joinOverlap, length * 0.25);
+      const prevFrom = polygon.vertices[prevEdgeIndex];
+      const prevTo = polygon.vertices[i];
+      const prevLength = Math.hypot(
+        prevTo.x - prevFrom.x,
+        prevTo.y - prevFrom.y,
+      );
+      const nextFrom = polygon.vertices[(i + 1) % n];
+      const nextTo = polygon.vertices[(i + 2) % n];
+      const nextLength = Math.hypot(
+        nextTo.x - nextFrom.x,
+        nextTo.y - nextFrom.y,
+      );
+
+      let fromX = from.x;
+      let fromY = from.y;
+      let toX = to.x;
+      let toY = to.y;
+
+      let fromExtend = 0;
+      let toExtend = 0;
+
+      // Overlap only on painted joins that are close to collinear to avoid corner spikes.
+      if (hasPrevGrass && prevLength > 0) {
+        const prevDir = {
+          x: (prevTo.x - prevFrom.x) / prevLength,
+          y: (prevTo.y - prevFrom.y) / prevLength,
+        };
+        const dot = prevDir.x * edgeDir.x + prevDir.y * edgeDir.y;
+        if (dot >= collinearDotThreshold) {
+          fromExtend = edgeOverlap;
+        }
+      }
+      if (hasNextGrass && nextLength > 0) {
+        const nextDir = {
+          x: (nextTo.x - nextFrom.x) / nextLength,
+          y: (nextTo.y - nextFrom.y) / nextLength,
+        };
+        const dot = edgeDir.x * nextDir.x + edgeDir.y * nextDir.y;
+        if (dot >= collinearDotThreshold) {
+          toExtend = edgeOverlap;
+        }
+      }
+
+      // If this edge is connected to grass on both ends, guarantee overlap on one side.
+      if (hasPrevGrass && hasNextGrass) {
+        toExtend = Math.max(
+          toExtend,
+          Math.min(minTwoSidedOvershoot, length * 0.25),
+        );
+      }
+
+      fromX -= edgeDir.x * fromExtend;
+      fromY -= edgeDir.y * fromExtend;
+      toX += edgeDir.x * toExtend;
+      toY += edgeDir.y * toExtend;
+
+      // Vertical edges can show a 1px AA seam; overdraw one side slightly.
+      if (Math.abs(edgeDir.x) <= verticalThreshold) {
+        const fix = edgeDir.y < 0 ? verticalGapFix : -verticalGapFix;
+        fromX += fix;
+        toX += fix;
+      }
+
+      const p3 = {
+        x: toX,
+        y: toY - depth,
+      };
+      const p4 = {
+        x: fromX,
+        y: fromY - depth,
+      };
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(fromX, fromY);
+      this.ctx.lineTo(toX, toY);
+      this.ctx.lineTo(p3.x, p3.y);
+      this.ctx.lineTo(p4.x, p4.y);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
+
+    this.ctx.restore();
+  }
+
+  private drawPolygons(groundPath: Path2D) {
     const state = this.store.getState();
 
     const activeTool = state.actions.getActiveTool();
@@ -663,30 +801,21 @@ export class EditorEngine {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
+        this.drawGrassFill(polygon, groundPath, state.zoom);
+
         this.ctx.strokeStyle = colors.grass;
         this.ctx.lineWidth = 1 / state.zoom;
-        const n = polygon.vertices.length;
-        if (n < 2) return;
-        // Find longest edge
-        let maxLen = -1;
-        let skipIdx = -1;
-        for (let i = 0; i < n; i++) {
-          const a = polygon.vertices[i];
-          const b = polygon.vertices[(i + 1) % n];
-          const len = Math.hypot(b.x - a.x, b.y - a.y);
-          if (len > maxLen) {
-            maxLen = len;
-            skipIdx = i;
-          }
-        }
-        // Draw all edges except the longest
+        this.ctx.lineCap = "butt";
+        this.ctx.lineJoin = "miter";
+
+        const grassEdgeIndices = this.getGrassEdgeIndices(polygon.vertices);
+
         this.ctx.beginPath();
-        for (let i = 0; i < n; i++) {
-          const a = polygon.vertices[i];
-          const b = polygon.vertices[(i + 1) % n];
-          if (i === skipIdx) continue; // skip longest edge
-          this.ctx.moveTo(a.x, a.y);
-          this.ctx.lineTo(b.x, b.y);
+        for (const i of grassEdgeIndices) {
+          const from = polygon.vertices[i];
+          const to = polygon.vertices[(i + 1) % polygon.vertices.length];
+          this.ctx.moveTo(from.x, from.y);
+          this.ctx.lineTo(to.x, to.y);
         }
         this.ctx.stroke();
         return;
