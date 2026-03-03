@@ -439,6 +439,8 @@ export class SelectTool extends Tool<SelectToolState> {
     const { toolState, setToolState } = this.getState();
     if (!toolState) return;
 
+    if (isObjectSelected(picture, toolState.selectedPictures)) return;
+
     setToolState({
       selectedPictures: [...toolState.selectedPictures, picture],
     });
@@ -558,21 +560,23 @@ export class SelectTool extends Tool<SelectToolState> {
     if (!toolState) return;
 
     const updatedPictures = [...state.pictures];
-    const updatedSelectedPictures = [...toolState.selectedPictures];
+    const updatedSelectedPictures: Position[] = [];
+    const handledPictureIndexes = new Set<number>();
 
     // Update each selected picture with its new position
     toolState.selectedPictures.forEach((picture: Position, index) => {
       const pictureIndex = updatedPictures.findIndex(
         (p) => p.position === picture
       );
-      if (pictureIndex !== -1) {
-        const newPos = newPositions[index];
-        updatedPictures[pictureIndex] = {
-          ...updatedPictures[pictureIndex],
-          position: newPos,
-        };
-        updatedSelectedPictures[index] = newPos;
-      }
+      if (pictureIndex === -1 || handledPictureIndexes.has(pictureIndex)) return;
+
+      const newPos = newPositions[index];
+      updatedPictures[pictureIndex] = {
+        ...updatedPictures[pictureIndex],
+        position: newPos,
+      };
+      handledPictureIndexes.add(pictureIndex);
+      updatedSelectedPictures.push(newPos);
     });
 
     // Update pictures in store
