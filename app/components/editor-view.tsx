@@ -27,7 +27,7 @@ export function EditorView({ className, ...props }: EditorViewProps) {
   return (
     <canvas
       className={cn(
-        "w-full h-full select-none cursor-crosshair",
+        "w-full h-full select-none touch-none cursor-crosshair",
         {
           "cursor-grab": activeTool?.meta.id === "hand",
           "cursor-grabbing":

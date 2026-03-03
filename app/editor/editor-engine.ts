@@ -49,6 +49,9 @@ type EditorEngineOptions = {
   maxZoom?: number;
   panSpeed?: number;
   zoomStep?: number;
+  touchpadStep?: number;
+  wheelStep?: number;
+  pinchPower?: number;
   store?: EditorStore;
   lgrAssets?: LgrAssets;
 };
@@ -66,11 +69,18 @@ export class EditorEngine {
   private maxZoom;
   private panSpeed;
   private zoomStep;
+  private touchpadStep;
+  private wheelStep;
+  private pinchPower;
 
   // Navigation state
   private isPanning = false;
   private lastPanX = 0;
   private lastPanY = 0;
+  private pinchDistance: number | null = null;
+  private pinchCenter: { x: number; y: number } | null = null;
+  private activeTouchToolPointerId: number | null = null;
+  private touchPointers = new Map<number, { x: number; y: number }>();
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -82,7 +92,10 @@ export class EditorEngine {
       minZoom = 0.2,
       maxZoom = 10000,
       panSpeed = 1.0,
-      zoomStep = 5,
+      zoomStep = 20,
+      touchpadStep = 100,
+      wheelStep = 420,
+      pinchPower = 1,
       store,
       lgrAssets,
     }: EditorEngineOptions = {},
@@ -97,6 +110,9 @@ export class EditorEngine {
     this.maxZoom = maxZoom;
     this.panSpeed = panSpeed;
     this.zoomStep = zoomStep;
+    this.touchpadStep = touchpadStep;
+    this.wheelStep = wheelStep;
+    this.pinchPower = pinchPower;
 
     this.lgrAssets = lgrAssets || new LgrAssets();
     if (!this.lgrAssets.isReady()) {
@@ -128,40 +144,24 @@ export class EditorEngine {
   }
 
   private setupEventListeners() {
-    this.canvas.addEventListener("mousedown", this.handleMouseDown);
-    this.canvas.addEventListener("mousemove", this.handleMouseMove);
-    this.canvas.addEventListener("mouseup", this.handleMouseUp);
-    this.canvas.addEventListener("mouseleave", this.handleMouseLeave);
+    this.canvas.addEventListener("pointerdown", this.handlePointerDown, {
+      passive: false,
+    });
+    this.canvas.addEventListener("pointermove", this.handlePointerMove, {
+      passive: false,
+    });
+    this.canvas.addEventListener("pointerup", this.handlePointerUp, {
+      passive: false,
+    });
+    this.canvas.addEventListener("pointercancel", this.handlePointerCancel, {
+      passive: false,
+    });
+    this.canvas.addEventListener("pointerleave", this.handlePointerLeave);
     this.canvas.addEventListener("contextmenu", this.handleRightClick);
-    this.canvas.addEventListener("wheel", this.handleWheel);
+    this.canvas.addEventListener("wheel", this.handleWheel, { passive: false });
     document.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("resize", this.handleResize);
   }
-
-  private handleMouseDown = (event: MouseEvent) => {
-    if (event.button === 1) {
-      event.preventDefault();
-      this.startPanning(event.clientX, event.clientY);
-      return;
-    }
-    if (event.button === 0) {
-      const state = this.store.getState();
-      const context = getEventContext(
-        event,
-        this.canvas,
-        state.viewPortOffset,
-        state.zoom,
-      );
-      const activeTool = state.actions.getActiveTool();
-      if (activeTool?.onPointerDown) {
-        const consumed = activeTool.onPointerDown(
-          event as PointerEvent,
-          context,
-        );
-        if (consumed) return;
-      }
-    }
-  };
 
   private startPanning(clientX: number, clientY: number) {
     this.isPanning = true;
@@ -169,7 +169,190 @@ export class EditorEngine {
     this.lastPanY = clientY;
   }
 
-  private handleMouseMove = (event: MouseEvent) => {
+  private trySetPointerCapture(pointerId: number) {
+    if (this.canvas.hasPointerCapture(pointerId)) return;
+    try {
+      this.canvas.setPointerCapture(pointerId);
+    } catch {
+      // Pointer may already be released by the browser.
+    }
+  }
+
+  private tryReleasePointerCapture(pointerId: number) {
+    if (!this.canvas.hasPointerCapture(pointerId)) return;
+    try {
+      this.canvas.releasePointerCapture(pointerId);
+    } catch {
+      // Ignore release races.
+    }
+  }
+
+  private dispatchToolPointerEvent(
+    phase: "down" | "move" | "up",
+    event: PointerEvent,
+  ) {
+    const state = this.store.getState();
+    const context = getEventContext(
+      event as unknown as MouseEvent,
+      this.canvas,
+      state.viewPortOffset,
+      state.zoom,
+    );
+    const activeTool = state.actions.getActiveTool();
+
+    if (phase === "down") {
+      activeTool?.onPointerDown?.(event, context);
+      state.actions.setMousePosition(context.worldPos);
+      state.actions.setMouseOnCanvas(true);
+      return;
+    }
+
+    if (phase === "move") {
+      activeTool?.onPointerMove?.(event, context);
+      state.actions.setMousePosition(context.worldPos);
+      state.actions.setMouseOnCanvas(true);
+      return;
+    }
+
+    activeTool?.onPointerUp?.(event, context);
+  }
+
+  private getTouchPinchState() {
+    if (this.touchPointers.size < 2) return null;
+
+    const [first, second] = Array.from(this.touchPointers.values());
+    const pointA = this.getCanvasPoint(first.x, first.y);
+    const pointB = this.getCanvasPoint(second.x, second.y);
+
+    return {
+      center: {
+        x: (pointA.x + pointB.x) / 2,
+        y: (pointA.y + pointB.y) / 2,
+      },
+      distance: Math.hypot(pointB.x - pointA.x, pointB.y - pointA.y),
+    };
+  }
+
+  private createSyntheticTouchPointerEvent(
+    pointerId: number,
+    clientX: number,
+    clientY: number,
+  ): PointerEvent {
+    return {
+      pointerId,
+      pointerType: "touch",
+      isPrimary: true,
+      button: 0,
+      buttons: 0,
+      clientX,
+      clientY,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      metaKey: false,
+      preventDefault() {},
+      stopPropagation() {},
+    } as PointerEvent;
+  }
+
+  private endActiveTouchToolInteraction() {
+    if (this.activeTouchToolPointerId === null) return;
+
+    const pointerPos = this.touchPointers.get(this.activeTouchToolPointerId);
+    if (pointerPos) {
+      const syntheticEvent = this.createSyntheticTouchPointerEvent(
+        this.activeTouchToolPointerId,
+        pointerPos.x,
+        pointerPos.y,
+      );
+      this.dispatchToolPointerEvent("up", syntheticEvent);
+    }
+
+    this.activeTouchToolPointerId = null;
+  }
+
+  private handlePointerDown = (event: PointerEvent) => {
+    if (event.pointerType === "touch") {
+      event.preventDefault();
+      this.trySetPointerCapture(event.pointerId);
+      this.touchPointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      const pinch = this.getTouchPinchState();
+      if (pinch) {
+        this.endActiveTouchToolInteraction();
+        this.pinchDistance = pinch.distance;
+        this.pinchCenter = pinch.center;
+        return;
+      }
+
+      this.resetPinchState();
+      this.activeTouchToolPointerId = event.pointerId;
+      this.dispatchToolPointerEvent("down", event);
+      return;
+    }
+
+    if (event.button === 1) {
+      event.preventDefault();
+      this.trySetPointerCapture(event.pointerId);
+      this.startPanning(event.clientX, event.clientY);
+      return;
+    }
+
+    if (event.button === 0) {
+      this.trySetPointerCapture(event.pointerId);
+      this.dispatchToolPointerEvent("down", event);
+    }
+  };
+
+  private handlePointerMove = (event: PointerEvent) => {
+    if (event.pointerType === "touch") {
+      if (!this.touchPointers.has(event.pointerId)) return;
+
+      event.preventDefault();
+      this.touchPointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      const pinch = this.getTouchPinchState();
+      if (pinch) {
+        this.endActiveTouchToolInteraction();
+        const previousCenter = this.pinchCenter;
+        const previousDistance = this.pinchDistance;
+
+        if (previousCenter) {
+          const state = this.store.getState();
+          updateCamera({
+            deltaX: pinch.center.x - previousCenter.x,
+            deltaY: pinch.center.y - previousCenter.y,
+            currentOffset: state.viewPortOffset,
+            setCamera: state.actions.setCamera,
+            panSpeed: this.panSpeed,
+          });
+        }
+
+        if (previousDistance && previousDistance > 0) {
+          const state = this.store.getState();
+          const rawZoomFactor = pinch.distance / previousDistance;
+          const zoomFactor = Math.pow(rawZoomFactor, this.pinchPower);
+          this.zoomAtAnchor(state.zoom * zoomFactor, pinch.center);
+        }
+
+        this.pinchDistance = pinch.distance;
+        this.pinchCenter = pinch.center;
+        return;
+      }
+
+      this.resetPinchState();
+      if (this.activeTouchToolPointerId === event.pointerId) {
+        this.dispatchToolPointerEvent("move", event);
+      }
+      return;
+    }
+
     const state = this.store.getState();
     if (this.isPanning) {
       const deltaX = event.clientX - this.lastPanX;
@@ -186,44 +369,64 @@ export class EditorEngine {
       return;
     }
 
-    const context = getEventContext(
-      event,
-      this.canvas,
-      state.viewPortOffset,
-      state.zoom,
-    );
-    const activeTool = state.actions.getActiveTool();
-    if (activeTool?.onPointerMove) {
-      const consumed = activeTool.onPointerMove(event as PointerEvent, context);
-      if (consumed) return;
-    }
-
-    state.actions.setMousePosition(context.worldPos);
-    state.actions.setMouseOnCanvas(true);
+    this.dispatchToolPointerEvent("move", event);
   };
 
-  private handleMouseUp = (event: MouseEvent) => {
+  private handlePointerUp = (event: PointerEvent) => {
+    if (event.pointerType === "touch") {
+      event.preventDefault();
+      this.touchPointers.delete(event.pointerId);
+
+      if (this.activeTouchToolPointerId === event.pointerId) {
+        this.dispatchToolPointerEvent("up", event);
+        this.activeTouchToolPointerId = null;
+      }
+
+      if (this.touchPointers.size < 2) {
+        this.resetPinchState();
+      }
+      if (this.touchPointers.size === 0) {
+        this.store.getState().actions.setMouseOnCanvas(false);
+      }
+
+      this.tryReleasePointerCapture(event.pointerId);
+      return;
+    }
+
     if (event.button === 1) {
       this.isPanning = false;
+      this.tryReleasePointerCapture(event.pointerId);
+      return;
     }
 
     if (event.button === 0) {
-      const state = this.store.getState();
-
-      const activeTool = state.actions.getActiveTool();
-      if (activeTool?.onPointerUp) {
-        const context = getEventContext(
-          event,
-          this.canvas,
-          state.viewPortOffset,
-          state.zoom,
-        );
-        activeTool.onPointerUp(event as PointerEvent, context);
-      }
+      this.dispatchToolPointerEvent("up", event);
+      this.tryReleasePointerCapture(event.pointerId);
     }
   };
 
-  private handleMouseLeave = () => {
+  private handlePointerCancel = (event: PointerEvent) => {
+    if (event.pointerType === "touch") {
+      this.touchPointers.delete(event.pointerId);
+
+      if (this.activeTouchToolPointerId === event.pointerId) {
+        this.dispatchToolPointerEvent("up", event);
+        this.activeTouchToolPointerId = null;
+      }
+
+      if (this.touchPointers.size < 2) {
+        this.resetPinchState();
+      }
+      if (this.touchPointers.size === 0) {
+        this.store.getState().actions.setMouseOnCanvas(false);
+      }
+    }
+
+    this.isPanning = false;
+    this.tryReleasePointerCapture(event.pointerId);
+  };
+
+  private handlePointerLeave = () => {
     const state = this.store.getState();
     state.actions.setMouseOnCanvas(false);
   };
@@ -245,26 +448,63 @@ export class EditorEngine {
     }
   };
 
+  private getCanvasPoint(clientX: number, clientY: number) {
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  }
+
+  private zoomAtAnchor(newZoom: number, anchor: { x: number; y: number }) {
+    const state = this.store.getState();
+    updateZoom({
+      newZoom,
+      minZoom: this.minZoom,
+      maxZoom: this.maxZoom,
+      currentZoom: state.zoom,
+      setZoom: state.actions.setZoom,
+      anchor,
+      currentOffset: state.viewPortOffset,
+      setCamera: state.actions.setCamera,
+    });
+  }
+
+  private resetPinchState() {
+    this.pinchDistance = null;
+    this.pinchCenter = null;
+  }
+
   private handleWheel = (event: WheelEvent) => {
     event.preventDefault();
     const state = this.store.getState();
-    const rect = this.canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const { x: mouseX, y: mouseY } = this.getCanvasPoint(
+      event.clientX,
+      event.clientY,
+    );
 
     const modifier = checkModifierKey(event);
-    if (modifier) {
-      const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = state.zoom * zoomFactor;
-      updateZoom({
-        newZoom,
-        minZoom: this.minZoom,
-        maxZoom: this.maxZoom,
-        currentZoom: state.zoom,
-        setZoom: state.actions.setZoom,
-        anchor: { x: mouseX, y: mouseY },
+    const isLikelyPinchWheel =
+      event.ctrlKey && event.deltaMode === WheelEvent.DOM_DELTA_PIXEL;
+    if (modifier || isLikelyPinchWheel) {
+      const zoomStepValue = isLikelyPinchWheel
+        ? this.touchpadStep
+        : this.wheelStep;
+      const zoomFactor = Math.pow(2, -event.deltaY / zoomStepValue);
+      this.zoomAtAnchor(state.zoom * zoomFactor, { x: mouseX, y: mouseY });
+      return;
+    }
+
+    // Pixel-mode wheel deltas are typically trackpad two-finger gestures.
+    // Let those pan freely in both axes without requiring Shift.
+    const isTouchpadScroll = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL;
+    if (isTouchpadScroll) {
+      updateCamera({
+        deltaX: -event.deltaX * 0.5,
+        deltaY: -event.deltaY * 0.5,
         currentOffset: state.viewPortOffset,
         setCamera: state.actions.setCamera,
+        panSpeed: this.panSpeed,
       });
       return;
     }
@@ -380,17 +620,11 @@ export class EditorEngine {
   private zoomInOut(step: number) {
     const state = this.store.getState();
     const anchor = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
+    const stepSize = Math.max(0, Math.abs(step));
+    const stepFactor = 1 + stepSize / 100;
+    const zoomFactor = step >= 0 ? stepFactor : 1 / stepFactor;
 
-    updateZoom({
-      newZoom: state.zoom + step,
-      minZoom: this.minZoom,
-      maxZoom: this.maxZoom,
-      currentZoom: state.zoom,
-      setZoom: state.actions.setZoom,
-      anchor: anchor,
-      currentOffset: state.viewPortOffset,
-      setCamera: anchor ? state.actions.setCamera : undefined,
-    });
+    this.zoomAtAnchor(state.zoom * zoomFactor, anchor);
   }
 
   public zoomIn(step = this.zoomStep) {
@@ -839,9 +1073,11 @@ export class EditorEngine {
       cancelAnimationFrame(this.animationId);
     }
 
-    this.canvas.removeEventListener("mousedown", this.handleMouseDown);
-    this.canvas.removeEventListener("mousemove", this.handleMouseMove);
-    this.canvas.removeEventListener("mouseup", this.handleMouseUp);
+    this.canvas.removeEventListener("pointerdown", this.handlePointerDown);
+    this.canvas.removeEventListener("pointermove", this.handlePointerMove);
+    this.canvas.removeEventListener("pointerup", this.handlePointerUp);
+    this.canvas.removeEventListener("pointercancel", this.handlePointerCancel);
+    this.canvas.removeEventListener("pointerleave", this.handlePointerLeave);
     this.canvas.removeEventListener("contextmenu", this.handleRightClick);
     this.canvas.removeEventListener("wheel", this.handleWheel);
     document.removeEventListener("keydown", this.handleKeyDown);

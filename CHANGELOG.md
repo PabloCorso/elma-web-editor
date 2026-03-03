@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-03-03
+
+- Improve zoom controls and add pinch/touchpad zooming.
+- Add selection and zoom gestures on mobile.
+
 ## 2026-02-08
 
 - Feedback from @Isty. Remove apple gravity shortcut which conflict with select tool on S (gravity down).
