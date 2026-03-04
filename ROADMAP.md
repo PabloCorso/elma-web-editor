@@ -2,6 +2,17 @@
 
 Ideas and plans for Elma Web Editor.
 
+## Feedback
+
+- Add a visual cue for when the click will start editing a polygon with X cursor.
+- Add "always show all vertices" kind of option @roope
+- I haven't used much of internal editor so i didn't realize clicking an edge creates a new vertex instantly at that point, so i accidentally created several "invisible" vertices on a flat wall (i know they can be shown by selecting that area but meh) @roope
+  - Maybe allow creating from edges with shift+click so its easier to start new polygons near edges and so that we avoid this situation overall, or remove that and allow only to start edits from vertex.
+- Also took like 10 seconds (!!!) to figure out that green vertex tool = grass :D @roope
+  - I would try first to simply add better icons to the vertex tool menu, might be noticeable enough with better visuals.
+- If you select 2+ vertices and try to move them, the entire polygon moves, not just the selected parts @infe (video in Discord)
+  - Can only select vertices form polys, but if it’s intuitive to move form the selected edge can totally try adding that case.
+
 ## Fix
 
 - Object select state can get out of sync with actual object.
