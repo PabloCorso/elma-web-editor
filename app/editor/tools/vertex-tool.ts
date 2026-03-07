@@ -156,6 +156,14 @@ export class VertexTool extends Tool<VertexToolState> {
     if (!toolState) return false;
 
     if (event.key === "Escape") {
+      const isDrawing = toolState.drawingPolygon.vertices.length > 0;
+      const isEditing = !!toolState.editingPolygon;
+
+      if (!isDrawing && !isEditing) {
+        // Let the editor-level Escape shortcut switch to the default/select tool.
+        return false;
+      }
+
       // If we're editing an existing polygon, restore it
       if (toolState.editingPolygon) {
         state.actions.setPolygons([
