@@ -99,11 +99,11 @@ export function HeaderToolbar({
               className="w-14 relative gap-0"
               aria-label="Elma Web Editor"
             >
-              <span className="absolute -top-0 right-1 px-1 text-[8px] font-semibold bg-blue-500 opacity-75 text-white rounded-full">
+              <span className="absolute -top-0 right-0.5 px-1 text-[8px] font-semibold bg-blue-500 rounded-full">
                 BETA
               </span>
               <img src={logo} className="w-8 h-8 isolate" />
-              <Icon size="xs" className="text-white/70">
+              <Icon size="xs">
                 <CaretDownIcon />
               </Icon>
             </ToolbarButton>

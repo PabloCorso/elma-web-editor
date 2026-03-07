@@ -42,7 +42,7 @@ export function SettingsDialog(props: DialogProps) {
             for updates.
           </p>
 
-          <div className="mt-4 border border-gray-800 rounded-lg p-3">
+          <div className="mt-4 border border-separator rounded-lg p-3">
             {supportsFilePickers() ? (
               <div className="flex items-center justify-between">
                 <div>
@@ -51,9 +51,7 @@ export function SettingsDialog(props: DialogProps) {
                     {levelFolderName ? (
                       <>
                         set:{" "}
-                        <span className="font-semibold text-white">
-                          {levelFolderName}
-                        </span>
+                        <span className="font-semibold">{levelFolderName}</span>
                       </>
                     ) : (
                       "not set"

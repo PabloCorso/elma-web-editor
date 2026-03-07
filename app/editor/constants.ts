@@ -16,7 +16,7 @@ export const colors = {
 };
 
 export const uiColors = {
-  selectionHandleFill: "#5ec8ff",
+  selectionHandleFill: "#ffffff",
   selectionHandleStroke: "#1b3b5c",
   marqueeFill: "rgba(94, 200, 255, 0.16)",
   marqueeStroke: "#5ec8ff",

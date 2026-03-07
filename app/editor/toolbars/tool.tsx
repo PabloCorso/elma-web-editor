@@ -41,7 +41,7 @@ export function ToolButton({
         className="text-xs flex items-center gap-2"
       >
         {name}
-        {shortcut && <span className="text-slate-400">{shortcut}</span>}
+        {shortcut && <span className="text-secondary">{shortcut}</span>}
       </TooltipContent>
     </Tooltip>
   );

@@ -730,7 +730,7 @@ function drawSelectHandle(
   size = 3,
 ): void {
   const side = size * 2;
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = uiColors.selectionHandleFill;
   ctx.fillRect(position.x - size, position.y - size, side, side);
   ctx.strokeStyle = uiColors.selectionHandleStroke;
   ctx.lineWidth = 0.75;

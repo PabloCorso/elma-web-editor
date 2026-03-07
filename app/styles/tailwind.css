@@ -7,13 +7,19 @@
 :root {
   color-scheme: dark;
 
-  --border-default: var(--color-slate-800);
-  --border-separator: var(--color-slate-700);
-  --background-screen: var(--color-slate-900);
-  --background-primary: var(--color-slate-900);
+  --primary: #5ec8ff;
+  --ground: #181048;
+
+  --text-primary: white;
+  --text-secondary: var(--color-slate-400);
+
+  --background-screen: var(--color-slate-800);
+  --background-primary: var(--color-slate-800);
   --background-primary-hover: var(--color-slate-500);
   --background-primary-active: var(--color-slate-400);
-  --tree-green: #008008;
+
+  --border-default: var(--color-slate-800);
+  --border-separator: var(--color-slate-700);
 }
 
 @layer theme {
@@ -26,6 +32,11 @@
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
 
+    --color-ground: var(--ground);
+
+    --text-color-primary: var(--text-primary);
+    --text-color-secondary: var(--text-secondary);
+
     --background-color-screen: var(--background-screen);
     --background-color-primary: var(--background-primary);
     --background-color-primary-hover: var(--background-primary-hover);
@@ -37,10 +48,10 @@
 
     --divide-color-separator: var(--border-separator);
 
-    --ring-color-tree-green: var(--tree-green);
+    --ring-color-primary: var(--primary);
   }
 }
 
 @utility focus-ring {
-  @apply ring-2 ring-tree-green outline-none;
+  @apply ring-2 ring-primary outline-none;
 }
