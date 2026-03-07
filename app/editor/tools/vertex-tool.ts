@@ -266,15 +266,15 @@ export class VertexTool extends Tool<VertexToolState> {
 
     ctx.stroke();
 
-    // Draw vertices
+    // Draw vertex handles (square, matching selection handle styling)
     toolState.drawingPolygon.vertices.forEach((vertex) => {
-      ctx.beginPath();
-      ctx.arc(vertex.x, vertex.y, 3 / state.zoom, 0, 2 * Math.PI);
+      const size = 3 / state.zoom;
+      const side = size * 2;
       ctx.fillStyle = uiColors.vertexDraftPointFill;
-      ctx.fill();
+      ctx.fillRect(vertex.x - size, vertex.y - size, side, side);
       ctx.strokeStyle = uiColors.vertexDraftPointStroke;
       ctx.lineWidth = uiStrokeWidths.boundsIdleScreen / state.zoom;
-      ctx.stroke();
+      ctx.strokeRect(vertex.x - size, vertex.y - size, side, side);
     });
   }
 
