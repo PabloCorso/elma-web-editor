@@ -5,6 +5,7 @@ import type { DefaultToolMeta } from "./default-tools";
 import type { LgrAssets } from "~/components/lgr-assets";
 
 export type ToolState<T = unknown> = Record<string, T>;
+export type ToolCursor = string;
 
 export abstract class Tool<T extends ToolState = ToolState> {
   abstract readonly meta: DefaultToolMeta;
@@ -31,6 +32,7 @@ export abstract class Tool<T extends ToolState = ToolState> {
   onPointerUp?(event: PointerEvent, context: EventContext): boolean;
   onKeyDown?(event: KeyboardEvent, context: EventContext): boolean;
   onRightClick?(event: MouseEvent, context: EventContext): boolean;
+  getCursor?(context: EventContext): ToolCursor | undefined;
 
   // Rendering
   onRender?(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets): void;

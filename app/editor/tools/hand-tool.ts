@@ -58,4 +58,9 @@ export class HandTool extends Tool<HandToolState> {
     setToolState({ isDragging: false });
     return true;
   }
+
+  getCursor(): string {
+    const { toolState } = this.getState();
+    return toolState?.isDragging ? "grabbing" : "grab";
+  }
 }

@@ -1,8 +1,17 @@
 import { type EditorState } from "./editor-state";
-import { getEventContext, isUserTyping } from "./helpers/event-handler";
+import {
+  getEventContext,
+  isUserTyping,
+  type EventContext,
+} from "./helpers/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./helpers/camera-helpers";
 import { correctPolygonWinding } from "./helpers/polygon-helpers";
-import { colors, GRASS_FILL_DEPTH_PX } from "./constants";
+import {
+  colors,
+  debugColors,
+  GRASS_FILL_DEPTH_PX,
+  uiStrokeWidths,
+} from "./constants";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
@@ -21,6 +30,7 @@ import {
 import { defaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
 import { defaultAppleState } from "./tools/apple-tools";
+import type { SelectToolState } from "./tools/select-tool";
 
 enum RenderType {
   Picture = "picture",
@@ -63,6 +73,7 @@ export class EditorEngine {
   private debugMode = false;
   private store: EditorStore;
   private lgrAssets: LgrAssets;
+  private currentCursor: string | null = null;
 
   // Camera system
   private minZoom;
@@ -136,6 +147,7 @@ export class EditorEngine {
     state.actions.loadLevel(initialLevel);
     this.startRenderLoop();
     this.fitToView();
+    this.updateCanvasCursor();
   }
 
   // Expose store for React integration
@@ -204,6 +216,7 @@ export class EditorEngine {
       activeTool?.onPointerDown?.(event, context);
       state.actions.setMousePosition(context.worldPos);
       state.actions.setMouseOnCanvas(true);
+      this.updateCanvasCursor(context);
       return;
     }
 
@@ -211,10 +224,49 @@ export class EditorEngine {
       activeTool?.onPointerMove?.(event, context);
       state.actions.setMousePosition(context.worldPos);
       state.actions.setMouseOnCanvas(true);
+      this.updateCanvasCursor(context);
       return;
     }
 
     activeTool?.onPointerUp?.(event, context);
+    this.updateCanvasCursor(context);
+  }
+
+  private setCanvasCursor(cursor: string) {
+    if (this.currentCursor === cursor) return;
+    this.currentCursor = cursor;
+    this.canvas.style.cursor = cursor;
+  }
+
+  private getMouseEventContext(state: EditorState): EventContext {
+    const screenPos = worldToScreen(
+      state.mousePosition,
+      state.viewPortOffset,
+      state.zoom,
+    );
+    return {
+      worldPos: state.mousePosition,
+      screenX: screenPos.x,
+      screenY: screenPos.y,
+    };
+  }
+
+  private updateCanvasCursor(context?: EventContext): void {
+    const state = this.store.getState();
+    if (!state.mouseOnCanvas) {
+      this.setCanvasCursor("");
+      return;
+    }
+
+    const activeTool = state.actions.getActiveTool();
+    if (!activeTool) {
+      this.setCanvasCursor("");
+      return;
+    }
+
+    const resolvedContext = context ?? this.getMouseEventContext(state);
+    const cursor = activeTool.getCursor?.(resolvedContext)?.trim();
+    this.setCanvasCursor(cursor || "");
   }
 
   private getTouchPinchState() {
@@ -297,7 +349,9 @@ export class EditorEngine {
     if (event.button === 1) {
       event.preventDefault();
       this.trySetPointerCapture(event.pointerId);
+      this.store.getState().actions.setMouseOnCanvas(true);
       this.startPanning(event.clientX, event.clientY);
+      this.updateCanvasCursor();
       return;
     }
 
@@ -366,6 +420,7 @@ export class EditorEngine {
       });
       this.lastPanX = event.clientX;
       this.lastPanY = event.clientY;
+      this.updateCanvasCursor();
       return;
     }
 
@@ -387,6 +442,7 @@ export class EditorEngine {
       }
       if (this.touchPointers.size === 0) {
         this.store.getState().actions.setMouseOnCanvas(false);
+        this.updateCanvasCursor();
       }
 
       this.tryReleasePointerCapture(event.pointerId);
@@ -396,6 +452,7 @@ export class EditorEngine {
     if (event.button === 1) {
       this.isPanning = false;
       this.tryReleasePointerCapture(event.pointerId);
+      this.updateCanvasCursor();
       return;
     }
 
@@ -419,16 +476,19 @@ export class EditorEngine {
       }
       if (this.touchPointers.size === 0) {
         this.store.getState().actions.setMouseOnCanvas(false);
+        this.updateCanvasCursor();
       }
     }
 
     this.isPanning = false;
     this.tryReleasePointerCapture(event.pointerId);
+    this.updateCanvasCursor();
   };
 
   private handlePointerLeave = () => {
     const state = this.store.getState();
     state.actions.setMouseOnCanvas(false);
+    this.updateCanvasCursor();
   };
 
   private handleRightClick = (event: MouseEvent) => {
@@ -685,6 +745,7 @@ export class EditorEngine {
       if (currentTool !== lastCurrentTool) {
         lastCurrentTool = currentTool;
         state.actions.activateTool(currentTool);
+        this.updateCanvasCursor();
       }
     });
   }
@@ -771,7 +832,19 @@ export class EditorEngine {
     if (item.type === "picture") {
       const sprite = this.lgrAssets.getSprite(item.name);
       if (!sprite) return;
-      drawPicture({ ctx, sprite, position });
+      const selectState = state.actions.getToolState<SelectToolState>("select");
+      const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
+        (selected) => selected.x === position.x && selected.y === position.y,
+      );
+      drawPicture({
+        ctx,
+        sprite,
+        position,
+        showBounds: true,
+        boundsLineWidth: isSelectedPicture
+          ? uiStrokeWidths.boundsSelectedScreen / state.zoom
+          : uiStrokeWidths.boundsIdleScreen / state.zoom,
+      });
     } else if (item.type === "apple") {
       const sprite = this.lgrAssets.getAppleSprite(
         item.animation ?? defaultAppleState.animation,
@@ -1030,20 +1103,18 @@ export class EditorEngine {
     this.ctx.closePath();
     this.ctx.fill(); // Fill all polygons at once according to even-odd (winding) rule
 
-    // Draw all polygon edges (only permanent polygons, not drafts)
+    // Draw grass interior shading and thin idle polygon outlines.
     correctedPolygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
         this.drawGrassFill(polygon, groundPath, state.zoom);
-
         this.ctx.strokeStyle = colors.grass;
         this.ctx.lineWidth = 1 / state.zoom;
         this.ctx.lineCap = "butt";
         this.ctx.lineJoin = "miter";
 
         const grassEdgeIndices = this.getGrassEdgeIndices(polygon.vertices);
-
         this.ctx.beginPath();
         for (const i of grassEdgeIndices) {
           const from = polygon.vertices[i];
@@ -1053,10 +1124,13 @@ export class EditorEngine {
         }
         this.ctx.stroke();
         return;
+      } else {
+        this.ctx.strokeStyle = colors.edges;
       }
 
-      this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom;
+      this.ctx.lineCap = "butt";
+      this.ctx.lineJoin = "miter";
 
       this.ctx.beginPath();
       this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
@@ -1097,7 +1171,7 @@ export class EditorEngine {
         state.zoom,
       );
 
-      this.ctx.fillStyle = "#ffff00";
+      this.ctx.fillStyle = debugColors.distanceLabel;
       this.ctx.font = `12px monospace`;
       this.ctx.textAlign = "left";
       this.ctx.textBaseline = "bottom";
@@ -1138,10 +1212,10 @@ export class EditorEngine {
     const panelX = this.canvas.width - panelWidth - 10;
     const panelY = 10;
 
-    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    this.ctx.fillStyle = debugColors.panelFill;
     this.ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
 
-    this.ctx.fillStyle = "#ffffff";
+    this.ctx.fillStyle = debugColors.panelText;
     lines.forEach((line, index) => {
       this.ctx.fillText(
         line,

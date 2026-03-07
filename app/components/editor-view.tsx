@@ -1,11 +1,7 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { EditorEngine } from "../editor/editor-engine";
-import {
-  useEditorActiveTool,
-  useEditorStore,
-  useEditorToolState,
-} from "~/editor/use-editor-store";
+import { useEditorStore } from "~/editor/use-editor-store";
 import { VertexTool } from "~/editor/tools/vertex-tool";
 import { SelectTool } from "~/editor/tools/select-tool";
 import { AppleTool } from "~/editor/tools/apple-tools";
@@ -15,26 +11,16 @@ import { AIWidget } from "~/editor/widgets/ai-widget";
 import { useLgrAssets } from "./use-lgr-assets";
 import { getBuiltinLevel } from "~/editor/helpers/level-parser";
 import { PictureTool } from "~/editor/tools/picture-tool";
-import { HandTool, type HandToolState } from "~/editor/tools/hand-tool";
+import { HandTool } from "~/editor/tools/hand-tool";
 import { cn } from "~/utils/misc";
 import type { EditorLevel } from "~/editor/elma-types";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
 
 export function EditorView({ className, ...props }: EditorViewProps) {
-  const activeTool = useEditorActiveTool();
-  const handToolState = useEditorToolState<HandToolState>("hand");
   return (
     <canvas
-      className={cn(
-        "w-full h-full select-none touch-none cursor-crosshair",
-        {
-          "cursor-grab": activeTool?.meta.id === "hand",
-          "cursor-grabbing":
-            activeTool?.meta.id === "hand" && handToolState?.isDragging,
-        },
-        className
-      )}
+      className={cn("w-full h-full select-none touch-none", className)}
       {...props}
     />
   );
@@ -156,7 +142,7 @@ export function useEditorView({
         }
       };
     },
-    [store, initialLevel, isOpenAIEnabled, lgrAssets]
+    [store, initialLevel, isOpenAIEnabled, lgrAssets],
   );
 
   return { canvasRef, engineRef };
@@ -171,7 +157,7 @@ type InitialLevel = {
 export function useInitialLevel(levelName?: string): InitialLevel {
   const [data, setData] = useState<EditorLevel | undefined>(undefined);
   const [status, setStatus] = useState<"loading" | "done" | "error">(
-    levelName ? "loading" : "done"
+    levelName ? "loading" : "done",
   );
 
   useEffect(() => {

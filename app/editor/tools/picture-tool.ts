@@ -6,6 +6,7 @@ import { Tool } from "./tool-interface";
 import { type Picture } from "../elma-types";
 import { drawPicture } from "../draw-picture";
 import { standardSprites } from "~/components/standard-sprites";
+import { uiStrokeWidths } from "../constants";
 
 export type PictureToolState = Pick<Picture, "name" | "distance" | "clip">;
 
@@ -44,7 +45,14 @@ export class PictureTool extends Tool<PictureToolState> {
 
     const sprite = lgrAssets.getSprite(toolState.name);
     if (sprite) {
-      drawPicture({ ctx, sprite, position: state.mousePosition, opacity: 0.5 });
+      drawPicture({
+        ctx,
+        sprite,
+        position: state.mousePosition,
+        opacity: 0.5,
+        showBounds: true,
+        boundsLineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+      });
     }
   }
 }

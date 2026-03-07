@@ -10,7 +10,7 @@ import {
   findPolygonLineForEditing,
   findPolygonVertexForEditing,
 } from "../helpers/selection-helpers";
-import { colors } from "../constants";
+import { colors, uiColors, uiStrokeWidths } from "../constants";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { Polygon, Position } from "../elma-types";
@@ -230,6 +230,10 @@ export class VertexTool extends Tool<VertexToolState> {
     return false;
   }
 
+  getCursor(_context: EventContext): string {
+    return "crosshair";
+  }
+
   private updatePolygon(index: number, polygon: Polygon): void {
     const { state } = this.getState();
     state.actions.setPolygons(
@@ -242,8 +246,10 @@ export class VertexTool extends Tool<VertexToolState> {
     if (!toolState || toolState.drawingPolygon.vertices.length === 0) return;
 
     const isGrass = toolState.drawingPolygon.grass;
-    ctx.strokeStyle = isGrass ? colors.grass : colors.edges;
-    ctx.lineWidth = 1 / state.zoom;
+    ctx.strokeStyle = isGrass ? colors.grass : uiColors.vertexDraftLine;
+    ctx.lineWidth = uiStrokeWidths.boundsSelectedScreen / state.zoom;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     ctx.beginPath();
     ctx.moveTo(
@@ -261,11 +267,14 @@ export class VertexTool extends Tool<VertexToolState> {
     ctx.stroke();
 
     // Draw vertices
-    ctx.fillStyle = colors.edges;
     toolState.drawingPolygon.vertices.forEach((vertex) => {
       ctx.beginPath();
-      ctx.arc(vertex.x, vertex.y, 2 / state.zoom, 0, 2 * Math.PI);
+      ctx.arc(vertex.x, vertex.y, 3 / state.zoom, 0, 2 * Math.PI);
+      ctx.fillStyle = uiColors.vertexDraftPointFill;
       ctx.fill();
+      ctx.strokeStyle = uiColors.vertexDraftPointStroke;
+      ctx.lineWidth = uiStrokeWidths.boundsIdleScreen / state.zoom;
+      ctx.stroke();
     });
   }
 
@@ -292,8 +301,10 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // Draw preview line from last point to mouse cursor (solid)
     const isGrass = toolState.drawingPolygon.grass;
-    ctx.strokeStyle = isGrass ? colors.grass : colors.edges;
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = isGrass ? colors.grass : uiColors.vertexDraftLine;
+    ctx.lineWidth = uiStrokeWidths.boundsSelectedScreen;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.beginPath();
     ctx.moveTo(lastScreen.x, lastScreen.y);
     ctx.lineTo(mouseScreen.x, mouseScreen.y);
@@ -308,11 +319,9 @@ export class VertexTool extends Tool<VertexToolState> {
         state.zoom,
       );
 
-      // Workaround to draw dashed line on top of solid line
-      // There is a solid line being drawn by EditorEngine already at drawPolygons stage
-      ctx.strokeStyle = colors.ground;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]); // Dashed line for closing edge
+      ctx.strokeStyle = uiColors.vertexDraftClosingLine;
+      ctx.lineWidth = uiStrokeWidths.boundsSelectedScreen;
+      ctx.setLineDash([8, 6]);
       ctx.beginPath();
       ctx.moveTo(firstScreen.x, firstScreen.y);
       ctx.lineTo(mouseScreen.x, mouseScreen.y);

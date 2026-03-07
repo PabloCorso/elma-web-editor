@@ -1,4 +1,9 @@
-import { OBJECT_FRAME_PX, OBJECT_FPS, OBJECT_DIAMETER } from "./constants";
+import {
+  OBJECT_FRAME_PX,
+  OBJECT_FPS,
+  OBJECT_DIAMETER,
+  uiColors,
+} from "./constants";
 import { Gravity, type Position } from "./elma-types";
 
 export function drawObject({
@@ -82,7 +87,7 @@ export function drawGravityArrow({
   ctx.rotate(arrowRotations[gravity] ?? 0);
 
   ctx.globalAlpha = opacity;
-  ctx.strokeStyle = "#fde047";
+  ctx.strokeStyle = uiColors.gravityArrow;
   ctx.lineWidth = 0.08;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";

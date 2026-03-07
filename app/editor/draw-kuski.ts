@@ -1,6 +1,7 @@
 // Original code at https://github.com/elmadev/recplayer
 
 import { standardSprites } from "~/components/standard-sprites";
+import { debugColors } from "./constants";
 
 function hypot(a: number, b: number) {
   return Math.sqrt(a * a + b * b);
@@ -33,7 +34,7 @@ function skewimage(
   ctx.scale(bx + br + hypot(o, a), ih);
   ctx.drawImage(img, 0, 0, 1, 1);
   if (box) {
-    ctx.strokeStyle = "purple";
+    ctx.strokeStyle = debugColors.kuskiBounds;
     ctx.lineWidth = 0.02;
     ctx.strokeRect(0, 0, 1, 1);
   }
