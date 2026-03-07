@@ -16,14 +16,24 @@ import type { EditorEngine } from "~/editor/editor-engine";
 import { ToolButton, type ToolButtonProps } from "./tool";
 import { cn, useModifier } from "~/utils/misc";
 
-export function CanvasToolbar({
-  engineRef,
-}: {
+type CanvasToolbarProps = ToolbarProps & {
   engineRef: React.RefObject<EditorEngine | null>;
-}) {
+};
+
+export function CanvasToolbar({
+  className,
+  engineRef,
+  ...props
+}: CanvasToolbarProps) {
   const { triggerFitToView } = useEditorActions();
   return (
-    <div className="absolute right-4 bottom-4 flex gap-2 items-center">
+    <div
+      className={cn(
+        "absolute right-4 bottom-4 flex gap-2 items-center",
+        className,
+      )}
+      {...props}
+    >
       <CanvasBar>
         <UntoToolButton />
         <RedoToolButton />
@@ -105,7 +115,7 @@ function CanvasToolButton({ className, ...props }: ToolButtonProps) {
         "first-of-type:rounded-l-full last-of-type:rounded-r-full only-of-type:rounded-full",
         // Visually center icons
         "first-of-type:*:translate-x-px last-of-type:*:-translate-x-px only-of-type:*:translate-x-0",
-        className
+        className,
       )}
       size="sm"
       iconSize="sm"

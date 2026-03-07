@@ -11,6 +11,10 @@ import { CanvasToolbar } from "~/editor/toolbars/canvas-toolbar";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { LgrAssetsProvider } from "~/components/use-lgr-assets";
 import { EditorContextMenu } from "~/editor/editor-context-menu";
+import { useHotkeys } from "@mantine/hooks";
+import { cn } from "~/utils/misc";
+import { useState } from "react";
+import type { EditorEngine } from "~/editor/editor-engine";
 
 export function meta() {
   return [
@@ -48,15 +52,36 @@ function Editor({ initialLevelName, isOpenAIEnabled }: EditorProps) {
     initialLevel,
     isOpenAIEnabled,
   });
+
   return (
     <>
-      <HeaderToolbar isLoading={initialLevel.status === "loading"} />
-      <ControlToolbar />
-      <CanvasToolbar engineRef={engineRef} />
+      <EditorToolbars
+        engineRef={engineRef}
+        isLoading={initialLevel.status === "loading"}
+      />
       <EditorContextMenu />
       <div className="flex-1">
         <EditorView ref={canvasRef} />
       </div>
+    </>
+  );
+}
+
+function EditorToolbars({
+  engineRef,
+  isLoading,
+}: {
+  engineRef: React.RefObject<EditorEngine | null>;
+  isLoading?: boolean;
+}) {
+  const [showUI, setShowUI] = useState(true);
+  useHotkeys([["mod + .", () => setShowUI((state) => !state)]]);
+  const showUIClassName = cn({ hidden: !showUI });
+  return (
+    <>
+      <HeaderToolbar className={showUIClassName} isLoading={isLoading} />
+      <ControlToolbar className={showUIClassName} />
+      <CanvasToolbar className={showUIClassName} engineRef={engineRef} />
     </>
   );
 }

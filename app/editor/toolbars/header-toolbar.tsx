@@ -6,7 +6,11 @@ import {
   useLevelName,
 } from "~/editor/use-editor-store";
 import logo from "../../assets/bear-helmet.png";
-import { Toolbar, ToolbarButton } from "../../components/ui/toolbar";
+import {
+  Toolbar,
+  ToolbarButton,
+  type ToolbarProps,
+} from "../../components/ui/toolbar";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,7 +35,13 @@ import { SettingsDialog } from "../../components/settings";
 import { Icon } from "../../components/ui/icon";
 import { cn } from "~/utils/misc";
 
-export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
+type HeaderToolbarProps = ToolbarProps & { isLoading?: boolean };
+
+export function HeaderToolbar({
+  className,
+  isLoading,
+  ...props
+}: HeaderToolbarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { setLevelName, loadLevel, triggerFitToView } = useEditorActions();
   const store = useEditorStore();
@@ -82,7 +92,7 @@ export function HeaderToolbar({ isLoading }: { isLoading?: boolean }) {
 
   return (
     <>
-      <Toolbar className="absolute left-4 top-4">
+      <Toolbar className={cn("absolute left-4 top-4", className)} {...props}>
         <DropdownMenu>
           <DropdownMenuTrigger>
             <ToolbarButton

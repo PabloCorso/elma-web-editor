@@ -6,21 +6,32 @@ import {
 import { SpriteIcon } from "~/components/sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
-import { Toolbar, ToolbarSeparator } from "~/components/ui/toolbar";
+import {
+  Toolbar,
+  ToolbarSeparator,
+  type ToolbarProps,
+} from "~/components/ui/toolbar";
 import { useLgrSprite } from "~/components/use-lgr-assets";
 import { AppleToolControl } from "./apple-tool-control";
 import { PictureToolControl } from "./picture-tool-control";
 import { VertexToolControl } from "./vertex-tool-control";
+import { cn } from "~/utils/misc";
+
+type ControlToolbarProps = ToolbarProps & { isOpenAIEnabled?: boolean };
 
 export function ControlToolbar({
+  className,
   isOpenAIEnabled,
-}: {
-  isOpenAIEnabled?: boolean;
-}) {
+  ...props
+}: ControlToolbarProps) {
   return (
     <Toolbar
       orientation="vertical"
-      className="flex flex-col gap-2 absolute inset-y-0 h-fit m-auto left-4"
+      className={cn(
+        "flex flex-col gap-2 absolute inset-y-0 h-fit m-auto left-4",
+        className,
+      )}
+      {...props}
     >
       <SelectToolControl tooltipSide="right" />
       <HandToolControl tooltipSide="right" />
