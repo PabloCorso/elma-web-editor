@@ -25,7 +25,7 @@ export function VertexToolControl(props: ToolControlButtonProps) {
   return (
     <>
       <ToolControlButton {...defaultTools.vertex} {...props}>
-        <VertexIcon variant={vertexToolState?.variant} />
+        <VertexIcon {...getVertexIconProps(vertexToolState?.variant)} />
       </ToolControlButton>
       <ToolMenu id={defaultTools.vertex.id}>
         <VertexToolbar
@@ -56,7 +56,7 @@ function VertexToolbar({ onVariantChange, ...props }: VertexToolbarProps) {
         isActive={vertexTool?.variant !== "grass"}
         onClick={() => onVariantChange("default")}
       >
-        <VertexIcon variant="default" />
+        <VertexIcon {...getVertexIconProps("default")} />
       </ToolControlButton>
       <ToolControlButton
         {...defaultTools.vertex}
@@ -64,25 +64,27 @@ function VertexToolbar({ onVariantChange, ...props }: VertexToolbarProps) {
         isActive={vertexTool?.variant === "grass"}
         onClick={() => onVariantChange("grass")}
       >
-        <VertexIcon variant="grass" />
+        <VertexIcon {...getVertexIconProps("grass")} />
       </ToolControlButton>
     </Toolbar>
   );
 }
 
 type VertexIconProps = React.ComponentPropsWithoutRef<"svg"> & {
-  variant?: VertexToolVariant;
+  sky?: string;
+  ground?: string;
+  bounds?: boolean;
+  handles?: boolean;
 };
 
-function VertexIcon({
+export function VertexIcon({
   className,
-  variant = "default",
+  sky = colors.sky,
+  ground = colors.ground,
+  bounds,
+  handles,
   ...props
 }: VertexIconProps) {
-  const isGrass = variant === "grass";
-  const edgeColor = isGrass ? colors.grass : uiColors.vertexDraftLine;
-  const lowerFill = isGrass ? colors.grass : colors.ground;
-
   return (
     <svg
       viewBox="0 0 24 24"
@@ -97,36 +99,58 @@ function VertexIcon({
         </clipPath>
       </defs>
 
-      <rect x="0" y="0" width="24" height="24" rx="4" fill={lowerFill} />
+      <rect x="0" y="0" width="24" height="24" rx="4" fill={ground} />
       <g clipPath="url(#vertex-icon-frame)">
-        <path d="M0 0H24L0 24Z" fill={colors.sky} />
+        <path d="M0 0H24L0 24Z" fill={sky} />
       </g>
 
-      {!isGrass && (
+      {bounds && (
         <path
-          d="M0 24L24 0"
-          stroke={edgeColor}
+          d="M2 22L22 2"
+          stroke={uiColors.vertexDraftLine}
           strokeWidth="2"
           strokeLinecap="round"
         />
       )}
 
-      <rect
-        x="-1.9"
-        y="22.1"
-        width="3.8"
-        height="3.8"
-        fill={uiColors.vertexDraftPointFill}
-        stroke={uiColors.vertexDraftPointStroke}
-      />
-      <rect
-        x="22.1"
-        y="-1.9"
-        width="3.8"
-        height="3.8"
-        fill={uiColors.vertexDraftPointFill}
-        stroke={uiColors.vertexDraftPointStroke}
-      />
+      {handles && (
+        <>
+          <rect
+            x="-1.9"
+            y="22.1"
+            width="3.8"
+            height="3.8"
+            fill={uiColors.vertexDraftPointFill}
+            stroke={uiColors.vertexDraftPointStroke}
+          />
+          <rect
+            x="22.1"
+            y="-1.9"
+            width="3.8"
+            height="3.8"
+            fill={uiColors.vertexDraftPointFill}
+            stroke={uiColors.vertexDraftPointStroke}
+          />
+        </>
+      )}
     </svg>
   );
+}
+
+function getVertexIconProps(variant?: VertexToolVariant): VertexIconProps {
+  if (variant === "grass") {
+    return {
+      sky: colors.sky,
+      ground: colors.grass,
+      bounds: false,
+      handles: true,
+    };
+  }
+
+  return {
+    sky: colors.sky,
+    ground: colors.ground,
+    bounds: true,
+    handles: true,
+  };
 }

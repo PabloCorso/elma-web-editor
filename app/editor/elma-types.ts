@@ -33,10 +33,21 @@ export type ElmaPicture = InstanceType<typeof elmajs.Picture>;
 
 export type Picture = {
   name: string;
+  texture: string;
+  mask: string;
   position: Position;
   distance: number;
   clip: Clip;
 };
+
+export enum Texture {
+  Brick = "brick",
+  Ground = "ground",
+  Sky = "sky",
+  Stone1 = "stone1",
+  Stone2 = "stone2",
+  Stone3 = "stone3",
+}
 
 export type AppleAnimation = 1 | 2;
 
@@ -48,6 +59,8 @@ export type Apple = {
 
 export type EditorLevel = {
   levelName: string;
+  ground: string;
+  sky: string;
   polygons: Polygon[];
   apples: Apple[];
   killers: Position[];

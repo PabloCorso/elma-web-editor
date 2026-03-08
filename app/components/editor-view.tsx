@@ -12,6 +12,7 @@ import { useLgrAssets } from "./use-lgr-assets";
 import { getBuiltinLevel } from "~/editor/helpers/level-parser";
 import { PictureTool } from "~/editor/tools/picture-tool";
 import { HandTool } from "~/editor/tools/hand-tool";
+import { TextureTool } from "~/editor/tools/texture-tool";
 import { cn } from "~/utils/misc";
 import type { EditorLevel } from "~/editor/elma-types";
 
@@ -109,6 +110,7 @@ export function useEditorView({
         KillerTool,
         FlowerTool,
         PictureTool,
+        TextureTool,
       ];
 
       const widgets = [];

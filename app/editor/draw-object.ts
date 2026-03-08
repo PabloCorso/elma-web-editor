@@ -47,6 +47,24 @@ export function drawObject({
   ctx.restore();
 }
 
+export function drawObjectBounds({
+  ctx,
+  position,
+  lineWidth = 0.02,
+}: {
+  ctx: CanvasRenderingContext2D;
+  position: Position;
+  lineWidth?: number;
+}) {
+  ctx.save();
+  ctx.strokeStyle = uiColors.objectBounds;
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  ctx.arc(position.x, position.y, OBJECT_DIAMETER / 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
 const arrowRotations = {
   [Gravity.Up]: 0,
   [Gravity.Down]: Math.PI,

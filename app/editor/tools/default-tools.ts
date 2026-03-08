@@ -5,7 +5,8 @@ export type DefaultToolId =
   | "apple"
   | "killer"
   | "flower"
-  | "picture";
+  | "picture"
+  | "texture";
 
 type DefaultToolVariant = { name: string; shortcut: string };
 
@@ -29,4 +30,5 @@ export const defaultTools: Record<DefaultToolId, DefaultToolMeta> = {
   killer: { id: "killer", name: "Killer", shortcut: "K" },
   flower: { id: "flower", name: "Flower", shortcut: "F" },
   picture: { id: "picture", name: "Picture", shortcut: "P" },
+  texture: { id: "texture", name: "Texture", shortcut: "T" },
 } as const;

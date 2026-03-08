@@ -5,6 +5,8 @@ import { useEditorStore } from "./use-editor-store";
 type LocalStorageLevel = Pick<
   EditorState,
   | "levelName"
+  | "ground"
+  | "sky"
   | "polygons"
   | "apples"
   | "killers"
@@ -35,6 +37,8 @@ export function useLocalStorageSync(key = "elma-web-store") {
         const state = store.getState();
         state.actions.loadLevel({
           levelName: savedData.levelName,
+          ground: savedData.ground ?? "ground",
+          sky: savedData.sky ?? "sky",
           polygons: savedData.polygons,
           apples: savedData.apples,
           killers: savedData.killers,
@@ -66,6 +70,8 @@ export function useLocalStorageSync(key = "elma-web-store") {
     const unsubscribe = store.subscribe((state) => {
       const levelData: LocalStorageLevel = {
         levelName: state.levelName,
+        ground: state.ground,
+        sky: state.sky,
         polygons: state.polygons,
         apples: state.apples,
         killers: state.killers,
@@ -103,6 +109,8 @@ export function loadLevelFromLocalStorage(key = "elma-web-store") {
     const savedData = JSON.parse(item) as LocalStorageLevel;
     return {
       name: savedData.levelName,
+      ground: savedData.ground,
+      sky: savedData.sky,
       polygons: savedData.polygons,
       apples: savedData.apples,
       killers: savedData.killers,

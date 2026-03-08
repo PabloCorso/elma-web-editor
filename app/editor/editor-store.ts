@@ -8,6 +8,7 @@ import { LevelFolder } from "~/editor/helpers/level-folder";
 import type { DefaultToolId } from "./tools/default-tools";
 import fastDeepEqual from "fast-deep-equal";
 import throttle from "just-throttle";
+import type { LevelVisibilitySettings } from "./editor-state";
 
 type CreateEditorStoreOptions = {
   initialToolId?: DefaultToolId | string;
@@ -15,9 +16,24 @@ type CreateEditorStoreOptions = {
   historyUpdateThrottle?: number;
 };
 
+const defaultLevelVisibility: LevelVisibilitySettings = {
+  useGroundSkyTextures: true,
+  showPolygonHandles: false,
+  showObjectBounds: true,
+  showPolygonBounds: true,
+  showPictureBounds: true,
+  showTextureBounds: true,
+  showObjects: true,
+  showPictures: true,
+  showTextures: true,
+  showPolygons: true,
+};
+
 export type PartialEditorState = Pick<
   EditorState,
   | "levelName"
+  | "ground"
+  | "sky"
   | "polygons"
   | "apples"
   | "killers"
@@ -40,6 +56,8 @@ export function createEditorStore({
       (set, get, store) => ({
         // Initial state - level data will be injected via constructor
         levelName: defaultLevelTitle,
+        ground: "ground",
+        sky: "sky",
         polygons: [],
         apples: [],
         killers: [],
@@ -59,6 +77,7 @@ export function createEditorStore({
         // View settings
         animateSprites: true,
         showSprites: true,
+        levelVisibility: defaultLevelVisibility,
 
         // Fit to view trigger
         fitToViewTrigger: 0,
@@ -77,6 +96,8 @@ export function createEditorStore({
         actions: {
           // Level data operations
           setLevelName: (name) => set({ levelName: name }),
+          setGround: (ground) => set({ ground }),
+          setSky: (sky) => set({ sky }),
           setStart: (position) => set({ start: position }),
           addApple: (apple) => set({ apples: [...get().apples, apple] }),
           updateApple: (values) =>
@@ -220,10 +241,26 @@ export function createEditorStore({
           toggleShowSprites: () =>
             set((state) => ({ showSprites: !state.showSprites })),
 
+          setLevelVisibility: (settings) =>
+            set((state) => ({
+              levelVisibility: { ...state.levelVisibility, ...settings },
+            })),
+
+          toggleLevelVisibility: (key) =>
+            set((state) => ({
+              levelVisibility: {
+                ...state.levelVisibility,
+                [key]: !state.levelVisibility[key],
+              },
+            })),
+
           loadLevel: (level) => {
             set({
               ...level,
               levelName: level.levelName || defaultLevelTitle,
+              ground: level.ground || "ground",
+              sky: level.sky || "sky",
+              levelVisibility: defaultLevelVisibility,
             });
             const temporal = (store as EditorStore).temporal.getState();
             temporal.clear();
@@ -240,6 +277,8 @@ export function createEditorStore({
         handleSet: (handleSet) => throttle(handleSet, historyUpdateThrottle),
         partialize: (state) => ({
           levelName: state.levelName,
+          ground: state.ground,
+          sky: state.sky,
           polygons: state.polygons,
           apples: state.apples,
           killers: state.killers,

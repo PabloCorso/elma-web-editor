@@ -64,12 +64,74 @@ export function usePictureSprites() {
   );
 }
 
+export function useTextureSprites() {
+  const lgrAssets = useLgrAssets();
+  const textureSprites = lgrAssets.lgr?.getTextureSprites() || [];
+  return useMemo(
+    () =>
+      textureSprites.map(({ texture, sprite }) => {
+        const maskSprite = lgrAssets.lgr?.getSprite(texture.mask) || null;
+        return {
+          texture,
+          src: bitmapToDataUrl(sprite),
+          maskedSrc: bitmapMaskToDataUrl(sprite, maskSprite),
+          width: sprite?.width,
+          height: sprite?.height,
+        };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lgrAssets.isLoaded]
+  );
+}
+
 export function bitmapToDataUrl(bmp: ImageBitmap | null) {
   if (typeof document === "undefined" || !bmp) return undefined;
   const canvas = document.createElement("canvas");
   canvas.width = bmp.width;
   canvas.height = bmp.height;
   const ctx = canvas.getContext("2d");
+  if (ctx) ctx.imageSmoothingEnabled = false;
   ctx?.drawImage(bmp, 0, 0);
   return canvas.toDataURL();
+}
+
+function bitmapMaskToDataUrl(
+  textureBmp: ImageBitmap | null,
+  maskBmp: ImageBitmap | null
+) {
+  if (typeof document === "undefined" || !textureBmp || !maskBmp) return undefined;
+  const canvas = document.createElement("canvas");
+  canvas.width = maskBmp.width;
+  canvas.height = maskBmp.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return undefined;
+  ctx.imageSmoothingEnabled = false;
+
+  const pattern = ctx.createPattern(textureBmp, "repeat");
+  if (!pattern) return undefined;
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = "destination-in";
+  const binaryMaskCanvas = createBinaryMaskCanvas(maskBmp);
+  ctx.drawImage(binaryMaskCanvas, 0, 0);
+  return canvas.toDataURL();
+}
+
+function createBinaryMaskCanvas(maskBmp: ImageBitmap) {
+  const canvas = document.createElement("canvas");
+  canvas.width = maskBmp.width;
+  canvas.height = maskBmp.height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return canvas;
+
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(maskBmp, 0, 0);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    data[i + 3] = data[i + 3] > 0 ? 255 : 0;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
 }

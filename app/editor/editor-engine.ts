@@ -10,15 +10,21 @@ import {
   colors,
   debugColors,
   GRASS_FILL_DEPTH_PX,
+  uiColors,
   uiStrokeWidths,
 } from "./constants";
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
-import { drawKuski } from "./draw-kuski";
+import { drawKuski, drawKuskiBounds } from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
-import { drawGravityArrow, drawObject } from "./draw-object";
-import { drawPicture } from "./draw-picture";
+import { drawGravityArrow, drawObject, drawObjectBounds } from "./draw-object";
+import {
+  drawMaskedTexturePicture,
+  drawPictureBounds,
+  drawPicture,
+  PICTURE_SCALE,
+} from "./draw-picture";
 import { worldToScreen } from "./helpers/coordinate-helpers";
 import {
   Clip,
@@ -758,8 +764,12 @@ export class EditorEngine {
     this.applyCameraTransform(state);
 
     const skyPath = this.buildSkyPath(state);
-    const groundPath = this.buildGroundPath(state, skyPath);
-    this.drawPolygons(groundPath);
+    const groundPath = state.levelVisibility.showPolygons
+      ? this.buildGroundPath(state, skyPath)
+      : this.buildViewportPath(state);
+    this.drawGroundFill(state, groundPath);
+    this.drawPolygons(state, groundPath);
+    this.drawPolygonHandles(state);
 
     const queue = this.getDrawItemQueue(state);
     for (const item of queue) {
@@ -797,31 +807,54 @@ export class EditorEngine {
 
   private getDrawItemQueue(state: EditorState): RenderItem[] {
     const objectProperties = { distance: 500, clip: Clip.Unclipped };
+    const {
+      showObjects,
+      showPictures,
+      showTextures,
+      showObjectBounds,
+      showPictureBounds,
+      showTextureBounds,
+    } = state.levelVisibility;
+    const showAnyObjects = showObjects || showObjectBounds;
+    const showAnyPictures =
+      showPictures || showTextures || showPictureBounds || showTextureBounds;
     return [
-      ...state.pictures.map((picture) => ({
-        type: RenderType.Picture as const,
-        ...picture,
-      })),
-      ...state.killers.map((killer) => ({
-        type: RenderType.Killer as const,
-        ...objectProperties,
-        position: killer,
-      })),
-      ...state.apples.map((apple) => ({
-        ...apple,
-        type: RenderType.Apple as const,
-        ...objectProperties,
-      })),
-      ...state.flowers.map((flower) => ({
-        type: RenderType.Flower as const,
-        ...objectProperties,
-        position: flower,
-      })),
-      {
-        type: RenderType.Start as const,
-        ...objectProperties,
-        position: state.start,
-      },
+      ...(showAnyPictures
+        ? state.pictures.map((picture) => ({
+            type: RenderType.Picture as const,
+            ...picture,
+          }))
+        : []),
+      ...(showAnyObjects
+        ? state.killers.map((killer) => ({
+            type: RenderType.Killer as const,
+            ...objectProperties,
+            position: killer,
+          }))
+        : []),
+      ...(showAnyObjects
+        ? state.apples.map((apple) => ({
+            ...apple,
+            type: RenderType.Apple as const,
+            ...objectProperties,
+          }))
+        : []),
+      ...(showAnyObjects
+        ? state.flowers.map((flower) => ({
+            type: RenderType.Flower as const,
+            ...objectProperties,
+            position: flower,
+          }))
+        : []),
+      ...(showAnyObjects
+        ? [
+            {
+              type: RenderType.Start as const,
+              ...objectProperties,
+              position: state.start,
+            },
+          ]
+        : []),
     ].sort((a, b) => b.distance - a.distance);
   }
 
@@ -830,39 +863,131 @@ export class EditorEngine {
     const position = item.position;
 
     if (item.type === "picture") {
-      const sprite = this.lgrAssets.getSprite(item.name);
-      if (!sprite) return;
+      const { showPictureBounds, showTextureBounds, showPictures, showTextures } =
+        state.levelVisibility;
       const selectState = state.actions.getToolState<SelectToolState>("select");
       const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
         (selected) => selected.x === position.x && selected.y === position.y,
       );
-      drawPicture({
-        ctx,
-        sprite,
-        position,
-        showBounds: true,
-        boundsLineWidth: isSelectedPicture
-          ? uiStrokeWidths.boundsSelectedScreen / state.zoom
-          : uiStrokeWidths.boundsIdleScreen / state.zoom,
-      });
+      const boundsLineWidth = isSelectedPicture
+        ? uiStrokeWidths.boundsSelectedScreen / state.zoom
+        : uiStrokeWidths.boundsIdleScreen / state.zoom;
+
+      if (item.texture && item.mask) {
+        const shouldRenderContent = showTextures;
+        const shouldShowBounds = showTextureBounds;
+        if (!shouldRenderContent && !shouldShowBounds) return;
+        const textureSprite = this.lgrAssets.getSprite(item.texture);
+        const maskSprite = this.lgrAssets.getSprite(item.mask);
+        if (!maskSprite) return;
+
+        if (shouldRenderContent && textureSprite) {
+          drawMaskedTexturePicture({
+            ctx,
+            textureSprite,
+            maskSprite,
+            position,
+            showBounds: shouldShowBounds,
+            boundsLineWidth,
+          });
+        } else if (shouldShowBounds) {
+          drawPictureBounds({
+            ctx,
+            position,
+            width: maskSprite.width,
+            height: maskSprite.height,
+            boundsLineWidth,
+          });
+        }
+      } else {
+        const shouldRenderContent = showPictures;
+        const shouldShowBounds = showPictureBounds;
+        if (!shouldRenderContent && !shouldShowBounds) return;
+        const sprite = item.name ? this.lgrAssets.getSprite(item.name) : null;
+        if (!sprite) return;
+
+        if (shouldRenderContent) {
+          drawPicture({
+            ctx,
+            sprite,
+            position,
+            showBounds: shouldShowBounds,
+            boundsLineWidth,
+          });
+        } else if (shouldShowBounds) {
+          drawPictureBounds({
+            ctx,
+            position,
+            width: sprite.width,
+            height: sprite.height,
+            boundsLineWidth,
+          });
+        }
+      }
     } else if (item.type === "apple") {
+      const { showObjects, showObjectBounds } = state.levelVisibility;
+      if (!showObjects && !showObjectBounds) return;
       const sprite = this.lgrAssets.getAppleSprite(
         item.animation ?? defaultAppleState.animation,
       );
-      if (!sprite) return;
-      drawObject({ ctx, sprite, position, animate: state.animateSprites });
-      drawGravityArrow({ ctx, position, gravity: item.gravity });
+      if (showObjects) {
+        if (!sprite) return;
+        drawObject({ ctx, sprite, position, animate: state.animateSprites });
+      }
+      if (showObjectBounds) {
+        drawObjectBounds({
+          ctx,
+          position,
+          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+        });
+      }
+      if (showObjects) {
+        drawGravityArrow({ ctx, position, gravity: item.gravity });
+      }
     } else if (item.type === "killer") {
+      const { showObjects, showObjectBounds } = state.levelVisibility;
+      if (!showObjects && !showObjectBounds) return;
       const sprite = this.lgrAssets.getKillerSprite();
-      if (!sprite) return;
-      drawObject({ ctx, sprite, position, animate: state.animateSprites });
+      if (showObjects) {
+        if (!sprite) return;
+        drawObject({ ctx, sprite, position, animate: state.animateSprites });
+      }
+      if (showObjectBounds) {
+        drawObjectBounds({
+          ctx,
+          position,
+          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+        });
+      }
     } else if (item.type === "flower") {
+      const { showObjects, showObjectBounds } = state.levelVisibility;
+      if (!showObjects && !showObjectBounds) return;
       const sprite = this.lgrAssets.getFlowerSprite();
-      if (!sprite) return;
-      drawObject({ ctx, sprite, position, animate: state.animateSprites });
+      if (showObjects) {
+        if (!sprite) return;
+        drawObject({ ctx, sprite, position, animate: state.animateSprites });
+      }
+      if (showObjectBounds) {
+        drawObjectBounds({
+          ctx,
+          position,
+          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+        });
+      }
     } else if (item.type === "start") {
-      const lgrSprites = this.lgrAssets.getKuskiSprites();
-      drawKuski({ ctx, lgrSprites, start: state.start });
+      const { showObjects, showObjectBounds } = state.levelVisibility;
+      if (!showObjects && !showObjectBounds) return;
+      if (showObjects) {
+        const lgrSprites = this.lgrAssets.getKuskiSprites();
+        drawKuski({ ctx, lgrSprites, start: state.start });
+      }
+      if (showObjectBounds) {
+        drawKuskiBounds({
+          ctx,
+          start: state.start,
+          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+        });
+      }
     }
   }
 
@@ -920,9 +1045,56 @@ export class EditorEngine {
     return path;
   }
 
+  private buildViewportPath(state: EditorState): Path2D {
+    const topLeft = {
+      x: -state.viewPortOffset.x / state.zoom,
+      y: -state.viewPortOffset.y / state.zoom,
+    };
+    const bottomRight = {
+      x: topLeft.x + this.canvas.width / state.zoom,
+      y: topLeft.y + this.canvas.height / state.zoom,
+    };
+
+    const path = new Path2D();
+    path.rect(
+      topLeft.x,
+      topLeft.y,
+      bottomRight.x - topLeft.x,
+      bottomRight.y - topLeft.y,
+    );
+    return path;
+  }
+
   private clearCanvas() {
-    this.ctx.fillStyle = colors.ground;
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  private getTexturePattern(textureName: string) {
+    const textureSprite = this.lgrAssets.getSprite(textureName);
+    if (!textureSprite) return null;
+
+    const pattern = this.ctx.createPattern(textureSprite, "repeat");
+    if (!pattern) return null;
+
+    pattern.setTransform(new DOMMatrix().scale(PICTURE_SCALE, PICTURE_SCALE));
+    return pattern;
+  }
+
+  private getFlatTextureColor(textureName: string, fallback: string) {
+    const textureColor = colors[textureName as keyof typeof colors];
+    return textureColor ?? fallback;
+  }
+
+  private drawGroundFill(state: EditorState, groundPath: Path2D) {
+    const groundPattern = state.levelVisibility.useGroundSkyTextures
+      ? this.getTexturePattern(state.ground)
+      : null;
+    const groundColor = this.getFlatTextureColor(state.ground, colors.ground);
+
+    this.ctx.save();
+    this.ctx.fillStyle = groundPattern ?? groundColor;
+    this.ctx.fill(groundPath, "evenodd");
+    this.ctx.restore();
   }
 
   private applyCameraTransform(state: EditorState) {
@@ -1068,8 +1240,9 @@ export class EditorEngine {
     this.ctx.restore();
   }
 
-  private drawPolygons(groundPath: Path2D) {
-    const state = this.store.getState();
+  private drawPolygons(state: EditorState, groundPath: Path2D) {
+    const { showPolygons, showPolygonBounds } = state.levelVisibility;
+    if (!showPolygons && !showPolygonBounds) return;
 
     const activeTool = state.actions.getActiveTool();
     const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
@@ -1086,29 +1259,38 @@ export class EditorEngine {
     });
 
     // Draw non-grass polygons with fill
-    this.ctx.fillStyle = colors.sky;
-    this.ctx.beginPath();
+    if (showPolygons) {
+      const skyFill = state.levelVisibility.useGroundSkyTextures
+        ? this.getTexturePattern(state.sky)
+        : null;
+      const skyColor = this.getFlatTextureColor(state.sky, colors.sky);
+      this.ctx.fillStyle = skyFill ?? skyColor;
+      this.ctx.beginPath();
 
-    correctedPolygons.forEach((polygon) => {
-      if (polygon.vertices.length < 3 || polygon.grass) return;
+      correctedPolygons.forEach((polygon) => {
+        if (polygon.vertices.length < 3 || polygon.grass) return;
 
-      this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
-      for (let i = 1; i < polygon.vertices.length; i++) {
-        this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
-      }
+        this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
+        for (let i = 1; i < polygon.vertices.length; i++) {
+          this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
+        }
 
-      this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
-    });
+        this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
+      });
 
-    this.ctx.closePath();
-    this.ctx.fill(); // Fill all polygons at once according to even-odd (winding) rule
+      this.ctx.closePath();
+      this.ctx.fill(); // Fill all polygons at once according to even-odd (winding) rule
+    }
 
     // Draw grass interior shading and thin idle polygon outlines.
     correctedPolygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
-        this.drawGrassFill(polygon, groundPath, state.zoom);
+        if (showPolygons) {
+          this.drawGrassFill(polygon, groundPath, state.zoom);
+        }
+        if (!showPolygonBounds) return;
         this.ctx.strokeStyle = colors.grass;
         this.ctx.lineWidth = 1 / state.zoom;
         this.ctx.lineCap = "butt";
@@ -1124,10 +1306,10 @@ export class EditorEngine {
         }
         this.ctx.stroke();
         return;
-      } else {
-        this.ctx.strokeStyle = colors.edges;
       }
 
+      if (!showPolygonBounds) return;
+      this.ctx.strokeStyle = colors.edges;
       this.ctx.lineWidth = 1 / state.zoom;
       this.ctx.lineCap = "butt";
       this.ctx.lineJoin = "miter";
@@ -1139,6 +1321,24 @@ export class EditorEngine {
       }
       this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
       this.ctx.stroke();
+    });
+  }
+
+  private drawPolygonHandles(state: EditorState) {
+    if (!state.levelVisibility.showPolygonHandles) return;
+    if (state.polygons.length === 0) return;
+
+    const size = 3 / state.zoom;
+    const side = size * 2;
+    this.ctx.fillStyle = uiColors.selectionHandleFill;
+    this.ctx.strokeStyle = uiColors.selectionHandleStroke;
+    this.ctx.lineWidth = uiStrokeWidths.boundsIdleScreen / state.zoom;
+
+    state.polygons.forEach((polygon) => {
+      polygon.vertices.forEach((vertex) => {
+        this.ctx.fillRect(vertex.x - size, vertex.y - size, side, side);
+        this.ctx.strokeRect(vertex.x - size, vertex.y - size, side, side);
+      });
     });
   }
 

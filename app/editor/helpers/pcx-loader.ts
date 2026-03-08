@@ -69,11 +69,6 @@ function decodePcx(pcx: Uint8Array): DecodedPcx {
     paletteMarkerIndex + VGA_PALETTE_SIZE
   );
   const pixels = new Uint8ClampedArray(width * height * 4);
-  // Transparency: for object sprites, the color of the top-left pixel is transparent.
-  // Determine the palette index of the top-left pixel from decoded data (first byte).
-  let transparentIndex = decoded[0];
-  // Fallback to palette index 0 if decoded[0] is out of range.
-  if (transparentIndex * 3 + 2 >= palette.length) transparentIndex = 0;
 
   for (let y = 0; y < height; y++) {
     const lineOffset = y * bytesPerLine;
@@ -87,12 +82,100 @@ function decodePcx(pcx: Uint8Array): DecodedPcx {
       pixels[outOffset] = r;
       pixels[outOffset + 1] = g;
       pixels[outOffset + 2] = b;
-      // Treat the palette index used by the top-left pixel as transparent.
-      pixels[outOffset + 3] = idx === transparentIndex ? 0 : 255;
+      pixels[outOffset + 3] = 255;
     }
   }
 
   return { width, height, pixels };
+}
+
+type TransparencyMode = 10 | 11 | 12 | 13 | 14 | 15;
+
+type DecodePcxOptions = {
+  forceOpaque?: boolean;
+  transparencyMode?: TransparencyMode;
+};
+
+function applyTransparency(
+  pixels: Uint8ClampedArray,
+  paletteIndices: Uint8Array,
+  width: number,
+  height: number,
+  bytesPerLine: number,
+  mode: TransparencyMode,
+) {
+  if (mode === 10) {
+    return;
+  }
+
+  let transparentIndex = 0;
+  if (mode === 11) {
+    transparentIndex = 0;
+  } else if (mode === 12) {
+    transparentIndex = paletteIndices[0];
+  } else if (mode === 13) {
+    transparentIndex = paletteIndices[width - 1];
+  } else if (mode === 14) {
+    transparentIndex = paletteIndices[(height - 1) * bytesPerLine];
+  } else if (mode === 15) {
+    transparentIndex = paletteIndices[(height - 1) * bytesPerLine + (width - 1)];
+  }
+
+  for (let y = 0; y < height; y++) {
+    const lineOffset = y * bytesPerLine;
+    for (let x = 0; x < width; x++) {
+      const idx = paletteIndices[lineOffset + x];
+      if (idx === transparentIndex) {
+        const outOffset = (y * width + x) * 4;
+        pixels[outOffset + 3] = 0;
+      }
+    }
+  }
+}
+
+function decodePcxWithOptions(pcx: Uint8Array, options: DecodePcxOptions = {}) {
+  const decoded = decodePcx(pcx);
+  const { forceOpaque, transparencyMode } = options;
+
+  if (forceOpaque || transparencyMode === undefined) {
+    return decoded;
+  }
+
+  // Re-decode palette indices needed for transparency mode handling.
+  const dataView = new DataView(pcx.buffer, pcx.byteOffset, pcx.byteLength);
+  const xMin = dataView.getUint16(4, true);
+  const yMin = dataView.getUint16(6, true);
+  const xMax = dataView.getUint16(8, true);
+  const yMax = dataView.getUint16(10, true);
+  const width = xMax - xMin + 1;
+  const height = yMax - yMin + 1;
+  const bytesPerLine = dataView.getUint16(66, true);
+  const paletteMarkerIndex = pcx.length - VGA_PALETTE_SIZE;
+
+  const indices = new Uint8Array(bytesPerLine * height);
+  let src = PCX_HEADER_SIZE;
+  let dst = 0;
+  while (dst < indices.length && src < paletteMarkerIndex) {
+    const value = pcx[src++];
+    if ((value & 0xc0) === 0xc0) {
+      const runLength = value & 0x3f;
+      const data = pcx[src++];
+      indices.fill(data, dst, dst + runLength);
+      dst += runLength;
+    } else {
+      indices[dst++] = value;
+    }
+  }
+
+  applyTransparency(
+    decoded.pixels,
+    indices,
+    width,
+    height,
+    bytesPerLine,
+    transparencyMode,
+  );
+  return decoded;
 }
 
 function pcxToImageBitmap(decodedPcx: DecodedPcx) {
@@ -110,5 +193,28 @@ export async function decodeLgrSprite(picture: PictureData) {
     picture.data.byteLength
   );
   const decodedPcx = decodePcx(bytes);
+  return pcxToImageBitmap(decodedPcx);
+}
+
+type PictureDeclarationLike = {
+  pictureType?: number;
+  transparency?: number;
+};
+
+export async function decodeLgrSpriteWithDeclaration(
+  picture: PictureData,
+  declaration?: PictureDeclarationLike,
+) {
+  const bytes = new Uint8Array(
+    picture.data.buffer,
+    picture.data.byteOffset,
+    picture.data.byteLength,
+  );
+  const isTexture = declaration?.pictureType === 101;
+  const transparencyMode = isTexture ? undefined : (12 as TransparencyMode);
+  const decodedPcx = decodePcxWithOptions(bytes, {
+    forceOpaque: isTexture,
+    transparencyMode,
+  });
   return pcxToImageBitmap(decodedPcx);
 }

@@ -1,7 +1,7 @@
 // Original code at https://github.com/elmadev/recplayer
 
 import { standardSprites } from "~/components/standard-sprites";
-import { debugColors } from "./constants";
+import { debugColors, OBJECT_DIAMETER, uiColors } from "./constants";
 
 function hypot(a: number, b: number) {
   return Math.sqrt(a * a + b * b);
@@ -178,6 +178,100 @@ type BikeRenderArgs = {
   scale?: number;
   coords?: typeof defaultBikeCoords;
 };
+
+function rotatePoint(point: { x: number; y: number }, radians: number) {
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  return {
+    x: point.x * cos - point.y * sin,
+    y: point.x * sin + point.y * cos,
+  };
+}
+
+function transformBikeLocalPoint({
+  point,
+  bikeR,
+  turn,
+}: {
+  point: { x: number; y: number };
+  bikeR: number;
+  turn: number;
+}) {
+  const mirroredX = turn ? -point.x : point.x;
+  return rotatePoint({ x: mirroredX, y: point.y }, -bikeR);
+}
+
+export function drawKuskiBounds({
+  ctx,
+  start,
+  lineWidth = 0.02,
+  coords = defaultBikeCoords,
+}: {
+  ctx: CanvasRenderingContext2D;
+  start: { x: number; y: number };
+  lineWidth?: number;
+  coords?: typeof defaultBikeCoords;
+}) {
+  const bikeR = (coords.bikeR * Math.PI * 2) / 10000;
+  const turn = coords.turn;
+  const leftX = coords.leftX / 1000;
+  const leftY = coords.leftY / 1000;
+  const rightX = coords.rightX / 1000;
+  const rightY = coords.rightY / 1000;
+  const headX = coords.headX / 1000;
+  const headY = coords.headY / 1000;
+
+  const backX = !turn ? rightX : leftX;
+  const backY = !turn ? rightY : leftY;
+  const frontX = turn ? rightX : leftX;
+  const frontY = turn ? rightY : leftY;
+
+  const backCenter = {
+    x: start.x - leftX + backX,
+    y: start.y + leftY - backY,
+  };
+  const frontCenter = {
+    x: start.x - leftX + frontX,
+    y: start.y + leftY - frontY,
+  };
+
+  const headRadius = hypot(headX, headY);
+  const headAngle =
+    Math.atan2(-headY, turn ? -headX : headX) + (turn ? -bikeR : bikeR);
+  const wx = headRadius * Math.cos(headAngle);
+  const wy = headRadius * Math.sin(headAngle);
+
+  // Head sprite is drawn at (-15.5/48, -42/48) with scale (23/48, 23/48),
+  // so its center is offset by (-4/48, -30.5/48) from the translated head origin.
+  const headCenterInRotatedSpace = {
+    x: wx - 4 / 48,
+    y: wy - 30.5 / 48,
+  };
+  const headOffset = transformBikeLocalPoint({
+    point: headCenterInRotatedSpace,
+    bikeR,
+    turn,
+  });
+  const headCenter = {
+    x: start.x - leftX + headOffset.x,
+    y: start.y + leftY + headOffset.y,
+  };
+
+  const wheelRadius = OBJECT_DIAMETER / 2;
+  const headBoundsRadius = 11.5 / 48;
+  ctx.save();
+  ctx.strokeStyle = uiColors.objectBounds;
+  ctx.lineWidth = lineWidth;
+  [backCenter, frontCenter].forEach((center) => {
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, wheelRadius, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  ctx.beginPath();
+  ctx.arc(headCenter.x, headCenter.y, headBoundsRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
 
 export function drawKuski({
   ctx,

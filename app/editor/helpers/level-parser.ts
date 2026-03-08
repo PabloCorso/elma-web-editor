@@ -3,6 +3,7 @@ import {
   ElmaLevel,
   Gravity,
   ObjectType,
+  Texture,
   type Apple,
   type EditorLevel,
   type Position,
@@ -22,6 +23,8 @@ export type ImportResult = {
 
 export const defaultLevel: EditorLevel = {
   levelName: "",
+  ground: Texture.Ground,
+  sky: Texture.Sky,
   polygons: [
     {
       vertices: [
@@ -43,7 +46,7 @@ export const defaultLevel: EditorLevel = {
 export async function editorLevelFromFile(file: File) {
   if (!file.name.toLowerCase().endsWith(".lev")) {
     throw new Error(
-      `Invalid file type ${file.name}. Please upload a .lev file.`
+      `Invalid file type ${file.name}. Please upload a .lev file.`,
     );
   }
 
@@ -96,6 +99,8 @@ async function editorLevelFromBuffer(data: ArrayBuffer) {
 
   const level: EditorLevel = {
     levelName: elmaLevel.name,
+    ground: elmaLevel.ground || Texture.Ground,
+    sky: elmaLevel.sky || Texture.Sky,
     polygons: elmaLevel.polygons,
     apples,
     killers,
@@ -109,12 +114,14 @@ async function editorLevelFromBuffer(data: ArrayBuffer) {
 export function elmaLevelFromEditorState(state: EditorState) {
   if (!state.polygons || state.polygons.length === 0) {
     throw new Error(
-      "No polygons found in level. Please add some geometry before downloading."
+      "No polygons found in level. Please add some geometry before downloading.",
     );
   }
 
   const level = new ElmaLevel();
   level.name = state.levelName || "Untitled";
+  level.ground = state.ground || Texture.Ground;
+  level.sky = state.sky || Texture.Sky;
 
   const normalizedPolygons = state.polygons.map((polygon) => {
     const correctedPolygon = correctPolygonPrecision(polygon);
@@ -153,12 +160,12 @@ export function elmaLevelFromEditorState(state: EditorState) {
   ];
 
   level.pictures = state.pictures.map((picture) => ({
-    name: picture.name,
-    texture: "",
-    mask: "",
+    name: picture.name ?? "",
+    texture: picture.texture ?? "",
+    mask: picture.mask ?? "",
     position: correctPositionPrecision(picture.position),
-    distance: 999,
-    clip: Clip.Sky,
+    distance: picture.distance ?? 999,
+    clip: picture.clip ?? Clip.Sky,
     grass: false,
     vertices: [],
   }));

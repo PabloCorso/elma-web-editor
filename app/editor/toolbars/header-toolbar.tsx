@@ -34,6 +34,10 @@ import { supportsFilePickers } from "~/editor/helpers/file-session";
 import { SettingsDialog } from "../../components/settings";
 import { Icon } from "../../components/ui/icon";
 import { cn } from "~/utils/misc";
+import {
+  LevelVisibilityControl,
+} from "./level-visibility";
+import { LevelPropertiesControl } from "./level-properties";
 
 type HeaderToolbarProps = ToolbarProps & { isLoading?: boolean };
 
@@ -43,10 +47,20 @@ export function HeaderToolbar({
   ...props
 }: HeaderToolbarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { setLevelName, loadLevel, triggerFitToView } = useEditorActions();
+  const {
+    setLevelName,
+    setGround,
+    setSky,
+    loadLevel,
+    triggerFitToView,
+    toggleLevelVisibility,
+  } = useEditorActions();
   const store = useEditorStore();
   const activeTool = useEditorActiveTool();
   const levelName = useLevelName();
+  const groundTexture = useEditor((state) => state.ground);
+  const skyTexture = useEditor((state) => state.sky);
+  const levelVisibility = useEditor((state) => state.levelVisibility);
   const filename = useEditor((state) => state.fileSession.fileName);
   const isModified = useEditor((state) => state.fileSession.isModified);
 
@@ -88,6 +102,28 @@ export function HeaderToolbar({
     const fileSession = state.fileSession;
     const level = elmaLevelFromEditorState(state);
     await fileSession.saveAs(level);
+  };
+
+  const handleSkyTextureSelect = (nextSky: string) => {
+    const previousSky = skyTexture;
+    const previousGround = groundTexture;
+    if (nextSky === previousSky) return;
+
+    if (nextSky === previousGround) {
+      setGround(previousSky);
+    }
+    setSky(nextSky);
+  };
+
+  const handleGroundTextureSelect = (nextGround: string) => {
+    const previousSky = skyTexture;
+    const previousGround = groundTexture;
+    if (nextGround === previousGround) return;
+
+    if (nextGround === previousSky) {
+      setSky(previousGround);
+    }
+    setGround(nextGround);
   };
 
   return (
@@ -165,6 +201,16 @@ export function HeaderToolbar({
               placeholder="Enter level name…"
             />
           )}
+          <LevelPropertiesControl
+            skyTexture={skyTexture}
+            groundTexture={groundTexture}
+            onSkyTextureSelect={handleSkyTextureSelect}
+            onGroundTextureSelect={handleGroundTextureSelect}
+          />
+          <LevelVisibilityControl
+            levelVisibility={levelVisibility}
+            onToggle={toggleLevelVisibility}
+          />
           {filename ? (
             <div>
               {filename} {isModified ? "*" : ""}
@@ -172,7 +218,6 @@ export function HeaderToolbar({
           ) : null}
         </div>
       </Toolbar>
-
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );

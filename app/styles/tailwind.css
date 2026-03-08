@@ -20,6 +20,7 @@
 
   --border-default: var(--color-slate-800);
   --border-separator: var(--color-slate-700);
+  --border-accent: var(--primary);
 }
 
 @layer theme {
@@ -45,6 +46,7 @@
 
     --border-color-default: var(--border-default);
     --border-color-separator: var(--border-separator);
+    --border-color-accent: var(--border-accent);
 
     --divide-color-separator: var(--border-separator);
 

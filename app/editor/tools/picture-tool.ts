@@ -35,7 +35,13 @@ export class PictureTool extends Tool<PictureToolState> {
     const defaults =
       standardSprites.pictures.find((pic) => pic.name === toolState.name) ||
       defaultPictureState;
-    state.actions.addPicture({ ...defaults, name: toolState.name, position });
+    state.actions.addPicture({
+      ...defaults,
+      name: toolState.name,
+      texture: "",
+      mask: "",
+      position,
+    });
     return true;
   }
 

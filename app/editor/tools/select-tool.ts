@@ -67,8 +67,11 @@ export class SelectTool extends Tool<SelectToolState> {
 
   onRightClick(_event: MouseEvent, context: EventContext) {
     const { state, setToolState } = this.getState();
+    this.pruneHiddenSelection();
 
-    const object = this.findObjectNearPosition(context.worldPos);
+    const object = this.isObjectSelectable()
+      ? this.findObjectNearPosition(context.worldPos)
+      : null;
     const isApple = object
       ? state.apples.some((a) => a.position === object)
       : false;
@@ -79,11 +82,13 @@ export class SelectTool extends Tool<SelectToolState> {
       return true;
     }
 
-    const polygon = findPolygonEdgeNearPosition(
-      context.worldPos,
-      state.polygons,
-      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
-    );
+    const polygon = this.isPolygonSelectable()
+      ? findPolygonEdgeNearPosition(
+          context.worldPos,
+          state.polygons,
+          SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+        )
+      : null;
     if (polygon) {
       this.updatePolygon(state.polygons.indexOf(polygon), {
         ...polygon,
@@ -96,6 +101,7 @@ export class SelectTool extends Tool<SelectToolState> {
   }
 
   onPointerDown(event: PointerEvent, context: EventContext): boolean {
+    this.pruneHiddenSelection();
     const { state, toolState } = this.getState();
 
     const modifier = checkModifierKey(event);
@@ -116,11 +122,13 @@ export class SelectTool extends Tool<SelectToolState> {
       }
     };
 
-    const vertex = findVertexNearPosition(
-      context.worldPos,
-      state.polygons,
-      SELECT_VERTEX_THRESHOLD / state.zoom,
-    );
+    const vertex = this.isPolygonSelectable()
+      ? findVertexNearPosition(
+          context.worldPos,
+          state.polygons,
+          SELECT_VERTEX_THRESHOLD / state.zoom,
+        )
+      : null;
     if (vertex) {
       const isSelected = isVertexSelected(
         { polygon: vertex.polygon, vertex: vertex.vertex },
@@ -133,11 +141,13 @@ export class SelectTool extends Tool<SelectToolState> {
       return true;
     }
 
-    const polygonEdge = findPolygonEdgeNearPosition(
-      context.worldPos,
-      state.polygons,
-      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
-    );
+    const polygonEdge = this.isPolygonSelectable()
+      ? findPolygonEdgeNearPosition(
+          context.worldPos,
+          state.polygons,
+          SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+        )
+      : null;
     if (polygonEdge) {
       const polygonSelectionCount = toolState
         ? toolState.selectedVertices.filter(
@@ -153,9 +163,12 @@ export class SelectTool extends Tool<SelectToolState> {
       return true;
     }
 
+    const selectablePictures = state.pictures.filter((picture) =>
+      this.isPictureSelectable(picture),
+    );
     const picture = findObjectNearPosition(
       context.worldPos,
-      state.pictures.map((p) => p.position),
+      selectablePictures.map((p) => p.position),
       SELECT_OBJECT_THRESHOLD / state.zoom,
     );
     if (picture) {
@@ -166,7 +179,9 @@ export class SelectTool extends Tool<SelectToolState> {
       return true;
     }
 
-    const object = this.findObjectNearPosition(context.worldPos);
+    const object = this.isObjectSelectable()
+      ? this.findObjectNearPosition(context.worldPos)
+      : null;
     if (object) {
       const isSelected = isObjectSelected(
         object,
@@ -212,6 +227,8 @@ export class SelectTool extends Tool<SelectToolState> {
   }
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
+    this.pruneHiddenSelection();
+
     if (event.key === "Delete" || event.key === "Backspace") {
       this.deleteSelection();
       return true;
@@ -224,6 +241,7 @@ export class SelectTool extends Tool<SelectToolState> {
   }
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
+    this.pruneHiddenSelection();
     const { state, toolState } = this.getState();
     if (!toolState) return;
 
@@ -397,35 +415,41 @@ export class SelectTool extends Tool<SelectToolState> {
     const bounds = getSelectionBounds(this.marqueeStartPos, this.marqueeEndPos);
 
     // Select vertices within the marquee
-    state.polygons.forEach((polygon: Polygon) => {
-      polygon.vertices.forEach((vertex: Position) => {
-        if (isPointInRect(vertex, bounds)) {
-          const isSelected = toolState.selectedVertices.some(
-            (sv: VertexSelection) =>
-              sv.polygon === polygon && sv.vertex === vertex,
-          );
-          if (!isSelected) {
-            this.selectVertex(polygon, vertex);
+    if (this.isPolygonSelectable()) {
+      state.polygons.forEach((polygon: Polygon) => {
+        polygon.vertices.forEach((vertex: Position) => {
+          if (isPointInRect(vertex, bounds)) {
+            const isSelected = toolState.selectedVertices.some(
+              (sv: VertexSelection) =>
+                sv.polygon === polygon && sv.vertex === vertex,
+            );
+            if (!isSelected) {
+              this.selectVertex(polygon, vertex);
+            }
           }
-        }
+        });
       });
-    });
+    }
 
     // Select objects within the marquee
-    const allObjects = getAllObjects(
-      state.apples.map((a) => a.position),
-      state.killers,
-      state.flowers,
-      state.start,
-    );
-    allObjects.forEach(({ obj }: { obj: Position }) => {
-      if (isPointInRect(obj, bounds)) {
-        this.selectObject(obj);
-      }
-    });
+    if (this.isObjectSelectable()) {
+      const allObjects = getAllObjects(
+        state.apples.map((a) => a.position),
+        state.killers,
+        state.flowers,
+        state.start,
+      );
+      allObjects.forEach(({ obj }: { obj: Position }) => {
+        if (isPointInRect(obj, bounds)) {
+          this.selectObject(obj);
+        }
+      });
+    }
 
     // Select pictures within the marquee
-    state.pictures.forEach((picture) => {
+    state.pictures
+      .filter((picture) => this.isPictureSelectable(picture))
+      .forEach((picture) => {
       if (isPointInRect(picture.position, bounds)) {
         const isSelected = toolState.selectedPictures.includes(
           picture.position,
@@ -435,6 +459,66 @@ export class SelectTool extends Tool<SelectToolState> {
         }
       }
     });
+  }
+
+  private isPolygonSelectable(): boolean {
+    const { state } = this.getState();
+    const { showPolygons, showPolygonBounds, showPolygonHandles } =
+      state.levelVisibility;
+    return showPolygons || showPolygonBounds || showPolygonHandles;
+  }
+
+  private isObjectSelectable(): boolean {
+    const { state } = this.getState();
+    const { showObjects, showObjectBounds } = state.levelVisibility;
+    return showObjects || showObjectBounds;
+  }
+
+  private isPictureSelectable(picture: {
+    texture?: string;
+    mask?: string;
+  }): boolean {
+    const { state } = this.getState();
+    const { showPictureBounds, showTextureBounds, showPictures, showTextures } =
+      state.levelVisibility;
+    const hasTexture = Boolean(picture.texture && picture.mask);
+    return hasTexture
+      ? showTextures || showTextureBounds
+      : showPictures || showPictureBounds;
+  }
+
+  private isObjectPresent(object: Position): boolean {
+    const { state } = this.getState();
+    return (
+      state.start === object ||
+      state.killers.includes(object) ||
+      state.flowers.includes(object) ||
+      state.apples.some((apple) => apple.position === object)
+    );
+  }
+
+  private pruneHiddenSelection(): void {
+    const { state, toolState, setToolState } = this.getState();
+    if (!toolState) return;
+
+    const selectedVertices = this.isPolygonSelectable()
+      ? toolState.selectedVertices
+      : [];
+    const selectedObjects = this.isObjectSelectable()
+      ? toolState.selectedObjects.filter((object) => this.isObjectPresent(object))
+      : [];
+    const selectedPictures = toolState.selectedPictures.filter((position) => {
+      const picture = state.pictures.find((entry) => entry.position === position);
+      return picture ? this.isPictureSelectable(picture) : false;
+    });
+
+    if (
+      selectedVertices.length !== toolState.selectedVertices.length ||
+      selectedObjects.length !== toolState.selectedObjects.length ||
+      selectedPictures.length !== toolState.selectedPictures.length
+    ) {
+      setToolState({ selectedVertices, selectedObjects, selectedPictures });
+    }
   }
 
   private selectVertex(polygon: Polygon, vertex: Position): void {

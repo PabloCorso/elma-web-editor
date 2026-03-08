@@ -14,6 +14,7 @@ import {
 import { useLgrSprite } from "~/components/use-lgr-assets";
 import { AppleToolControl } from "./apple-tool-control";
 import { PictureToolControl } from "./picture-tool-control";
+import { TextureToolControl } from "./texture-tool-control";
 import { VertexToolControl } from "./vertex-tool-control";
 import { cn } from "~/utils/misc";
 
@@ -43,6 +44,7 @@ export function ControlToolbar({
       <KillerToolControl tooltipSide="right" />
       <FlowerToolControl tooltipSide="right" />
       <PictureToolControl tooltipSide="right" />
+      <TextureToolControl tooltipSide="right" />
       {isOpenAIEnabled && <AIChatToolControl tooltipSide="right" />}
     </Toolbar>
   );

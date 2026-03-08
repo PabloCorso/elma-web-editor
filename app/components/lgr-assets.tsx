@@ -1,5 +1,5 @@
 import defaultLgr from "../assets/lgr/Default.lgr?url";
-import { decodeLgrSprite } from "~/editor/helpers/pcx-loader";
+import { decodeLgrSpriteWithDeclaration } from "~/editor/helpers/pcx-loader";
 import { ElmaLGR, type AppleAnimation } from "~/editor/elma-types";
 import { standardSprites } from "./standard-sprites";
 
@@ -23,11 +23,19 @@ export class LgrAssets {
   private async loadAllSprites() {
     if (!this.lgr) return;
 
+    const declarations = new Map(
+      this.lgr.pictureList.map((declaration) => [
+        this.normalizeName(declaration.name),
+        declaration,
+      ]),
+    );
+
     for (const picture of this.lgr.pictureData) {
       const name = this.normalizeName(picture.name);
       if (this.lgrSprites[name]) continue;
 
-      const sprite = await decodeLgrSprite(picture);
+      const declaration = declarations.get(name);
+      const sprite = await decodeLgrSpriteWithDeclaration(picture, declaration);
       if (sprite) {
         this.lgrSprites[name] = sprite;
       }
@@ -72,6 +80,13 @@ export class LgrAssets {
     return standardSprites.pictures.map((picture) => ({
       picture,
       sprite: this.getSprite(picture.name),
+    }));
+  }
+
+  getTextureSprites() {
+    return standardSprites.textures.map((texture) => ({
+      texture,
+      sprite: this.getSprite(texture.texture),
     }));
   }
 

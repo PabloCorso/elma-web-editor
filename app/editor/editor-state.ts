@@ -10,6 +10,19 @@ import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 
+export type LevelVisibilitySettings = {
+  useGroundSkyTextures: boolean;
+  showPolygonHandles: boolean;
+  showObjectBounds: boolean;
+  showPolygonBounds: boolean;
+  showPictureBounds: boolean;
+  showTextureBounds: boolean;
+  showObjects: boolean;
+  showPictures: boolean;
+  showTextures: boolean;
+  showPolygons: boolean;
+};
+
 export type EditorState = EditorLevel & {
   // Editor state
   activeToolId: string;
@@ -23,6 +36,7 @@ export type EditorState = EditorLevel & {
   // View settings
   animateSprites: boolean;
   showSprites: boolean;
+  levelVisibility: LevelVisibilitySettings;
 
   // Fit to view trigger
   fitToViewTrigger: number;
@@ -52,6 +66,8 @@ export type EditorState = EditorLevel & {
     removePicture: (picture: Picture) => void;
 
     setLevelName: (name: string) => void;
+    setGround: (ground: string) => void;
+    setSky: (sky: string) => void;
     setMousePosition: (position: Position) => void;
     setMouseOnCanvas: (onCanvas: boolean) => void;
     setCamera: (x: number, y: number) => void;
@@ -82,6 +98,8 @@ export type EditorState = EditorLevel & {
     // View operations
     toggleAnimateSprites: () => void;
     toggleShowSprites: () => void;
+    setLevelVisibility: (settings: Partial<LevelVisibilitySettings>) => void;
+    toggleLevelVisibility: (key: keyof LevelVisibilitySettings) => void;
     loadLevel: (level: EditorLevel) => void;
     triggerFitToView: () => void;
   };
