@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Future
+
+- Add basic texture and visibility options.
+
 ## 2026-03-03
 
 - Improve zoom controls and add pinch/touchpad zooming.
