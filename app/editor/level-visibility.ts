@@ -12,7 +12,7 @@ export type LevelVisibilitySettings = {
 };
 
 export const defaultLevelVisibility: LevelVisibilitySettings = {
-  useGroundSkyTextures: true,
+  useGroundSkyTextures: false,
   showPolygonHandles: false,
   showObjectBounds: false,
   showPolygonBounds: false,
