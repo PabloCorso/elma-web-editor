@@ -34,7 +34,6 @@ import { VertexIcon } from "./vertex-tool-control";
 export function LevelVisibilityControl() {
   const levelVisibility = useEditor((state) => state.levelVisibility);
   const { toggleLevelVisibility, resetLevelVisibility } = useEditorActions();
-  const showReset = !isDefaultLevelVisibility(levelVisibility);
   const [open, setOpen] = useState(false);
   const rootRef = useClickOutside(() => setOpen(false));
 
@@ -55,16 +54,15 @@ export function LevelVisibilityControl() {
         </TooltipContent>
       </Tooltip>
       {open && (
-        <div className="fixed top-20 left-24 flex items-center justify-center pointer-events-none">
+        <div className="fixed top-20 left-24 right-4 overflow-x-auto pointer-events-none">
           <Toolbar
             orientation="horizontal"
-            className="p-2 gap-1 pointer-events-auto"
+            className="min-w-max p-2 gap-1 pointer-events-auto"
           >
             <LevelVisibilityControls
               levelVisibility={levelVisibility}
               onToggle={toggleLevelVisibility}
               onReset={resetLevelVisibility}
-              showReset={showReset}
             />
           </Toolbar>
         </div>
@@ -77,19 +75,12 @@ export function LevelVisibilityControls({
   levelVisibility,
   onToggle,
   onReset,
-  showReset,
 }: {
   levelVisibility: LevelVisibilitySettings;
   onToggle: (key: keyof LevelVisibilitySettings) => void;
   onReset?: () => void;
-  showReset?: boolean;
 }) {
-  const shouldShowReset =
-    showReset ??
-    (!isDefaultLevelVisibility(levelVisibility) && Boolean(onReset));
-
-  console.log(shouldShowReset);
-
+  const canReset = !isDefaultLevelVisibility(levelVisibility);
   return (
     <>
       <VisibilityToggleButton
@@ -155,7 +146,7 @@ export function LevelVisibilityControls({
         onClick={() => onToggle("showPolygonBounds")}
       />
       <ToolbarSeparator />
-      <IconButton type="button" onClick={onReset} disabled={!showReset}>
+      <IconButton type="button" onClick={onReset} disabled={!canReset}>
         <ArrowsClockwiseIcon />
       </IconButton>
     </>

@@ -76,10 +76,10 @@ export function LevelPropertiesControl() {
         </TooltipContent>
       </Tooltip>
       {open && (
-        <div className="fixed top-20 left-20 flex items-center justify-center pointer-events-none">
+        <div className="fixed top-20 left-20 right-4 overflow-x-auto pointer-events-none">
           <Toolbar
             orientation="vertical"
-            className="pl-4 gap-2 pointer-events-auto flex-col items-stretch"
+            className="min-w-max pl-4 gap-2 pointer-events-auto flex-col items-stretch"
           >
             <TexturePickerRow
               label="Sky"
@@ -144,9 +144,9 @@ function TexturePickerRow({
   tooltipSide = "bottom",
 }: TexturePickerRowProps) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-3 min-w-max">
       <div className="w-12 text-xs self-center font-semibold">{label}</div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-nowrap gap-2">
         {textures.map((textureName) => {
           const textureSprite = textureSprites.find(
             ({ texture }) => texture.texture === textureName,
