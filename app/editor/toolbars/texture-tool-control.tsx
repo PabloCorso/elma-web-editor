@@ -9,8 +9,9 @@ import {
   type ToolControlButtonProps,
 } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
-import { useLgrSprite, useTextureSprites } from "~/components/use-lgr-assets";
+import { useTextureMaskSprites } from "~/components/use-lgr-assets";
 import { standardSprites } from "~/components/standard-sprites";
+import { Mask } from "~/editor/elma-types";
 import {
   defaultTextureState,
   type TextureToolState,
@@ -22,40 +23,55 @@ export function TextureToolControl(props: ToolControlButtonProps) {
     defaultTools.texture.id,
   );
   const { setToolState } = useEditorActions();
-
-  const sprite = useLgrSprite(
-    textureTool?.texture ?? defaultTextureState.texture,
-  );
-  const textureSprites = useTextureSprites();
+  const textureSprites = useTextureMaskSprites();
+  const selectedTexture = textureTool?.texture ?? defaultTextureState.texture;
+  const selectedMask = textureTool?.mask ?? standardSprites.textureMasks[0];
   const selectedTextureSprite = textureSprites.find(
-    ({ texture }) =>
-      texture.texture === (textureTool?.texture ?? defaultTextureState.texture),
+    ({ texture, mask }) =>
+      texture.texture === selectedTexture && mask === selectedMask,
   );
   return (
     <>
       <ToolControlButton {...defaultTools.texture} {...props}>
-        <PictureIcon src={selectedTextureSprite?.maskedSrc ?? sprite.src} />
+        <PictureIcon
+          className={getTexturePreviewClassName(selectedMask)}
+          src={selectedTextureSprite?.maskedSrc ?? selectedTextureSprite?.src}
+        />
       </ToolControlButton>
       <ToolMenu id={defaultTools.texture.id} className="pointer-events-none">
         <div className="pointer-events-auto max-h-full overflow-y-auto">
           <Toolbar orientation="vertical" className="p-2">
             <ul className="flex flex-col gap-2">
-              {textureSprites.map(({ texture, ...sprite }) => (
-                <li key={texture.texture}>
-                  <button
-                    className="inline-flex shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded text-sm font-bold transition-colors h-12 w-12"
-                    onClick={() => {
-                      setToolState<TextureToolState>(defaultTools.texture.id, {
-                        ...texture,
-                        mask: standardSprites.textureMasks[0],
-                      });
-                    }}
-                  >
-                    <PictureIcon
-                      className="w-full h-full"
-                      src={sprite.maskedSrc ?? sprite.src}
-                    />
-                  </button>
+              {standardSprites.textureMasks.map((mask) => (
+                <li key={mask}>
+                  <ul className="flex flex-col gap-2">
+                    {textureSprites
+                      .filter((sprite) => sprite.mask === mask)
+                      .map(({ texture, mask: textureMask, ...sprite }) => (
+                        <li key={`${textureMask}-${texture.texture}`}>
+                          <button
+                            className="inline-flex shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded text-sm font-bold transition-colors h-12 w-12"
+                            onClick={() => {
+                              setToolState<TextureToolState>(
+                                defaultTools.texture.id,
+                                {
+                                  ...texture,
+                                  mask: textureMask,
+                                },
+                              );
+                            }}
+                            title={`${texture.texture} (${textureMask})`}
+                          >
+                            <PictureIcon
+                              className={getTexturePreviewClassName(
+                                textureMask,
+                              )}
+                              src={sprite.maskedSrc ?? sprite.src}
+                            />
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
                 </li>
               ))}
             </ul>
@@ -64,4 +80,8 @@ export function TextureToolControl(props: ToolControlButtonProps) {
       </ToolMenu>
     </>
   );
+}
+
+function getTexturePreviewClassName(mask: Mask | "") {
+  return mask === Mask.Litt ? "h-3 w-3" : "h-full w-full";
 }

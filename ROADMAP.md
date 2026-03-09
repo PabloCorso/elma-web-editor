@@ -59,17 +59,13 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
     - Background (with distance?)
     - Level name
     - LGR file
-  - View options:
-    - View Polygons
-    - View Grass
-    - View Pictures
   - Check Topology (see above section)
     - "Error: Two lines are intersecting each others!
       After this dialog you will see the intersection.
       Use Zoom-out to see where it is located!"
     - "Everything seems to be all right."
   - Zoom level info.
-  - Delete tool
+  - Delete tool (mobile delete)
     - In-game editor: "You cannot delete the Start object!", "You cannot delete the Exit object!" (last one maybe) and "This is the only polygon, so you cannot delete it." (last polygon can be grass).
 
 - Show defaults for object, start and images while loading.
@@ -79,7 +75,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Save state to local storage and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
 
 - Mobile support:
-  - Touch gestures for pan/zoom
   - Erase tool
   - Mobile toolbar (drawer)
 

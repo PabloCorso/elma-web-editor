@@ -1,4 +1,4 @@
-import { Clip } from "~/editor/elma-types";
+import { Clip, Mask } from "~/editor/elma-types";
 
 export const standardSprites = {
   apple: ["qfood1", "qfood2"],
@@ -59,13 +59,13 @@ export const standardSprites = {
     { name: "tree4", distance: 600, clip: Clip.Sky },
     { name: "tree5", distance: 600, clip: Clip.Sky },
   ],
-  textureMasks: ["maskbig", "maskhor", "masklitt", "masktop"],
+  textureMasks: [Mask.Big, Mask.Horizontal, Mask.Litt, Mask.Top],
   textures: [
-    { texture: "brick", mask: "maskbig", distance: 750, clip: Clip.Ground },
-    { texture: "ground", mask: "maskbig", distance: 800, clip: Clip.Ground },
-    { texture: "sky", mask: "maskbig", distance: 800, clip: Clip.Sky },
-    { texture: "stone1", mask: "maskbig", distance: 750, clip: Clip.Ground },
-    { texture: "stone2", mask: "maskbig", distance: 750, clip: Clip.Ground },
-    { texture: "stone3", mask: "maskbig", distance: 750, clip: Clip.Sky },
+    { texture: "brick", mask: Mask.Big, distance: 750, clip: Clip.Ground },
+    { texture: "ground", mask: Mask.Big, distance: 800, clip: Clip.Ground },
+    { texture: "sky", mask: Mask.Big, distance: 800, clip: Clip.Sky },
+    { texture: "stone1", mask: Mask.Big, distance: 750, clip: Clip.Ground },
+    { texture: "stone2", mask: Mask.Big, distance: 750, clip: Clip.Ground },
+    { texture: "stone3", mask: Mask.Big, distance: 750, clip: Clip.Sky },
   ],
 };

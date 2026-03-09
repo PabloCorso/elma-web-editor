@@ -2,6 +2,7 @@ import {
   Clip,
   ElmaLevel,
   Gravity,
+  Mask,
   ObjectType,
   Texture,
   type Apple,
@@ -106,9 +107,16 @@ async function editorLevelFromBuffer(data: ArrayBuffer) {
     killers,
     flowers,
     start,
-    pictures: elmaLevel.pictures,
+    pictures: elmaLevel.pictures.map((picture) => ({
+      ...picture,
+      mask: parseMask(picture.mask),
+    })),
   };
   return level;
+}
+
+function parseMask(mask: string): Mask | "" {
+  return Object.values(Mask).includes(mask as Mask) ? (mask as Mask) : "";
 }
 
 export function elmaLevelFromEditorState(state: EditorState) {

@@ -34,7 +34,7 @@ export type ElmaPicture = InstanceType<typeof elmajs.Picture>;
 export type Picture = {
   name: string;
   texture: string;
-  mask: string;
+  mask: Mask | "";
   position: Position;
   distance: number;
   clip: Clip;
@@ -47,6 +47,13 @@ export enum Texture {
   Stone1 = "stone1",
   Stone2 = "stone2",
   Stone3 = "stone3",
+}
+
+export enum Mask {
+  Big = "maskbig",
+  Horizontal = "maskhor",
+  Litt = "masklitt",
+  Top = "masktop",
 }
 
 export type AppleAnimation = 1 | 2;

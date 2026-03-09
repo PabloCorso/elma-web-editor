@@ -1,5 +1,6 @@
 import { useEffect, useContext, createContext, useMemo, useState } from "react";
 import { LgrAssets } from "./lgr-assets";
+import { standardSprites } from "./standard-sprites";
 
 type LgrContextType = { lgr: LgrAssets | null; isLoaded: boolean };
 
@@ -84,6 +85,29 @@ export function useTextureSprites() {
   );
 }
 
+export function useTextureMaskSprites() {
+  const lgrAssets = useLgrAssets();
+  const textureSprites = lgrAssets.lgr?.getTextureSprites() || [];
+  return useMemo(
+    () =>
+      standardSprites.textureMasks.flatMap((mask) =>
+        textureSprites.map(({ texture, sprite }) => {
+          const maskSprite = lgrAssets.lgr?.getSprite(mask) || null;
+          return {
+            texture,
+            mask,
+            src: bitmapToDataUrl(sprite),
+            maskedSrc: bitmapMaskToDataUrl(sprite, maskSprite),
+            width: sprite?.width,
+            height: sprite?.height,
+          };
+        }),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lgrAssets.isLoaded]
+  );
+}
+
 export function bitmapToDataUrl(bmp: ImageBitmap | null) {
   if (typeof document === "undefined" || !bmp) return undefined;
   const canvas = document.createElement("canvas");
@@ -95,7 +119,7 @@ export function bitmapToDataUrl(bmp: ImageBitmap | null) {
   return canvas.toDataURL();
 }
 
-function bitmapMaskToDataUrl(
+export function bitmapMaskToDataUrl(
   textureBmp: ImageBitmap | null,
   maskBmp: ImageBitmap | null
 ) {
