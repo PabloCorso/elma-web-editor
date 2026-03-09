@@ -1,5 +1,13 @@
-import type { LevelVisibilitySettings } from "~/editor/editor-state";
-import { LayoutIcon, PaletteIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  isDefaultLevelVisibility,
+  type LevelVisibilitySettings,
+} from "~/editor/level-visibility";
+import { useEditor, useEditorActions } from "~/editor/use-editor-store";
+import {
+  ArrowsClockwiseIcon,
+  LayoutIcon,
+  PaletteIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import { useClickOutside } from "@mantine/hooks";
 import { SpriteIcon } from "~/components/sprite-icon";
 import {
@@ -23,15 +31,10 @@ import { useState } from "react";
 import { colors } from "../constants";
 import { VertexIcon } from "./vertex-tool-control";
 
-type LevelVisibilityProps = {
-  levelVisibility: LevelVisibilitySettings;
-  onToggle: (key: keyof LevelVisibilitySettings) => void;
-};
-
-export function LevelVisibilityControl({
-  levelVisibility,
-  onToggle,
-}: LevelVisibilityProps) {
+export function LevelVisibilityControl() {
+  const levelVisibility = useEditor((state) => state.levelVisibility);
+  const { toggleLevelVisibility, resetLevelVisibility } = useEditorActions();
+  const showReset = !isDefaultLevelVisibility(levelVisibility);
   const [open, setOpen] = useState(false);
   const rootRef = useClickOutside(() => setOpen(false));
 
@@ -59,7 +62,9 @@ export function LevelVisibilityControl({
           >
             <LevelVisibilityControls
               levelVisibility={levelVisibility}
-              onToggle={onToggle}
+              onToggle={toggleLevelVisibility}
+              onReset={resetLevelVisibility}
+              showReset={showReset}
             />
           </Toolbar>
         </div>
@@ -71,7 +76,20 @@ export function LevelVisibilityControl({
 export function LevelVisibilityControls({
   levelVisibility,
   onToggle,
-}: LevelVisibilityProps) {
+  onReset,
+  showReset,
+}: {
+  levelVisibility: LevelVisibilitySettings;
+  onToggle: (key: keyof LevelVisibilitySettings) => void;
+  onReset?: () => void;
+  showReset?: boolean;
+}) {
+  const shouldShowReset =
+    showReset ??
+    (!isDefaultLevelVisibility(levelVisibility) && Boolean(onReset));
+
+  console.log(shouldShowReset);
+
   return (
     <>
       <VisibilityToggleButton
@@ -136,6 +154,10 @@ export function LevelVisibilityControls({
         active={levelVisibility.showPolygonBounds}
         onClick={() => onToggle("showPolygonBounds")}
       />
+      <ToolbarSeparator />
+      <IconButton type="button" onClick={onReset} disabled={!showReset}>
+        <ArrowsClockwiseIcon />
+      </IconButton>
     </>
   );
 }

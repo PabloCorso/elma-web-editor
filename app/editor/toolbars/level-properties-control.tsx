@@ -11,33 +11,48 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { IconButton } from "~/components/ui/button";
+import { useEditor, useEditorActions } from "../use-editor-store";
 
-type LevelPropertiesControlProps = {
-  skyTexture: string;
-  groundTexture: string;
-  onSkyTextureSelect: (texture: string) => void;
-  onGroundTextureSelect: (texture: string) => void;
-};
-
-export function LevelPropertiesControl({
-  skyTexture,
-  groundTexture,
-  onSkyTextureSelect,
-  onGroundTextureSelect,
-}: LevelPropertiesControlProps) {
+export function LevelPropertiesControl() {
   const [open, setOpen] = useState(false);
   const rootRef = useClickOutside(() => setOpen(false));
+  const { setGround, setSky } = useEditorActions();
 
   const textureSprites = useTextureSprites();
   const allTextures = Array.from(
     new Set(standardSprites.textures.map(({ texture }) => texture)),
   );
+
+  const groundTexture = useEditor((state) => state.ground);
+  const skyTexture = useEditor((state) => state.sky);
   const groundTextureSprite = textureSprites.find(
     ({ texture }) => texture.texture === groundTexture,
   );
   const skyTextureSprite = textureSprites.find(
     ({ texture }) => texture.texture === skyTexture,
   );
+
+  const handleSkyTextureSelect = (nextSky: string) => {
+    const previousSky = skyTexture;
+    const previousGround = groundTexture;
+    if (nextSky === previousSky) return;
+
+    if (nextSky === previousGround) {
+      setGround(previousSky);
+    }
+    setSky(nextSky);
+  };
+
+  const handleGroundTextureSelect = (nextGround: string) => {
+    const previousSky = skyTexture;
+    const previousGround = groundTexture;
+    if (nextGround === previousGround) return;
+
+    if (nextGround === previousSky) {
+      setSky(previousGround);
+    }
+    setGround(nextGround);
+  };
 
   return (
     <div ref={rootRef} className="relative">
@@ -71,7 +86,7 @@ export function LevelPropertiesControl({
               selectedTexture={skyTexture}
               textures={allTextures}
               textureSprites={textureSprites}
-              onSelect={onSkyTextureSelect}
+              onSelect={handleSkyTextureSelect}
               tooltipSide="top"
             />
             <TexturePickerRow
@@ -79,7 +94,7 @@ export function LevelPropertiesControl({
               selectedTexture={groundTexture}
               textures={allTextures}
               textureSprites={textureSprites}
-              onSelect={onGroundTextureSelect}
+              onSelect={handleGroundTextureSelect}
             />
           </Toolbar>
         </div>

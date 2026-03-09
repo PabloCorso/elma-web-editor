@@ -8,7 +8,7 @@ import { LevelFolder } from "~/editor/helpers/level-folder";
 import type { DefaultToolId } from "./tools/default-tools";
 import fastDeepEqual from "fast-deep-equal";
 import throttle from "just-throttle";
-import type { LevelVisibilitySettings } from "./editor-state";
+import { defaultLevelVisibility } from "./level-visibility";
 import type { Position } from "./elma-types";
 import type { SelectToolState } from "./tools/select-tool";
 
@@ -16,19 +16,6 @@ type CreateEditorStoreOptions = {
   initialToolId?: DefaultToolId | string;
   defaultLevelTitle?: string;
   historyUpdateThrottle?: number;
-};
-
-const defaultLevelVisibility: LevelVisibilitySettings = {
-  useGroundSkyTextures: true,
-  showPolygonHandles: false,
-  showObjectBounds: false,
-  showPolygonBounds: false,
-  showPictureBounds: false,
-  showTextureBounds: false,
-  showObjects: true,
-  showPictures: true,
-  showTextures: true,
-  showPolygons: true,
 };
 
 export type PartialEditorState = Pick<
@@ -461,6 +448,9 @@ export function createEditorStore({
                 [key]: !state.levelVisibility[key],
               },
             })),
+
+          resetLevelVisibility: () =>
+            set({ levelVisibility: defaultLevelVisibility }),
 
           loadLevel: (level) => {
             set({

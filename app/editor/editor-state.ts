@@ -9,19 +9,7 @@ import type {
 import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
-
-export type LevelVisibilitySettings = {
-  useGroundSkyTextures: boolean;
-  showPolygonHandles: boolean;
-  showObjectBounds: boolean;
-  showPolygonBounds: boolean;
-  showPictureBounds: boolean;
-  showTextureBounds: boolean;
-  showObjects: boolean;
-  showPictures: boolean;
-  showTextures: boolean;
-  showPolygons: boolean;
-};
+import type { LevelVisibilitySettings } from "./level-visibility";
 
 export type EditorState = EditorLevel & {
   // Editor state
@@ -104,6 +92,7 @@ export type EditorState = EditorLevel & {
     toggleShowSprites: () => void;
     setLevelVisibility: (settings: Partial<LevelVisibilitySettings>) => void;
     toggleLevelVisibility: (key: keyof LevelVisibilitySettings) => void;
+    resetLevelVisibility: () => void;
     loadLevel: (level: EditorLevel) => void;
     triggerFitToView: () => void;
   };
