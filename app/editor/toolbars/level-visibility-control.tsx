@@ -54,7 +54,7 @@ export function LevelVisibilityControl() {
         </TooltipContent>
       </Tooltip>
       {open && (
-        <div className="fixed top-20 left-24 right-4 overflow-x-auto pointer-events-none">
+        <div className="fixed z-10 top-20 left-24 right-4 overflow-x-auto pointer-events-none">
           <Toolbar
             orientation="horizontal"
             className="min-w-max p-2 gap-1 pointer-events-auto"

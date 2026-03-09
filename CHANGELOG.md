@@ -2,9 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## Future
+## 2026-03-09
+
+- Add "always show all vertices" kind of option @roope
+- Improved vertex tool icons.
+  - "took 10 seconds to figure out grass vertex tool" @roope
 
 - Add basic texture and visibility options.
+- Add visual cues for when the click for selecting things.
+- Undo state can get out of sync with objects and overlay render.
 
 ## 2026-03-03
 

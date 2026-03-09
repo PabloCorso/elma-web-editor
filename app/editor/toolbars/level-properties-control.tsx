@@ -76,7 +76,7 @@ export function LevelPropertiesControl() {
         </TooltipContent>
       </Tooltip>
       {open && (
-        <div className="fixed top-20 left-20 right-4 overflow-x-auto pointer-events-none">
+        <div className="fixed z-10 top-20 left-20 right-4 overflow-x-auto pointer-events-none">
           <Toolbar
             orientation="vertical"
             className="min-w-max pl-4 gap-2 pointer-events-auto flex-col items-stretch"
