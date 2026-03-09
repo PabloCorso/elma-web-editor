@@ -64,6 +64,10 @@ export type EditorState = EditorLevel & {
     removeFlower: (flower: Position) => void;
     addPicture: (picture: Picture) => void;
     removePicture: (picture: Picture) => void;
+    setApples: (apples: Apple[]) => void;
+    setKillers: (killers: Position[]) => void;
+    setFlowers: (flowers: Position[]) => void;
+    setPictures: (pictures: Picture[]) => void;
 
     setLevelName: (name: string) => void;
     setGround: (ground: string) => void;

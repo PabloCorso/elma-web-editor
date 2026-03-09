@@ -94,13 +94,16 @@ export function getSelectionBounds(
 export function findPolygonEdgeNearPosition(
   pos: Position,
   polygons: Polygon[],
-  threshold = 8
+  threshold = 8,
+  shouldConsiderEdge: (polygon: Polygon, edgeIndex: number) => boolean = () =>
+    true
 ): Polygon | null {
   for (const polygon of polygons) {
     if (polygon.vertices.length < 3) continue;
 
     // Check each edge of the polygon
     for (let i = 0; i < polygon.vertices.length; i++) {
+      if (!shouldConsiderEdge(polygon, i)) continue;
       const start = polygon.vertices[i];
       const end = polygon.vertices[(i + 1) % polygon.vertices.length];
 

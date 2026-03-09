@@ -9,6 +9,8 @@ import type { DefaultToolId } from "./tools/default-tools";
 import fastDeepEqual from "fast-deep-equal";
 import throttle from "just-throttle";
 import type { LevelVisibilitySettings } from "./editor-state";
+import type { Position } from "./elma-types";
+import type { SelectToolState } from "./tools/select-tool";
 
 type CreateEditorStoreOptions = {
   initialToolId?: DefaultToolId | string;
@@ -46,12 +48,197 @@ export type EditorStore = UseBoundStore<StoreApi<EditorState>> & {
   temporal: StoreApi<TemporalEditorState>;
 };
 
+type PositionSnapshot = { x: number; y: number };
+type ObjectSelectionSnapshot = PositionSnapshot & {
+  kind?: "start" | "apple" | "killer" | "flower";
+  index?: number;
+};
+type SelectionMemento = {
+  selectedVertices: PositionSnapshot[];
+  selectedObjects: ObjectSelectionSnapshot[];
+  selectedPictures: PositionSnapshot[];
+};
+
 export function createEditorStore({
   initialToolId = "select",
   defaultLevelTitle = "Untitled",
   historyUpdateThrottle = 50,
 }: CreateEditorStoreOptions = {}) {
-  return create<EditorState>()(
+  const emptySelectionMemento = (): SelectionMemento => ({
+    selectedVertices: [],
+    selectedObjects: [],
+    selectedPictures: [],
+  });
+
+  const captureSelectionMemento = (state: EditorState): SelectionMemento => {
+    const selection = state.actions.getToolState<SelectToolState>("select");
+    const captureObjectSnapshot = (
+      object: Position,
+    ): ObjectSelectionSnapshot => {
+      if (state.start === object) {
+        return { x: object.x, y: object.y, kind: "start", index: 0 };
+      }
+
+      const appleIndex = state.apples.findIndex((apple) => apple.position === object);
+      if (appleIndex !== -1) {
+        return { x: object.x, y: object.y, kind: "apple", index: appleIndex };
+      }
+
+      const killerIndex = state.killers.findIndex((killer) => killer === object);
+      if (killerIndex !== -1) {
+        return { x: object.x, y: object.y, kind: "killer", index: killerIndex };
+      }
+
+      const flowerIndex = state.flowers.findIndex((flower) => flower === object);
+      if (flowerIndex !== -1) {
+        return { x: object.x, y: object.y, kind: "flower", index: flowerIndex };
+      }
+
+      return { x: object.x, y: object.y };
+    };
+
+    return {
+      selectedVertices: (selection?.selectedVertices ?? []).map(({ vertex }) => ({
+        x: vertex.x,
+        y: vertex.y,
+      })),
+      selectedObjects: (selection?.selectedObjects ?? []).map(captureObjectSnapshot),
+      selectedPictures: (selection?.selectedPictures ?? []).map((picture) => ({
+        x: picture.x,
+        y: picture.y,
+      })),
+    };
+  };
+
+  const positionKey = ({ x, y }: PositionSnapshot) => `${x}:${y}`;
+
+  const applySelectionMemento = (
+    store: EditorStore,
+    selectionMemento: SelectionMemento,
+  ) => {
+    const state = store.getState();
+    const vertexBuckets = new Map<
+      string,
+      Array<{ polygon: EditorState["polygons"][number]; vertex: Position }>
+    >();
+    state.polygons.forEach((polygon) => {
+      polygon.vertices.forEach((vertex) => {
+        const key = positionKey(vertex);
+        const bucket = vertexBuckets.get(key) ?? [];
+        bucket.push({ polygon, vertex });
+        vertexBuckets.set(key, bucket);
+      });
+    });
+
+    const objectBuckets = new Map<string, Position[]>();
+    const allObjects = [
+      state.start,
+      ...state.apples.map((apple) => apple.position),
+      ...state.killers,
+      ...state.flowers,
+    ];
+    allObjects.forEach((object) => {
+      const key = positionKey(object);
+      const bucket = objectBuckets.get(key) ?? [];
+      bucket.push(object);
+      objectBuckets.set(key, bucket);
+    });
+    const consumedObjects = new Set<Position>();
+    const consumeObjectBucket = (key: string): Position | null => {
+      const bucket = objectBuckets.get(key);
+      if (!bucket || bucket.length === 0) return null;
+      while (bucket.length > 0) {
+        const candidate = bucket.shift() ?? null;
+        if (!candidate || consumedObjects.has(candidate)) continue;
+        consumedObjects.add(candidate);
+        if (bucket.length === 0) {
+          objectBuckets.delete(key);
+        }
+        return candidate;
+      }
+      objectBuckets.delete(key);
+      return null;
+    };
+    const consumeObjectSnapshot = (
+      snapshot: ObjectSelectionSnapshot,
+    ): Position | null => {
+      let candidate: Position | null = null;
+
+      if (snapshot.kind === "start") {
+        candidate = snapshot.index === 0 ? state.start : null;
+      } else if (snapshot.kind === "apple") {
+        candidate =
+          typeof snapshot.index === "number"
+            ? (state.apples[snapshot.index]?.position ?? null)
+            : null;
+      } else if (snapshot.kind === "killer") {
+        candidate =
+          typeof snapshot.index === "number"
+            ? (state.killers[snapshot.index] ?? null)
+            : null;
+      } else if (snapshot.kind === "flower") {
+        candidate =
+          typeof snapshot.index === "number"
+            ? (state.flowers[snapshot.index] ?? null)
+            : null;
+      }
+
+      if (candidate && !consumedObjects.has(candidate)) {
+        consumedObjects.add(candidate);
+        return candidate;
+      }
+
+      return consumeObjectBucket(positionKey(snapshot));
+    };
+
+    const pictureBuckets = new Map<string, Position[]>();
+    state.pictures.forEach((picture) => {
+      const key = positionKey(picture.position);
+      const bucket = pictureBuckets.get(key) ?? [];
+      bucket.push(picture.position);
+      pictureBuckets.set(key, bucket);
+    });
+
+    const consumeBucket = <T>(buckets: Map<string, T[]>, key: string): T | null => {
+      const bucket = buckets.get(key);
+      if (!bucket || bucket.length === 0) return null;
+      const item = bucket.shift() ?? null;
+      if (bucket.length === 0) {
+        buckets.delete(key);
+      }
+      return item;
+    };
+
+    const selectedVertices = selectionMemento.selectedVertices
+      .map((vertexSnapshot) =>
+        consumeBucket(vertexBuckets, positionKey(vertexSnapshot)),
+      )
+      .filter(
+        (selection): selection is { polygon: EditorState["polygons"][number]; vertex: Position } =>
+          Boolean(selection),
+      );
+
+    const selectedObjects = selectionMemento.selectedObjects
+      .map(consumeObjectSnapshot)
+      .filter((object): object is Position => Boolean(object));
+
+    const selectedPictures = selectionMemento.selectedPictures
+      .map((pictureSnapshot) =>
+        consumeBucket(pictureBuckets, positionKey(pictureSnapshot)),
+      )
+      .filter((picture): picture is Position => Boolean(picture));
+
+    state.actions.setToolState<SelectToolState>("select", {
+      selectedVertices,
+      selectedObjects,
+      selectedPictures,
+      hoveredObject: undefined,
+      hoveredPictureBounds: undefined,
+      contextMenuType: undefined,
+    });
+  };
+
+  const editorStore = create<EditorState>()(
     temporal(
       (set, get, store) => ({
         // Initial state - level data will be injected via constructor
@@ -141,6 +328,10 @@ export function createEditorStore({
                   p.position.y !== picture.position.y,
               ),
             }),
+          setApples: (apples) => set({ apples }),
+          setKillers: (killers) => set({ killers }),
+          setFlowers: (flowers) => set({ flowers }),
+          setPictures: (pictures) => set({ pictures }),
 
           setMousePosition: (position) => set({ mousePosition: position }),
           setMouseOnCanvas: (onCanvas) => set({ mouseOnCanvas: onCanvas }),
@@ -285,10 +476,72 @@ export function createEditorStore({
           flowers: state.flowers,
           start: state.start,
           pictures: state.pictures,
-          activeToolId: state.activeToolId,
-          toolState: state.toolState,
         }),
       },
     ),
   );
+
+  let selectionPast: SelectionMemento[] = [];
+  let selectionFuture: SelectionMemento[] = [];
+  let currentSelection = emptySelectionMemento();
+
+  const temporalStore = editorStore.temporal;
+  const temporalState = temporalStore.getState();
+  const originalUndo = temporalState.undo;
+  const originalRedo = temporalState.redo;
+  const originalClear = temporalState.clear;
+
+  temporalState.setOnSave(() => {
+    selectionPast.push(currentSelection);
+    selectionFuture = [];
+    currentSelection = captureSelectionMemento(editorStore.getState());
+
+    const maxPastCount = temporalStore.getState().pastStates.length;
+    if (selectionPast.length > maxPastCount) {
+      selectionPast = selectionPast.slice(selectionPast.length - maxPastCount);
+    }
+  });
+
+  temporalStore.setState({
+    undo: (steps = 1) => {
+      const available = temporalStore.getState().pastStates.length;
+      if (available === 0) return;
+      const appliedSteps = Math.max(1, Math.min(steps, available));
+      const selectionsToApply = selectionPast.splice(-appliedSteps, appliedSteps);
+      const nextSelection = selectionsToApply.shift();
+      selectionFuture = selectionFuture.concat(
+        currentSelection,
+        selectionsToApply.reverse(),
+      );
+
+      originalUndo(appliedSteps);
+      currentSelection = nextSelection ?? emptySelectionMemento();
+      applySelectionMemento(editorStore, currentSelection);
+    },
+    redo: (steps = 1) => {
+      const available = temporalStore.getState().futureStates.length;
+      if (available === 0) return;
+      const appliedSteps = Math.max(1, Math.min(steps, available));
+      const selectionsToApply = selectionFuture.splice(-appliedSteps, appliedSteps);
+      const nextSelection = selectionsToApply.shift();
+      selectionPast = selectionPast.concat(
+        currentSelection,
+        selectionsToApply.reverse(),
+      );
+
+      originalRedo(appliedSteps);
+      currentSelection = nextSelection ?? emptySelectionMemento();
+      applySelectionMemento(editorStore, currentSelection);
+    },
+    clear: () => {
+      originalClear();
+      selectionPast = [];
+      selectionFuture = [];
+      currentSelection = captureSelectionMemento(editorStore.getState());
+    },
+  });
+
+  currentSelection = captureSelectionMemento(editorStore.getState());
+
+  return editorStore;
 }

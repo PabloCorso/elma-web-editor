@@ -10,9 +10,14 @@ import {
   isPointInRect,
   getSelectionBounds,
 } from "../helpers/selection-helpers";
-import { colors, uiColors, uiStrokeWidths } from "../constants";
+import {
+  colors,
+  OBJECT_DIAMETER,
+  uiColors,
+  uiStrokeWidths,
+} from "../constants";
 import type { Apple, Polygon, Position } from "../elma-types";
-import type { EditorStore } from "../editor-store";
+import type { EditorStore, PartialEditorState } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import {
   isWithinThreshold,
@@ -28,6 +33,12 @@ export type SelectToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
   selectedObjects: Position[];
   selectedPictures: Position[];
+  hoveredObject?: Position;
+  hoveredPictureBounds?: {
+    position: Position;
+    width: number;
+    height: number;
+  };
   contextMenuType?: "apple" | "killer" | "flower" | "picture";
 };
 
@@ -47,6 +58,9 @@ export class SelectTool extends Tool<SelectToolState> {
   private isMarqueeSelecting = false;
   private marqueeStartPos = { x: 0, y: 0 };
   private marqueeEndPos = { x: 0, y: 0 };
+  private dragHistoryStart: PartialEditorState | null = null;
+  private dragHasChanges = false;
+  private isHistoryPaused = false;
 
   onDeactivate(): void {
     this.clear();
@@ -58,11 +72,14 @@ export class SelectTool extends Tool<SelectToolState> {
       selectedVertices: [],
       selectedObjects: [],
       selectedPictures: [],
+      hoveredObject: undefined,
+      hoveredPictureBounds: undefined,
       contextMenuType: undefined,
     });
     this.isDragging = false;
     this.isMarqueeSelecting = false;
     this.dragOriginPositions = [];
+    this.endDragHistoryBatch(false);
   }
 
   onRightClick(_event: MouseEvent, context: EventContext) {
@@ -87,6 +104,7 @@ export class SelectTool extends Tool<SelectToolState> {
           context.worldPos,
           state.polygons,
           SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+          this.isSelectablePolygonEdge,
         )
       : null;
     if (polygon) {
@@ -103,6 +121,8 @@ export class SelectTool extends Tool<SelectToolState> {
   onPointerDown(event: PointerEvent, context: EventContext): boolean {
     this.pruneHiddenSelection();
     const { state, toolState } = this.getState();
+    const hoveredObject = toolState?.hoveredObject;
+    const hoveredPicture = toolState?.hoveredPictureBounds?.position;
 
     const modifier = checkModifierKey(event);
     const isSingleSelect = !modifier;
@@ -146,6 +166,7 @@ export class SelectTool extends Tool<SelectToolState> {
           context.worldPos,
           state.polygons,
           SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+          this.isSelectablePolygonEdge,
         )
       : null;
     if (polygonEdge) {
@@ -159,6 +180,25 @@ export class SelectTool extends Tool<SelectToolState> {
         polygonSelectionCount > 0;
       clearIfNewSingleSelect(isSelected);
       this.selectPolygon(polygonEdge);
+      this.startDragging(context.worldPos);
+      return true;
+    }
+
+    if (hoveredObject) {
+      const isSelected = isObjectSelected(
+        hoveredObject,
+        toolState?.selectedObjects ?? [],
+      );
+      clearIfNewSingleSelect(isSelected);
+      this.selectObject(hoveredObject);
+      this.startDragging(context.worldPos);
+      return true;
+    }
+
+    if (hoveredPicture) {
+      const isSelected = toolState?.selectedPictures.includes(hoveredPicture);
+      clearIfNewSingleSelect(isSelected);
+      this.selectPicture(hoveredPicture);
       this.startDragging(context.worldPos);
       return true;
     }
@@ -214,6 +254,7 @@ export class SelectTool extends Tool<SelectToolState> {
   onPointerUp(_event: PointerEvent, _context: EventContext): boolean {
     if (this.isDragging) {
       this.isDragging = false;
+      this.endDragHistoryBatch(true);
       return true;
     }
 
@@ -244,6 +285,99 @@ export class SelectTool extends Tool<SelectToolState> {
     this.pruneHiddenSelection();
     const { state, toolState } = this.getState();
     if (!toolState) return;
+
+    if (!this.isMarqueeSelecting) {
+      const { hoveredObject, hoveredPictureBounds } = toolState;
+      const isHoveredPictureSelected =
+        hoveredPictureBounds &&
+        toolState.selectedPictures.includes(hoveredPictureBounds.position);
+      if (hoveredPictureBounds && !isHoveredPictureSelected) {
+        const topLeft = worldToScreen(
+          hoveredPictureBounds.position,
+          state.viewPortOffset,
+          state.zoom,
+        );
+        ctx.strokeStyle = uiColors.selectionHandleFill;
+        ctx.lineWidth = uiStrokeWidths.boundsIdleScreen;
+        ctx.strokeRect(
+          topLeft.x,
+          topLeft.y,
+          hoveredPictureBounds.width * state.zoom,
+          hoveredPictureBounds.height * state.zoom,
+        );
+      }
+
+      if (hoveredObject && !toolState.selectedObjects.includes(hoveredObject)) {
+        const center = worldToScreen(
+          hoveredObject,
+          state.viewPortOffset,
+          state.zoom,
+        );
+        ctx.strokeStyle = uiColors.selectionHandleFill;
+        ctx.lineWidth = uiStrokeWidths.boundsIdleScreen;
+        ctx.beginPath();
+        ctx.arc(
+          center.x,
+          center.y,
+          (OBJECT_DIAMETER / 2) * state.zoom,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      }
+
+      if (!this.isDragging && this.isPolygonSelectable()) {
+        const hoveredVertex = findVertexNearPosition(
+          state.mousePosition,
+          state.polygons,
+          SELECT_VERTEX_THRESHOLD / state.zoom,
+        );
+        if (hoveredVertex) {
+          const hoveredVertexScreenPos = worldToScreen(
+            hoveredVertex.vertex,
+            state.viewPortOffset,
+            state.zoom,
+          );
+          drawSelectHandle(ctx, hoveredVertexScreenPos);
+        }
+
+        const hoveredPolygon = findPolygonEdgeNearPosition(
+          state.mousePosition,
+          state.polygons,
+          SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+          this.isSelectablePolygonEdge,
+        );
+        if (!hoveredVertex && hoveredPolygon) {
+          const polygonSelectionCount = toolState.selectedVertices.filter(
+            (sv) => sv.polygon === hoveredPolygon,
+          ).length;
+          const isHoveredPolygonSelected =
+            polygonSelectionCount === hoveredPolygon.vertices.length &&
+            polygonSelectionCount > 0;
+          if (!isHoveredPolygonSelected) {
+            const first = worldToScreen(
+              hoveredPolygon.vertices[0],
+              state.viewPortOffset,
+              state.zoom,
+            );
+            ctx.beginPath();
+            ctx.moveTo(first.x, first.y);
+            for (let i = 1; i < hoveredPolygon.vertices.length; i++) {
+              const point = worldToScreen(
+                hoveredPolygon.vertices[i],
+                state.viewPortOffset,
+                state.zoom,
+              );
+              ctx.lineTo(point.x, point.y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = uiColors.selectionHandleFill;
+            ctx.lineWidth = uiStrokeWidths.boundsIdleScreen;
+            ctx.stroke();
+          }
+        }
+      }
+    }
 
     const selectedPolygons = Array.from(
       new Set(toolState.selectedVertices.map(({ polygon }) => polygon)),
@@ -331,12 +465,43 @@ export class SelectTool extends Tool<SelectToolState> {
     return null;
   }
 
+  private isSelectablePolygonEdge = (polygon: Polygon, edgeIndex: number) => {
+    const { toolState } = this.getState();
+    const polygonSelectionCount =
+      toolState?.selectedVertices.filter((sv) => sv.polygon === polygon).length ??
+      0;
+    const isPolygonFullySelected =
+      polygonSelectionCount === polygon.vertices.length &&
+      polygonSelectionCount > 0;
+    if (isPolygonFullySelected) return true;
+
+    if (!polygon.grass) return true;
+    const n = polygon.vertices.length;
+    if (n < 2) return false;
+
+    let longestEdgeIndex = -1;
+    let longestEdgeLength = -1;
+    for (let i = 0; i < n; i++) {
+      const from = polygon.vertices[i];
+      const to = polygon.vertices[(i + 1) % n];
+      const length = Math.hypot(to.x - from.x, to.y - from.y);
+      if (length > longestEdgeLength) {
+        longestEdgeLength = length;
+        longestEdgeIndex = i;
+      }
+    }
+
+    return edgeIndex !== longestEdgeIndex;
+  };
+
   private startDragging(worldPos: Position): void {
     const { toolState } = this.getState();
     if (!toolState) return;
 
     this.isDragging = true;
     this.dragStartPos = worldPos;
+    this.dragHasChanges = false;
+    this.beginDragHistoryBatch();
 
     // Store original positions of selected items for delta calculations
     this.dragOriginPositions = [
@@ -363,6 +528,8 @@ export class SelectTool extends Tool<SelectToolState> {
 
     const totalDeltaX = worldPos.x - this.dragStartPos.x;
     const totalDeltaY = worldPos.y - this.dragStartPos.y;
+    if (totalDeltaX === 0 && totalDeltaY === 0) return;
+    this.dragHasChanges = true;
 
     if (toolState.selectedVertices.length > 0) {
       const newVertexPositions = toolState.selectedVertices.map(
@@ -503,19 +670,63 @@ export class SelectTool extends Tool<SelectToolState> {
 
     const selectedVertices = this.isPolygonSelectable()
       ? toolState.selectedVertices
+          .map((selection) => {
+            const polygon = state.polygons.find((p) =>
+              p.vertices.some(
+                (vertex) =>
+                  vertex.x === selection.vertex.x &&
+                  vertex.y === selection.vertex.y,
+              ),
+            );
+            if (!polygon) return null;
+            const vertex = polygon.vertices.find(
+              (candidate) =>
+                candidate.x === selection.vertex.x &&
+                candidate.y === selection.vertex.y,
+            );
+            if (!vertex) return null;
+            return { polygon, vertex };
+          })
+          .filter((selection): selection is VertexSelection => Boolean(selection))
       : [];
+
     const selectedObjects = this.isObjectSelectable()
-      ? toolState.selectedObjects.filter((object) => this.isObjectPresent(object))
+      ? toolState.selectedObjects
+          .map((selectedObject) => {
+            const identityMatch = this.findObjectByIdentity(selectedObject);
+            if (identityMatch) return identityMatch;
+            return this.findObjectByCoordinates(selectedObject);
+          })
+          .filter((object): object is Position => Boolean(object))
       : [];
-    const selectedPictures = toolState.selectedPictures.filter((position) => {
-      const picture = state.pictures.find((entry) => entry.position === position);
-      return picture ? this.isPictureSelectable(picture) : false;
-    });
+
+    const selectedPictures = toolState.selectedPictures
+      .map((position) => {
+        const picture = state.pictures.find(
+          (entry) =>
+            entry.position.x === position.x && entry.position.y === position.y,
+        );
+        return picture && this.isPictureSelectable(picture)
+          ? picture.position
+          : null;
+      })
+      .filter((position): position is Position => Boolean(position));
 
     if (
       selectedVertices.length !== toolState.selectedVertices.length ||
       selectedObjects.length !== toolState.selectedObjects.length ||
-      selectedPictures.length !== toolState.selectedPictures.length
+      selectedPictures.length !== toolState.selectedPictures.length ||
+      selectedVertices.some((selection, index) => {
+        const previous = toolState.selectedVertices[index];
+        return (
+          previous?.polygon !== selection.polygon ||
+          previous?.vertex !== selection.vertex
+        );
+      }) ||
+      selectedObjects.some((object, index) => object !== toolState.selectedObjects[index]) ||
+      selectedPictures.some(
+        (position, index) => position !== toolState.selectedPictures[index],
+      )
     ) {
       setToolState({ selectedVertices, selectedObjects, selectedPictures });
     }
@@ -555,6 +766,35 @@ export class SelectTool extends Tool<SelectToolState> {
     setToolState({
       selectedPictures: [...toolState.selectedPictures, picture],
     });
+  }
+
+  private findObjectByIdentity(selectedObject: Position): Position | null {
+    const { state } = this.getState();
+    if (state.start === selectedObject) return state.start;
+    if (state.apples.some((apple) => apple.position === selectedObject)) {
+      return selectedObject;
+    }
+    if (state.killers.includes(selectedObject)) return selectedObject;
+    if (state.flowers.includes(selectedObject)) return selectedObject;
+    return null;
+  }
+
+  private findObjectByCoordinates(selectedObject: Position): Position | null {
+    const { state } = this.getState();
+    const matchByCoords = (object: Position) =>
+      object.x === selectedObject.x && object.y === selectedObject.y;
+
+    const apple = state.apples.find((entry) => matchByCoords(entry.position));
+    if (apple) return apple.position;
+
+    const killer = state.killers.find(matchByCoords);
+    if (killer) return killer;
+
+    const flower = state.flowers.find(matchByCoords);
+    if (flower) return flower;
+
+    if (matchByCoords(state.start)) return state.start;
+    return null;
   }
 
   private selectPolygon(polygon: Polygon): void {
@@ -614,12 +854,10 @@ export class SelectTool extends Tool<SelectToolState> {
     const { state, toolState, setToolState } = this.getState();
     if (!toolState) return;
 
-    const updates: {
-      apples?: Apple[];
-      killers?: Position[];
-      flowers?: Position[];
-      start?: Position;
-    } = {};
+    let nextApples: Apple[] | undefined;
+    let nextKillers: Position[] | undefined;
+    let nextFlowers: Position[] | undefined;
+    let nextStart: Position | undefined;
     const updatedSelectedObjects = [...toolState.selectedObjects];
 
     // Update each selected object with its new position
@@ -629,9 +867,9 @@ export class SelectTool extends Tool<SelectToolState> {
       // Find and update the object in the appropriate array
       const appleIndex = state.apples.findIndex((a) => a.position === object);
       if (appleIndex !== -1) {
-        if (!updates.apples) updates.apples = [...state.apples];
+        if (!nextApples) nextApples = [...state.apples];
         const apple = state.apples[appleIndex];
-        updates.apples[appleIndex] = {
+        nextApples[appleIndex] = {
           position: newPos,
           animation: apple.animation,
           gravity: apple.gravity,
@@ -641,27 +879,29 @@ export class SelectTool extends Tool<SelectToolState> {
 
       const killerIndex = state.killers.findIndex((k) => k === object);
       if (killerIndex !== -1) {
-        if (!updates.killers) updates.killers = [...state.killers];
-        updates.killers[killerIndex] = newPos;
+        if (!nextKillers) nextKillers = [...state.killers];
+        nextKillers[killerIndex] = newPos;
         updatedSelectedObjects[index] = newPos;
       }
 
       const flowerIndex = state.flowers.findIndex((f) => f === object);
       if (flowerIndex !== -1) {
-        if (!updates.flowers) updates.flowers = [...state.flowers];
-        updates.flowers[flowerIndex] = newPos;
+        if (!nextFlowers) nextFlowers = [...state.flowers];
+        nextFlowers[flowerIndex] = newPos;
         updatedSelectedObjects[index] = newPos;
       }
 
       // Check if it's the start position
       if (object === state.start) {
-        updates.start = newPos;
+        nextStart = newPos;
         updatedSelectedObjects[index] = newPos;
       }
     });
 
-    // Apply updates to store
-    Object.assign(state, updates);
+    if (nextApples) state.actions.setApples(nextApples);
+    if (nextKillers) state.actions.setKillers(nextKillers);
+    if (nextFlowers) state.actions.setFlowers(nextFlowers);
+    if (nextStart) state.actions.setStart(nextStart);
 
     setToolState({ selectedObjects: updatedSelectedObjects });
   }
@@ -692,9 +932,59 @@ export class SelectTool extends Tool<SelectToolState> {
     });
 
     // Update pictures in store
-    Object.assign(state, { pictures: updatedPictures });
+    state.actions.setPictures(updatedPictures);
 
     setToolState({ selectedPictures: updatedSelectedPictures });
+  }
+
+  private getHistorySnapshot(): PartialEditorState {
+    const { state } = this.getState();
+    return {
+      levelName: state.levelName,
+      ground: state.ground,
+      sky: state.sky,
+      polygons: state.polygons,
+      apples: state.apples,
+      killers: state.killers,
+      flowers: state.flowers,
+      start: state.start,
+      pictures: state.pictures,
+    };
+  }
+
+  private beginDragHistoryBatch() {
+    if (this.isHistoryPaused) return;
+    this.dragHistoryStart = this.getHistorySnapshot();
+    this.store.temporal.getState().pause();
+    this.isHistoryPaused = true;
+  }
+
+  private endDragHistoryBatch(commit: boolean) {
+    if (!this.isHistoryPaused) return;
+    this.store.temporal.getState().resume();
+    this.isHistoryPaused = false;
+
+    if (!commit || !this.dragHasChanges || !this.dragHistoryStart) {
+      this.dragHistoryStart = null;
+      this.dragHasChanges = false;
+      return;
+    }
+
+    const temporalState = this.store.temporal.getState() as {
+      _handleSet?: (
+        pastState: PartialEditorState,
+        replace: undefined,
+        currentState: PartialEditorState,
+        deltaState?: Partial<PartialEditorState> | null,
+      ) => void;
+    };
+    temporalState._handleSet?.(
+      this.dragHistoryStart,
+      undefined,
+      this.getHistorySnapshot(),
+    );
+    this.dragHistoryStart = null;
+    this.dragHasChanges = false;
   }
 
   private updatePolygon(index: number, polygon: Polygon): void {

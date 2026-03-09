@@ -10,6 +10,7 @@ import {
   colors,
   debugColors,
   GRASS_FILL_DEPTH_PX,
+  OBJECT_DIAMETER,
   uiColors,
   uiStrokeWidths,
 } from "./constants";
@@ -217,6 +218,7 @@ export class EditorEngine {
       state.zoom,
     );
     const activeTool = state.actions.getActiveTool();
+    this.updateSelectHoverState(state, context.worldPos);
 
     if (phase === "down") {
       activeTool?.onPointerDown?.(event, context);
@@ -494,6 +496,7 @@ export class EditorEngine {
   private handlePointerLeave = () => {
     const state = this.store.getState();
     state.actions.setMouseOnCanvas(false);
+    this.clearSelectHoverState(state);
     this.updateCanvasCursor();
   };
 
@@ -758,6 +761,11 @@ export class EditorEngine {
 
   private render() {
     const state = this.store.getState();
+    if (state.mouseOnCanvas) {
+      this.updateSelectHoverState(state, state.mousePosition);
+    } else {
+      this.clearSelectHoverState(state);
+    }
     this.clearCanvas();
 
     this.ctx.save();
@@ -861,11 +869,17 @@ export class EditorEngine {
   private drawItem(state: EditorState, item: RenderItem) {
     const ctx = this.ctx;
     const position = item.position;
+    const selectState = state.actions.getToolState<SelectToolState>("select");
+    const isSelectedObject = (selectState?.selectedObjects ?? []).some(
+      (selected) => selected.x === position.x && selected.y === position.y,
+    );
+    const objectBoundsLineWidth = isSelectedObject
+      ? uiStrokeWidths.boundsSelectedScreen / state.zoom
+      : uiStrokeWidths.boundsIdleScreen / state.zoom;
 
     if (item.type === "picture") {
       const { showPictureBounds, showTextureBounds, showPictures, showTextures } =
         state.levelVisibility;
-      const selectState = state.actions.getToolState<SelectToolState>("select");
       const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
         (selected) => selected.x === position.x && selected.y === position.y,
       );
@@ -938,7 +952,7 @@ export class EditorEngine {
         drawObjectBounds({
           ctx,
           position,
-          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+          lineWidth: objectBoundsLineWidth,
         });
       }
       if (showObjects) {
@@ -956,7 +970,7 @@ export class EditorEngine {
         drawObjectBounds({
           ctx,
           position,
-          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+          lineWidth: objectBoundsLineWidth,
         });
       }
     } else if (item.type === "flower") {
@@ -971,7 +985,7 @@ export class EditorEngine {
         drawObjectBounds({
           ctx,
           position,
-          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+          lineWidth: objectBoundsLineWidth,
         });
       }
     } else if (item.type === "start") {
@@ -985,10 +999,148 @@ export class EditorEngine {
         drawKuskiBounds({
           ctx,
           start: state.start,
-          lineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
+          lineWidth: objectBoundsLineWidth,
         });
       }
     }
+  }
+
+  private updateSelectHoverState(state: EditorState, worldPos: Position) {
+    const activeTool = state.actions.getActiveTool();
+    if (activeTool?.meta.id !== "select") {
+      this.clearSelectHoverState(state);
+      return;
+    }
+
+    const nextHover = this.resolveSelectHoverTarget(state, worldPos);
+    const currentHover = state.actions.getToolState<SelectToolState>("select");
+    const currentPictureBounds = currentHover?.hoveredPictureBounds;
+    const nextPictureBounds = nextHover.hoveredPictureBounds;
+
+    const isSameHover =
+      currentHover?.hoveredObject === nextHover.hoveredObject &&
+      currentPictureBounds?.position === nextPictureBounds?.position &&
+      currentPictureBounds?.width === nextPictureBounds?.width &&
+      currentPictureBounds?.height === nextPictureBounds?.height;
+    if (isSameHover) return;
+
+    state.actions.setToolState<SelectToolState>("select", nextHover);
+  }
+
+  private clearSelectHoverState(state: EditorState) {
+    const selectState = state.actions.getToolState<SelectToolState>("select");
+    if (
+      !selectState?.hoveredObject &&
+      !selectState?.hoveredPictureBounds
+    ) {
+      return;
+    }
+
+    state.actions.setToolState<SelectToolState>("select", {
+      hoveredObject: undefined,
+      hoveredPictureBounds: undefined,
+    });
+  }
+
+  private resolveSelectHoverTarget(
+    state: EditorState,
+    worldPos: Position,
+  ): Pick<
+    SelectToolState,
+    "hoveredObject" | "hoveredPictureBounds"
+  > {
+    const queue = this.getDrawItemQueue(state);
+
+    // Objects take precedence over pictures/textures when overlapping.
+    for (let index = queue.length - 1; index >= 0; index--) {
+      const item = queue[index];
+      if (!this.isObjectSelectable(state)) break;
+      if (
+        item.type !== RenderType.Killer &&
+        item.type !== RenderType.Flower &&
+        item.type !== RenderType.Start &&
+        item.type !== RenderType.Apple
+      ) {
+        continue;
+      }
+      const distance = Math.hypot(
+        worldPos.x - item.position.x,
+        worldPos.y - item.position.y,
+      );
+      if (distance > OBJECT_DIAMETER / 2) continue;
+      return {
+        hoveredObject: item.position,
+        hoveredPictureBounds: undefined,
+      };
+    }
+
+    for (let index = queue.length - 1; index >= 0; index--) {
+      const item = queue[index];
+      if (item.type !== RenderType.Picture) continue;
+      if (!this.isPictureSelectable(state, item)) continue;
+      const pictureDimensions = this.getPictureWorldDimensions(item);
+      if (!pictureDimensions) continue;
+
+      const { width, height } = pictureDimensions;
+      if (
+        worldPos.x >= item.position.x &&
+        worldPos.x <= item.position.x + width &&
+        worldPos.y >= item.position.y &&
+        worldPos.y <= item.position.y + height
+      ) {
+        return {
+          hoveredObject: undefined,
+          hoveredPictureBounds: {
+            position: item.position,
+            width,
+            height,
+          },
+        };
+      }
+    }
+
+    return {
+      hoveredObject: undefined,
+      hoveredPictureBounds: undefined,
+    };
+  }
+
+  private isObjectSelectable(state: EditorState) {
+    const { showObjects, showObjectBounds } = state.levelVisibility;
+    return showObjects || showObjectBounds;
+  }
+
+  private isPolygonSelectable(state: EditorState) {
+    const { showPolygons, showPolygonBounds, showPolygonHandles } =
+      state.levelVisibility;
+    return showPolygons || showPolygonBounds || showPolygonHandles;
+  }
+
+  private isPictureSelectable(state: EditorState, picture: Picture) {
+    const { showPictureBounds, showTextureBounds, showPictures, showTextures } =
+      state.levelVisibility;
+    const hasTexture = Boolean(picture.texture && picture.mask);
+    return hasTexture
+      ? showTextures || showTextureBounds
+      : showPictures || showPictureBounds;
+  }
+
+  private getPictureWorldDimensions(picture: Picture) {
+    if (picture.texture && picture.mask) {
+      const maskSprite = this.lgrAssets.getSprite(picture.mask);
+      if (!maskSprite) return null;
+      return {
+        width: maskSprite.width * PICTURE_SCALE,
+        height: maskSprite.height * PICTURE_SCALE,
+      };
+    }
+
+    const sprite = picture.name ? this.lgrAssets.getSprite(picture.name) : null;
+    if (!sprite) return null;
+    return {
+      width: sprite.width * PICTURE_SCALE,
+      height: sprite.height * PICTURE_SCALE,
+    };
   }
 
   private buildSkyPath(state: EditorState): Path2D {
