@@ -21,10 +21,10 @@ type CreateEditorStoreOptions = {
 const defaultLevelVisibility: LevelVisibilitySettings = {
   useGroundSkyTextures: true,
   showPolygonHandles: false,
-  showObjectBounds: true,
-  showPolygonBounds: true,
-  showPictureBounds: true,
-  showTextureBounds: true,
+  showObjectBounds: false,
+  showPolygonBounds: false,
+  showPictureBounds: false,
+  showTextureBounds: false,
   showObjects: true,
   showPictures: true,
   showTextures: true,
@@ -79,17 +79,23 @@ export function createEditorStore({
         return { x: object.x, y: object.y, kind: "start", index: 0 };
       }
 
-      const appleIndex = state.apples.findIndex((apple) => apple.position === object);
+      const appleIndex = state.apples.findIndex(
+        (apple) => apple.position === object,
+      );
       if (appleIndex !== -1) {
         return { x: object.x, y: object.y, kind: "apple", index: appleIndex };
       }
 
-      const killerIndex = state.killers.findIndex((killer) => killer === object);
+      const killerIndex = state.killers.findIndex(
+        (killer) => killer === object,
+      );
       if (killerIndex !== -1) {
         return { x: object.x, y: object.y, kind: "killer", index: killerIndex };
       }
 
-      const flowerIndex = state.flowers.findIndex((flower) => flower === object);
+      const flowerIndex = state.flowers.findIndex(
+        (flower) => flower === object,
+      );
       if (flowerIndex !== -1) {
         return { x: object.x, y: object.y, kind: "flower", index: flowerIndex };
       }
@@ -98,11 +104,15 @@ export function createEditorStore({
     };
 
     return {
-      selectedVertices: (selection?.selectedVertices ?? []).map(({ vertex }) => ({
-        x: vertex.x,
-        y: vertex.y,
-      })),
-      selectedObjects: (selection?.selectedObjects ?? []).map(captureObjectSnapshot),
+      selectedVertices: (selection?.selectedVertices ?? []).map(
+        ({ vertex }) => ({
+          x: vertex.x,
+          y: vertex.y,
+        }),
+      ),
+      selectedObjects: (selection?.selectedObjects ?? []).map(
+        captureObjectSnapshot,
+      ),
       selectedPictures: (selection?.selectedPictures ?? []).map((picture) => ({
         x: picture.x,
         y: picture.y,
@@ -199,7 +209,10 @@ export function createEditorStore({
       pictureBuckets.set(key, bucket);
     });
 
-    const consumeBucket = <T>(buckets: Map<string, T[]>, key: string): T | null => {
+    const consumeBucket = <T>(
+      buckets: Map<string, T[]>,
+      key: string,
+    ): T | null => {
       const bucket = buckets.get(key);
       if (!bucket || bucket.length === 0) return null;
       const item = bucket.shift() ?? null;
@@ -214,8 +227,12 @@ export function createEditorStore({
         consumeBucket(vertexBuckets, positionKey(vertexSnapshot)),
       )
       .filter(
-        (selection): selection is { polygon: EditorState["polygons"][number]; vertex: Position } =>
-          Boolean(selection),
+        (
+          selection,
+        ): selection is {
+          polygon: EditorState["polygons"][number];
+          vertex: Position;
+        } => Boolean(selection),
       );
 
     const selectedObjects = selectionMemento.selectedObjects
@@ -507,7 +524,10 @@ export function createEditorStore({
       const available = temporalStore.getState().pastStates.length;
       if (available === 0) return;
       const appliedSteps = Math.max(1, Math.min(steps, available));
-      const selectionsToApply = selectionPast.splice(-appliedSteps, appliedSteps);
+      const selectionsToApply = selectionPast.splice(
+        -appliedSteps,
+        appliedSteps,
+      );
       const nextSelection = selectionsToApply.shift();
       selectionFuture = selectionFuture.concat(
         currentSelection,
@@ -522,7 +542,10 @@ export function createEditorStore({
       const available = temporalStore.getState().futureStates.length;
       if (available === 0) return;
       const appliedSteps = Math.max(1, Math.min(steps, available));
-      const selectionsToApply = selectionFuture.splice(-appliedSteps, appliedSteps);
+      const selectionsToApply = selectionFuture.splice(
+        -appliedSteps,
+        appliedSteps,
+      );
       const nextSelection = selectionsToApply.shift();
       selectionPast = selectionPast.concat(
         currentSelection,
