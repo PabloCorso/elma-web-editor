@@ -525,6 +525,10 @@ export class EditorEngine {
     };
   }
 
+  private getCurrentMouseScreenPoint(state: EditorState) {
+    return worldToScreen(state.mousePosition, state.viewPortOffset, state.zoom);
+  }
+
   private syncMousePositionFromScreenPoint(screenPoint: Position) {
     const state = this.store.getState();
     const worldPos = screenToWorld(
@@ -565,10 +569,7 @@ export class EditorEngine {
   private handleWheel = (event: WheelEvent) => {
     event.preventDefault();
     const state = this.store.getState();
-    const screenPoint = this.getCanvasPoint(
-      event.clientX,
-      event.clientY,
-    );
+    const screenPoint = this.getCanvasPoint(event.clientX, event.clientY);
     const { x: mouseX, y: mouseY } = screenPoint;
 
     const modifier = checkModifierKey(event);
@@ -688,12 +689,14 @@ export class EditorEngine {
     };
 
     if (event.key in arrowDeltas) {
+      const screenPoint = this.getCurrentMouseScreenPoint(state);
       updateCamera({
         ...arrowDeltas[event.key],
         currentOffset: state.viewPortOffset,
         setCamera: state.actions.setCamera,
         panSpeed: this.panSpeed,
       });
+      this.syncMousePositionFromScreenPoint(screenPoint);
       return;
     }
 
@@ -901,8 +904,12 @@ export class EditorEngine {
       : uiStrokeWidths.boundsIdleScreen / state.zoom;
 
     if (item.type === "picture") {
-      const { showPictureBounds, showTextureBounds, showPictures, showTextures } =
-        state.levelVisibility;
+      const {
+        showPictureBounds,
+        showTextureBounds,
+        showPictures,
+        showTextures,
+      } = state.levelVisibility;
       const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
         (selected) => selected.x === position.x && selected.y === position.y,
       );
@@ -1052,10 +1059,7 @@ export class EditorEngine {
 
   private clearSelectHoverState(state: EditorState) {
     const selectState = state.actions.getToolState<SelectToolState>("select");
-    if (
-      !selectState?.hoveredObject &&
-      !selectState?.hoveredPictureBounds
-    ) {
+    if (!selectState?.hoveredObject && !selectState?.hoveredPictureBounds) {
       return;
     }
 
@@ -1068,10 +1072,7 @@ export class EditorEngine {
   private resolveSelectHoverTarget(
     state: EditorState,
     worldPos: Position,
-  ): Pick<
-    SelectToolState,
-    "hoveredObject" | "hoveredPictureBounds"
-  > {
+  ): Pick<SelectToolState, "hoveredObject" | "hoveredPictureBounds"> {
     const queue = this.getDrawItemQueue(state);
 
     // Objects take precedence over pictures/textures when overlapping.
