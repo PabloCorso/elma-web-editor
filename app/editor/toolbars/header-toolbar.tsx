@@ -96,7 +96,7 @@ export function HeaderToolbar({
     <>
       <Toolbar
         className={cn(
-          "absolute left-4 top-4 max-w-[calc(100vw-2rem)] overflow-auto",
+          "absolute left-4 z-10 top-4 max-w-[calc(100vw-2rem)] overflow-auto",
           className,
         )}
         {...props}
