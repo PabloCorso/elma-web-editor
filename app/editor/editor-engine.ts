@@ -779,7 +779,6 @@ export class EditorEngine {
       const currentTool = state.activeToolId;
       if (currentTool !== lastCurrentTool) {
         lastCurrentTool = currentTool;
-        state.actions.activateTool(currentTool);
         this.updateCanvasCursor();
       }
     });
