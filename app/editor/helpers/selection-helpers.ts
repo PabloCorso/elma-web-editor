@@ -12,7 +12,7 @@ export type SelectedVertex = {
 export function findVertexNearPosition(
   pos: Position,
   polygons: Polygon[],
-  threshold: number = 10
+  threshold: number = 10,
 ): { polygon: Polygon; vertex: Position } | null {
   for (const polygon of polygons) {
     for (const vertex of polygon.vertices) {
@@ -27,7 +27,7 @@ export function findVertexNearPosition(
 export function findObjectNearPosition(
   position: Position,
   objects: Position[],
-  threshold = 15
+  threshold = 15,
 ): Position | null {
   for (const object of objects) {
     if (isWithinThreshold(position, object, threshold)) {
@@ -39,16 +39,16 @@ export function findObjectNearPosition(
 
 export function isVertexSelected(
   vertex: { polygon: Polygon; vertex: Position },
-  selectedVertices: SelectedVertex[]
+  selectedVertices: SelectedVertex[],
 ): boolean {
   return selectedVertices.some(
-    (sv) => sv.polygon === vertex.polygon && sv.vertex === vertex.vertex
+    (sv) => sv.polygon === vertex.polygon && sv.vertex === vertex.vertex,
   );
 }
 
 export function isObjectSelected(
   object: Position,
-  selectedObjects: Position[]
+  selectedObjects: Position[],
 ): boolean {
   return selectedObjects.includes(object);
 }
@@ -57,7 +57,7 @@ export function getAllObjects(
   apples: Position[],
   killers: Position[],
   flowers: Position[],
-  start: Position
+  start: Position,
 ): Array<{ obj: Position; type: string }> {
   return [
     ...apples.map((apple) => ({ obj: apple, type: "apple" })),
@@ -69,7 +69,7 @@ export function getAllObjects(
 
 export function isPointInRect(
   point: Position,
-  rect: { minX: number; maxX: number; minY: number; maxY: number }
+  rect: { minX: number; maxX: number; minY: number; maxY: number },
 ): boolean {
   return (
     point.x >= rect.minX &&
@@ -81,7 +81,7 @@ export function isPointInRect(
 
 export function getSelectionBounds(
   startPos: Position,
-  endPos: Position
+  endPos: Position,
 ): { minX: number; maxX: number; minY: number; maxY: number } {
   return {
     minX: Math.min(startPos.x, endPos.x),
@@ -96,7 +96,7 @@ export function findPolygonEdgeNearPosition(
   polygons: Polygon[],
   threshold = 8,
   shouldConsiderEdge: (polygon: Polygon, edgeIndex: number) => boolean = () =>
-    true
+    true,
 ): Polygon | null {
   for (const polygon of polygons) {
     if (polygon.vertices.length < 3) continue;
@@ -122,7 +122,7 @@ export function findPolygonEdgeNearPosition(
 function distanceToLineSegment(
   point: Position,
   lineStart: Position,
-  lineEnd: Position
+  lineEnd: Position,
 ): number {
   const A = point.x - lineStart.x;
   const B = point.y - lineStart.y;
@@ -161,7 +161,7 @@ export function findPolygonVertexForEditing(
   pos: Position,
   polygons: Polygon[],
   threshold: number = 10,
-  zoom: number
+  zoom: number,
 ): { polygon: Polygon; vertexIndex: number; vertex: Position } | null {
   for (const polygon of polygons) {
     for (let i = 0; i < polygon.vertices.length; i++) {
@@ -178,11 +178,11 @@ export function findPolygonLineForEditing(
   pos: Position,
   polygons: Polygon[],
   threshold: number = 8,
-  zoom: number
+  zoom: number,
 ): {
   polygon: Polygon;
-  insertionIndex: number;
-  insertionPoint: Position;
+  pivotVertexIndex: number;
+  side: "next" | "previous";
 } | null {
   const adjustedThreshold = threshold / zoom;
 
@@ -198,16 +198,23 @@ export function findPolygonLineForEditing(
       const distance = distanceToLineSegment(pos, start, end);
 
       if (distance <= adjustedThreshold) {
-        // Find the closest point on this line segment
-        const insertionPoint = getClosestPointOnLineSegment(pos, start, end);
-
-        // The insertion index is after the current vertex (i)
-        const insertionIndex = (i + 1) % polygon.vertices.length;
+        const closestPoint = getClosestPointOnLineSegment(pos, start, end);
+        const distanceToStart = Math.hypot(
+          closestPoint.x - start.x,
+          closestPoint.y - start.y,
+        );
+        const distanceToEnd = Math.hypot(
+          closestPoint.x - end.x,
+          closestPoint.y - end.y,
+        );
+        const startVertexIndex = i;
+        const endVertexIndex = (i + 1) % polygon.vertices.length;
+        const isStartCloser = distanceToStart <= distanceToEnd;
 
         return {
           polygon,
-          insertionIndex,
-          insertionPoint,
+          pivotVertexIndex: isStartCloser ? startVertexIndex : endVertexIndex,
+          side: isStartCloser ? "next" : "previous",
         };
       }
     }

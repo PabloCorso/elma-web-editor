@@ -10,11 +10,13 @@ import {
   findPolygonLineForEditing,
   findPolygonVertexForEditing,
 } from "../helpers/selection-helpers";
+import { isPolygonClockwise } from "../helpers/polygon-helpers";
 import { colors, uiColors, uiStrokeWidths } from "../constants";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { Polygon, Position } from "../elma-types";
 import { SELECT_POLYGON_EDGE_THRESHOLD } from "./select-tool";
+import { checkModifierKey } from "~/utils/misc";
 
 const VERTEX_THRESHOLD = 15;
 const DEFAULT_VARIANT: VertexToolVariant = "default";
@@ -24,6 +26,7 @@ export type VertexToolVariant = "default" | "grass";
 export type VertexToolState = {
   drawingPolygon: Polygon;
   editingPolygon?: Polygon;
+  editPivot?: Position;
   variant?: VertexToolVariant;
 };
 
@@ -39,6 +42,7 @@ export class VertexTool extends Tool<VertexToolState> {
     const nextVariant = variant ?? toolState?.variant ?? DEFAULT_VARIANT;
     setToolState({
       drawingPolygon: { vertices: [], grass: nextVariant === "grass" },
+      editPivot: undefined,
       variant: nextVariant,
     });
   }
@@ -57,6 +61,7 @@ export class VertexTool extends Tool<VertexToolState> {
     setToolState({
       drawingPolygon: { vertices: [], grass: currentVariant === "grass" },
       editingPolygon: undefined,
+      editPivot: undefined,
       variant: currentVariant,
     });
   }
@@ -83,7 +88,7 @@ export class VertexTool extends Tool<VertexToolState> {
     return { polygons: [] };
   }
 
-  onPointerDown(_event: PointerEvent, context: EventContext): boolean {
+  onPointerDown(event: PointerEvent, context: EventContext): boolean {
     const worldPos = context.worldPos;
     const { state, toolState, setToolState } = this.getState();
     if (!toolState) return false;
@@ -106,10 +111,14 @@ export class VertexTool extends Tool<VertexToolState> {
         }
       }
 
-      // Continue drawing the current polygon
-      const newVertices = [...toolState.drawingPolygon.vertices, worldPos];
+      // When editing an existing polygon, keep inserting from the active
+      // start side so the preview direction remains consistent.
+      const newVertices = toolState.editingPolygon
+        ? [worldPos, ...toolState.drawingPolygon.vertices]
+        : [...toolState.drawingPolygon.vertices, worldPos];
       setToolState({
         drawingPolygon: { ...toolState.drawingPolygon, vertices: newVertices },
+        editPivot: worldPos,
       });
       return true;
     }
@@ -128,16 +137,18 @@ export class VertexTool extends Tool<VertexToolState> {
     }
 
     // If not near a vertex, check if we clicked near a polygon line
-    const lineResult = findPolygonLineForEditing(
-      worldPos,
-      state.polygons,
-      8,
-      state.zoom,
-    );
-    if (lineResult) {
-      // Start editing this polygon from the clicked line
-      this.startEditingFromLine(state, lineResult);
-      return true;
+    if (checkModifierKey(event)) {
+      const lineResult = findPolygonLineForEditing(
+        worldPos,
+        state.polygons,
+        8,
+        state.zoom,
+      );
+      if (lineResult) {
+        // Start editing this polygon from the closest existing edge vertex.
+        this.startEditingFromLine(state, lineResult);
+        return true;
+      }
     }
 
     // Start a new polygon
@@ -147,12 +158,13 @@ export class VertexTool extends Tool<VertexToolState> {
         vertices: newVertices,
         grass: toolState.variant === "grass",
       },
+      editPivot: worldPos,
     });
     return true;
   }
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
-    const { state, toolState, setToolState } = this.getState();
+    const { toolState, setToolState } = this.getState();
     if (!toolState) return false;
 
     if (event.key === "Escape") {
@@ -164,17 +176,7 @@ export class VertexTool extends Tool<VertexToolState> {
         return false;
       }
 
-      // If we're editing an existing polygon, restore it
-      if (toolState.editingPolygon) {
-        state.actions.setPolygons([
-          ...state.polygons,
-          toolState.editingPolygon,
-        ]);
-        this.clear();
-      } else {
-        this.clear();
-      }
-      return true;
+      return this.finalizeDrawingOrRestore();
     }
 
     if (event.key === "Enter") {
@@ -182,16 +184,28 @@ export class VertexTool extends Tool<VertexToolState> {
     }
 
     if (event.key === " " || event.key === "Space") {
-      // Reverse the direction of the polygon by reversing the vertices array
+      // Reverse around the current edit pivot without changing the open-chain
+      // behavior used by polygon editing.
       if (toolState.drawingPolygon.vertices.length > 1) {
-        const reversedVertices = [
-          ...toolState.drawingPolygon.vertices,
-        ].reverse();
+        const pivot =
+          toolState.editPivot ??
+          toolState.drawingPolygon.vertices[
+            toolState.drawingPolygon.vertices.length - 1
+          ];
+        const pivotIndex = toolState.drawingPolygon.vertices.indexOf(pivot);
+        if (pivotIndex === -1) {
+          return true;
+        }
+        const surroundingVertices = [
+          ...toolState.drawingPolygon.vertices.slice(pivotIndex + 1),
+          ...toolState.drawingPolygon.vertices.slice(0, pivotIndex),
+        ];
         setToolState({
           drawingPolygon: {
             ...toolState.drawingPolygon,
-            vertices: reversedVertices,
+            vertices: [pivot, ...surroundingVertices.reverse()],
           },
+          editPivot: pivot,
         });
       }
       return true;
@@ -290,12 +304,19 @@ export class VertexTool extends Tool<VertexToolState> {
     const { state, toolState } = this.getState();
     if (!toolState || toolState.drawingPolygon.vertices.length === 0) return;
 
+    const isEditingExistingPolygon = !!toolState.editingPolygon;
+    const startPoint = toolState.drawingPolygon.vertices[0];
     const lastPoint =
       toolState.drawingPolygon.vertices[
         toolState.drawingPolygon.vertices.length - 1
       ];
 
     // Convert world coordinates to screen coordinates
+    const startScreen = worldToScreen(
+      startPoint,
+      state.viewPortOffset,
+      state.zoom,
+    );
     const lastScreen = worldToScreen(
       lastPoint,
       state.viewPortOffset,
@@ -307,31 +328,32 @@ export class VertexTool extends Tool<VertexToolState> {
       state.zoom,
     );
 
-    // Draw preview line from last point to mouse cursor (solid)
+    // For polygon edits, the solid preview should grow from the pivot/start
+    // vertex and the dashed preview should point toward the opposite endpoint
+    // of the open edge. New polygon drawing keeps the original behavior.
     const isGrass = toolState.drawingPolygon.grass;
     ctx.strokeStyle = isGrass ? colors.grass : uiColors.vertexDraftLine;
     ctx.lineWidth = uiStrokeWidths.boundsSelectedScreen;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.moveTo(lastScreen.x, lastScreen.y);
+    ctx.moveTo(
+      isEditingExistingPolygon ? startScreen.x : lastScreen.x,
+      isEditingExistingPolygon ? startScreen.y : lastScreen.y,
+    );
     ctx.lineTo(mouseScreen.x, mouseScreen.y);
     ctx.stroke();
 
     // Draw potential closing line from first point to mouse cursor when we have 3+ vertices (dashed)
     if (toolState.drawingPolygon.vertices.length >= 3) {
-      const firstPoint = toolState.drawingPolygon.vertices[0];
-      const firstScreen = worldToScreen(
-        firstPoint,
-        state.viewPortOffset,
-        state.zoom,
-      );
-
       ctx.strokeStyle = uiColors.vertexDraftClosingLine;
       ctx.lineWidth = uiStrokeWidths.boundsSelectedScreen;
       ctx.setLineDash([8, 6]);
       ctx.beginPath();
-      ctx.moveTo(firstScreen.x, firstScreen.y);
+      ctx.moveTo(
+        isEditingExistingPolygon ? lastScreen.x : startScreen.x,
+        isEditingExistingPolygon ? lastScreen.y : startScreen.y,
+      );
       ctx.lineTo(mouseScreen.x, mouseScreen.y);
       ctx.stroke();
       ctx.setLineDash([]);
@@ -387,13 +409,15 @@ export class VertexTool extends Tool<VertexToolState> {
     // Remove the original polygon from the store
     state.actions.setPolygons(state.polygons.filter((p) => p !== polygon));
 
-    // Create a new drawing polygon that starts from the clicked vertex
-    // and includes all vertices starting from that vertex index
+    // Always start vertex editing in the same canvas direction regardless of
+    // the stored polygon winding. Clockwise polygons move to the next vertex;
+    // counterclockwise polygons move to the previous vertex.
     const vertices = polygon.vertices;
-    const drawingVertices = [
-      ...vertices.slice(vertexIndex),
-      ...vertices.slice(0, vertexIndex),
-    ];
+    const drawingVertices = this.buildEditingVertices(
+      vertices,
+      vertexIndex,
+      isPolygonClockwise(vertices) ? "previous" : "next",
+    );
 
     // Set this as the current drawing polygon and store the original
     setToolState({
@@ -402,6 +426,7 @@ export class VertexTool extends Tool<VertexToolState> {
         grass: editingPolygon.grass,
       },
       editingPolygon: editingPolygon,
+      editPivot: vertices[vertexIndex],
       variant: editingPolygon.grass ? "grass" : "default",
     });
   }
@@ -410,12 +435,12 @@ export class VertexTool extends Tool<VertexToolState> {
     state: EditorState,
     lineResult: {
       polygon: Polygon;
-      insertionIndex: number;
-      insertionPoint: Position;
+      pivotVertexIndex: number;
+      side: "next" | "previous";
     },
   ): void {
     const { setToolState } = this.getState();
-    const { polygon, insertionIndex, insertionPoint } = lineResult;
+    const { polygon, pivotVertexIndex, side } = lineResult;
 
     // Store the original polygon for potential restoration on ESCAPE
     const editingPolygon = polygon;
@@ -423,14 +448,14 @@ export class VertexTool extends Tool<VertexToolState> {
     // Remove the original polygon from the store
     state.actions.setPolygons(state.polygons.filter((p) => p !== polygon));
 
-    // Create a new drawing polygon that starts from the insertion point
-    // and includes all vertices starting from the insertion index
+    // Start from the closest endpoint and follow the side of that endpoint
+    // that belongs to the clicked edge.
     const vertices = polygon.vertices;
-    const drawingVertices = [
-      insertionPoint,
-      ...vertices.slice(insertionIndex),
-      ...vertices.slice(0, insertionIndex),
-    ];
+    const drawingVertices = this.buildEditingVertices(
+      vertices,
+      pivotVertexIndex,
+      side,
+    );
 
     // Set this as the current drawing polygon and store the original
     setToolState({
@@ -439,7 +464,27 @@ export class VertexTool extends Tool<VertexToolState> {
         grass: editingPolygon.grass,
       },
       editingPolygon: editingPolygon,
+      editPivot: vertices[pivotVertexIndex],
       variant: editingPolygon.grass ? "grass" : "default",
     });
+  }
+
+  private buildEditingVertices(
+    vertices: Position[],
+    pivotVertexIndex: number,
+    side: "next" | "previous",
+  ): Position[] {
+    const result = [vertices[pivotVertexIndex]];
+    const totalVertices = vertices.length;
+
+    for (let offset = 1; offset < totalVertices; offset++) {
+      const index =
+        side === "next"
+          ? (pivotVertexIndex + offset) % totalVertices
+          : (pivotVertexIndex - offset + totalVertices) % totalVertices;
+      result.push(vertices[index]);
+    }
+
+    return result;
   }
 }

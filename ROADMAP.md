@@ -75,6 +75,7 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
 - Mobile support:
   - Erase tool
   - Mobile toolbar (drawer)
+  - Vertex creation direction
 
 - Help section / keyboard shortcuts reference
 
