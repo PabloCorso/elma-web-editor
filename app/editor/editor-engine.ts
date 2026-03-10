@@ -919,7 +919,7 @@ export class EditorEngine {
 
       if (item.texture && item.mask) {
         const shouldRenderContent = showTextures;
-        const shouldShowBounds = showTextureBounds;
+        const shouldShowBounds = showTextureBounds || isSelectedPicture;
         if (!shouldRenderContent && !shouldShowBounds) return;
         const textureSprite = this.lgrAssets.getSprite(item.texture);
         const maskSprite = this.lgrAssets.getSprite(item.mask);
@@ -945,7 +945,7 @@ export class EditorEngine {
         }
       } else {
         const shouldRenderContent = showPictures;
-        const shouldShowBounds = showPictureBounds;
+        const shouldShowBounds = showPictureBounds || isSelectedPicture;
         if (!shouldRenderContent && !shouldShowBounds) return;
         const sprite = item.name ? this.lgrAssets.getSprite(item.name) : null;
         if (!sprite) return;
@@ -970,7 +970,8 @@ export class EditorEngine {
       }
     } else if (item.type === "apple") {
       const { showObjects, showObjectBounds } = state.levelVisibility;
-      if (!showObjects && !showObjectBounds) return;
+      const shouldShowBounds = showObjectBounds || isSelectedObject;
+      if (!showObjects && !shouldShowBounds) return;
       const sprite = this.lgrAssets.getAppleSprite(
         item.animation ?? defaultAppleState.animation,
       );
@@ -978,7 +979,7 @@ export class EditorEngine {
         if (!sprite) return;
         drawObject({ ctx, sprite, position, animate: state.animateSprites });
       }
-      if (showObjectBounds) {
+      if (shouldShowBounds) {
         drawObjectBounds({
           ctx,
           position,
@@ -990,13 +991,14 @@ export class EditorEngine {
       }
     } else if (item.type === "killer") {
       const { showObjects, showObjectBounds } = state.levelVisibility;
-      if (!showObjects && !showObjectBounds) return;
+      const shouldShowBounds = showObjectBounds || isSelectedObject;
+      if (!showObjects && !shouldShowBounds) return;
       const sprite = this.lgrAssets.getKillerSprite();
       if (showObjects) {
         if (!sprite) return;
         drawObject({ ctx, sprite, position, animate: state.animateSprites });
       }
-      if (showObjectBounds) {
+      if (shouldShowBounds) {
         drawObjectBounds({
           ctx,
           position,
@@ -1005,13 +1007,14 @@ export class EditorEngine {
       }
     } else if (item.type === "flower") {
       const { showObjects, showObjectBounds } = state.levelVisibility;
-      if (!showObjects && !showObjectBounds) return;
+      const shouldShowBounds = showObjectBounds || isSelectedObject;
+      if (!showObjects && !shouldShowBounds) return;
       const sprite = this.lgrAssets.getFlowerSprite();
       if (showObjects) {
         if (!sprite) return;
         drawObject({ ctx, sprite, position, animate: state.animateSprites });
       }
-      if (showObjectBounds) {
+      if (shouldShowBounds) {
         drawObjectBounds({
           ctx,
           position,
@@ -1020,12 +1023,13 @@ export class EditorEngine {
       }
     } else if (item.type === "start") {
       const { showObjects, showObjectBounds } = state.levelVisibility;
-      if (!showObjects && !showObjectBounds) return;
+      const shouldShowBounds = showObjectBounds || isSelectedObject;
+      if (!showObjects && !shouldShowBounds) return;
       if (showObjects) {
         const lgrSprites = this.lgrAssets.getKuskiSprites();
         drawKuski({ ctx, lgrSprites, start: state.start });
       }
-      if (showObjectBounds) {
+      if (shouldShowBounds) {
         drawKuskiBounds({
           ctx,
           start: state.start,
