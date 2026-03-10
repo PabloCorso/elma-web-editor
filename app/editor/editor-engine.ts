@@ -26,7 +26,7 @@ import {
   drawPicture,
   PICTURE_SCALE,
 } from "./draw-picture";
-import { worldToScreen } from "./helpers/coordinate-helpers";
+import { screenToWorld, worldToScreen } from "./helpers/coordinate-helpers";
 import {
   Clip,
   type Apple,
@@ -525,6 +525,24 @@ export class EditorEngine {
     };
   }
 
+  private syncMousePositionFromScreenPoint(screenPoint: Position) {
+    const state = this.store.getState();
+    const worldPos = screenToWorld(
+      screenPoint,
+      state.viewPortOffset,
+      state.zoom,
+    );
+
+    state.actions.setMousePosition(worldPos);
+    state.actions.setMouseOnCanvas(true);
+    this.updateSelectHoverState(state, worldPos);
+    this.updateCanvasCursor({
+      worldPos,
+      screenX: screenPoint.x,
+      screenY: screenPoint.y,
+    });
+  }
+
   private zoomAtAnchor(newZoom: number, anchor: { x: number; y: number }) {
     const state = this.store.getState();
     updateZoom({
@@ -547,10 +565,11 @@ export class EditorEngine {
   private handleWheel = (event: WheelEvent) => {
     event.preventDefault();
     const state = this.store.getState();
-    const { x: mouseX, y: mouseY } = this.getCanvasPoint(
+    const screenPoint = this.getCanvasPoint(
       event.clientX,
       event.clientY,
     );
+    const { x: mouseX, y: mouseY } = screenPoint;
 
     const modifier = checkModifierKey(event);
     const isLikelyPinchWheel =
@@ -561,6 +580,7 @@ export class EditorEngine {
         : this.wheelStep;
       const zoomFactor = Math.pow(2, -event.deltaY / zoomStepValue);
       this.zoomAtAnchor(state.zoom * zoomFactor, { x: mouseX, y: mouseY });
+      this.syncMousePositionFromScreenPoint(screenPoint);
       return;
     }
 
@@ -575,6 +595,7 @@ export class EditorEngine {
         setCamera: state.actions.setCamera,
         panSpeed: this.panSpeed,
       });
+      this.syncMousePositionFromScreenPoint(screenPoint);
       return;
     }
 
@@ -588,6 +609,7 @@ export class EditorEngine {
         setCamera: state.actions.setCamera,
         panSpeed: this.panSpeed,
       });
+      this.syncMousePositionFromScreenPoint(screenPoint);
       return;
     }
 
@@ -599,6 +621,7 @@ export class EditorEngine {
       setCamera: state.actions.setCamera,
       panSpeed: this.panSpeed,
     });
+    this.syncMousePositionFromScreenPoint(screenPoint);
   };
 
   private handleKeyDown = (event: KeyboardEvent) => {
