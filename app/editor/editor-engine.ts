@@ -17,7 +17,11 @@ import {
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
-import { drawKuski, drawKuskiBounds } from "./draw-kuski";
+import {
+  drawKuski,
+  drawKuskiBounds,
+  isPointInKuskiSelectionBounds,
+} from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject, drawObjectBounds } from "./draw-object";
 import {
@@ -906,10 +910,7 @@ export class EditorEngine {
       : uiStrokeWidths.boundsIdleScreen / state.zoom;
 
     if (item.type === "picture") {
-      const {
-        showPictures,
-        showTextures,
-      } = state.levelVisibility;
+      const { showPictures, showTextures } = state.levelVisibility;
 
       if (item.texture && item.mask) {
         if (!showTextures) return;
@@ -1075,11 +1076,18 @@ export class EditorEngine {
       ) {
         continue;
       }
-      const distance = Math.hypot(
-        worldPos.x - item.position.x,
-        worldPos.y - item.position.y,
-      );
-      if (distance > OBJECT_DIAMETER / 2) continue;
+      const isHovered =
+        item.type === RenderType.Start
+          ? isPointInKuskiSelectionBounds({
+              point: worldPos,
+              start: item.position,
+            })
+          : Math.hypot(
+              worldPos.x - item.position.x,
+              worldPos.y - item.position.y,
+            ) <=
+            OBJECT_DIAMETER / 2;
+      if (!isHovered) continue;
       return {
         hoveredObject: item.position,
         hoveredPictureBounds: undefined,
@@ -1498,7 +1506,8 @@ export class EditorEngine {
         : state.levelVisibility.showPictureBounds;
       const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
         (selected) =>
-          selected.x === picture.position.x && selected.y === picture.position.y,
+          selected.x === picture.position.x &&
+          selected.y === picture.position.y,
       );
       if (!shouldShowBounds && !isSelectedPicture) return;
 

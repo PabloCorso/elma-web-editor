@@ -19,11 +19,12 @@ import {
 import type { Apple, Polygon, Position } from "../elma-types";
 import type { EditorStore, PartialEditorState } from "../editor-store";
 import { defaultTools } from "./default-tools";
-import {
-  isWithinThreshold,
-  worldToScreen,
-} from "../helpers/coordinate-helpers";
+import { worldToScreen } from "../helpers/coordinate-helpers";
 import { checkModifierKey } from "~/utils/misc";
+import {
+  getKuskiSelectionCircles,
+  isPointInKuskiSelectionBounds,
+} from "../draw-kuski";
 
 const SELECT_OBJECT_THRESHOLD = 15;
 const SELECT_VERTEX_THRESHOLD = 10;
@@ -308,22 +309,42 @@ export class SelectTool extends Tool<SelectToolState> {
       }
 
       if (hoveredObject && !toolState.selectedObjects.includes(hoveredObject)) {
-        const center = worldToScreen(
-          hoveredObject,
-          state.viewPortOffset,
-          state.zoom,
-        );
         ctx.strokeStyle = uiColors.selectionHandleFill;
         ctx.lineWidth = uiStrokeWidths.boundsIdleScreen;
-        ctx.beginPath();
-        ctx.arc(
-          center.x,
-          center.y,
-          (OBJECT_DIAMETER / 2) * state.zoom,
-          0,
-          Math.PI * 2,
-        );
-        ctx.stroke();
+        if (hoveredObject === state.start) {
+          const circles = getKuskiSelectionCircles({ start: state.start });
+          circles.forEach((circle) => {
+            const center = worldToScreen(
+              { x: circle.x, y: circle.y },
+              state.viewPortOffset,
+              state.zoom,
+            );
+            ctx.beginPath();
+            ctx.arc(
+              center.x,
+              center.y,
+              circle.radius * state.zoom,
+              0,
+              Math.PI * 2,
+            );
+            ctx.stroke();
+          });
+        } else {
+          const center = worldToScreen(
+            hoveredObject,
+            state.viewPortOffset,
+            state.zoom,
+          );
+          ctx.beginPath();
+          ctx.arc(
+            center.x,
+            center.y,
+            (OBJECT_DIAMETER / 2) * state.zoom,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+        }
       }
 
       if (!this.isDragging && this.isPolygonSelectable()) {
@@ -455,11 +476,10 @@ export class SelectTool extends Tool<SelectToolState> {
     );
     if (flower) return flower;
 
-    const start = isWithinThreshold(
-      position,
-      state.start,
-      SELECT_OBJECT_THRESHOLD / state.zoom,
-    );
+    const start = isPointInKuskiSelectionBounds({
+      point: position,
+      start: state.start,
+    });
     if (start) return state.start;
 
     return null;

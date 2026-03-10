@@ -23,7 +23,7 @@ function skewimage(
   y1: number,
   x2: number,
   y2: number,
-  box?: boolean
+  box?: boolean,
 ) {
   const o = x2 - x1,
     a = y2 - y1;
@@ -44,7 +44,7 @@ function skewimage(
 function limb(
   cwInner: boolean,
   fstParams: { length: number; bx: number; by: number; br: number; ih: number },
-  sndParams: { length: number; bx: number; by: number; br: number; ih: number }
+  sndParams: { length: number; bx: number; by: number; br: number; ih: number },
 ) {
   return function (
     ctx: CanvasRenderingContext2D,
@@ -53,7 +53,7 @@ function limb(
     y1: number,
     sndImg: ImageBitmap,
     x2: number,
-    y2: number
+    y2: number,
   ) {
     const dist = hypot(x2 - x1, y2 - y1);
     let fstLen = fstParams.length;
@@ -87,7 +87,7 @@ function limb(
       jointx,
       jointy,
       x1,
-      y1
+      y1,
     );
     skewimage(
       ctx,
@@ -99,7 +99,7 @@ function limb(
       x2,
       y2,
       jointx,
-      jointy
+      jointy,
     );
   };
 }
@@ -119,7 +119,7 @@ const legLimb = limb(
     by: 0.45,
     br: 4 / 48,
     ih: 60 / 48 / 3,
-  }
+  },
 );
 
 const armLimb = limb(
@@ -137,7 +137,7 @@ const armLimb = limb(
     by: 0.5,
     br: 13.2 / 48 / 3,
     ih: 22.8 / 48 / 3,
-  }
+  },
 );
 
 function wheel(
@@ -145,7 +145,7 @@ function wheel(
   lgrSprites: Record<string, ImageBitmap>,
   wheelX: number,
   wheelY: number,
-  wheelR: number
+  wheelR: number,
 ) {
   ctx.save();
   ctx.translate(wheelX, -wheelY);
@@ -178,6 +178,18 @@ type BikeRenderArgs = {
   scale?: number;
   coords?: typeof defaultBikeCoords;
 };
+
+export type KuskiSelectionCircle = {
+  x: number;
+  y: number;
+  radius: number;
+};
+
+export type KuskiSelectionTriangle = [
+  { x: number; y: number },
+  { x: number; y: number },
+  { x: number; y: number },
+];
 
 function rotatePoint(point: { x: number; y: number }, radians: number) {
   const cos = Math.cos(radians);
@@ -212,6 +224,25 @@ export function drawKuskiBounds({
   lineWidth?: number;
   coords?: typeof defaultBikeCoords;
 }) {
+  const selectionCircles = getKuskiSelectionCircles({ start, coords });
+  ctx.save();
+  ctx.strokeStyle = uiColors.objectBounds;
+  ctx.lineWidth = lineWidth;
+  selectionCircles.forEach((circle) => {
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+export function getKuskiSelectionCircles({
+  start,
+  coords = defaultBikeCoords,
+}: {
+  start: { x: number; y: number };
+  coords?: typeof defaultBikeCoords;
+}): KuskiSelectionCircle[] {
   const bikeR = (coords.bikeR * Math.PI * 2) / 10000;
   const turn = coords.turn;
   const leftX = coords.leftX / 1000;
@@ -259,18 +290,87 @@ export function drawKuskiBounds({
 
   const wheelRadius = OBJECT_DIAMETER / 2;
   const headBoundsRadius = 11.5 / 48;
-  ctx.save();
-  ctx.strokeStyle = uiColors.objectBounds;
-  ctx.lineWidth = lineWidth;
-  [backCenter, frontCenter].forEach((center) => {
-    ctx.beginPath();
-    ctx.arc(center.x, center.y, wheelRadius, 0, Math.PI * 2);
-    ctx.stroke();
+  return [
+    { x: backCenter.x, y: backCenter.y, radius: wheelRadius },
+    { x: frontCenter.x, y: frontCenter.y, radius: wheelRadius },
+    { x: headCenter.x, y: headCenter.y, radius: headBoundsRadius },
+  ];
+}
+
+export function getKuskiSelectionTriangle({
+  start,
+  coords = defaultBikeCoords,
+}: {
+  start: { x: number; y: number };
+  coords?: typeof defaultBikeCoords;
+}): KuskiSelectionTriangle {
+  const circles = getKuskiSelectionCircles({
+    start,
+    coords,
   });
-  ctx.beginPath();
-  ctx.arc(headCenter.x, headCenter.y, headBoundsRadius, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
+  const centroid = circles.reduce(
+    (acc, circle) => ({
+      x: acc.x + circle.x / circles.length,
+      y: acc.y + circle.y / circles.length,
+    }),
+    { x: 0, y: 0 },
+  );
+
+  const expandedPoints = circles.map((circle) => {
+    const dx = circle.x - centroid.x;
+    const dy = circle.y - centroid.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    return {
+      x: circle.x + (dx / distance) * circle.radius,
+      y: circle.y + (dy / distance) * circle.radius,
+    };
+  });
+
+  return [expandedPoints[0], expandedPoints[1], expandedPoints[2]];
+}
+
+function triangleSign(
+  point: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+) {
+  return (point.x - b.x) * (a.y - b.y) - (a.x - b.x) * (point.y - b.y);
+}
+
+function isPointInTriangle(
+  point: { x: number; y: number },
+  triangle: KuskiSelectionTriangle,
+) {
+  const [a, b, c] = triangle;
+  const d1 = triangleSign(point, a, b);
+  const d2 = triangleSign(point, b, c);
+  const d3 = triangleSign(point, c, a);
+  const hasNegative = d1 < 0 || d2 < 0 || d3 < 0;
+  const hasPositive = d1 > 0 || d2 > 0 || d3 > 0;
+  return !(hasNegative && hasPositive);
+}
+
+export function isPointInKuskiSelectionBounds({
+  point,
+  start,
+  coords = defaultBikeCoords,
+}: {
+  point: { x: number; y: number };
+  start: { x: number; y: number };
+  coords?: typeof defaultBikeCoords;
+}) {
+  const selectionCircles = getKuskiSelectionCircles({ start, coords });
+  if (
+    selectionCircles.some((circle) => {
+      const dx = point.x - circle.x;
+      const dy = point.y - circle.y;
+      return Math.hypot(dx, dy) <= circle.radius;
+    })
+  ) {
+    return true;
+  }
+
+  return isPointInTriangle(point, getKuskiSelectionTriangle({ start, coords }));
 }
 
 export function drawKuski({
@@ -283,14 +383,14 @@ export function drawKuski({
   coords = defaultBikeCoords,
 }: BikeRenderArgs) {
   // Check if all required sprites are loaded
-  if (!standardSprites.kuski.every(sprite => lgrSprites[sprite])) {
+  if (!standardSprites.kuski.every((sprite) => lgrSprites[sprite])) {
     return; // Skip rendering if assets aren't ready
   }
 
   ctx.save();
   ctx.translate(
     scale * (-position.x + start.x),
-    scale * (-position.y + start.y)
+    scale * (-position.y + start.y),
   );
   ctx.scale(scale, scale);
   ctx.beginPath();
@@ -343,7 +443,7 @@ export function drawKuski({
     48 * r * Math.cos(a),
     48 * r * Math.sin(a),
     hbarsX,
-    hbarsY
+    hbarsY,
   );
 
   // rear suspension
@@ -362,7 +462,7 @@ export function drawKuski({
     9,
     20,
     48 * r * Math.cos(a),
-    48 * r * Math.sin(a)
+    48 * r * Math.sin(a),
   );
   ctx.restore();
 
@@ -397,7 +497,7 @@ export function drawKuski({
     bumy,
     lgrSprites.q1leg,
     pedalx,
-    pedaly
+    pedaly,
   );
 
   ctx.save(); // torso
@@ -430,7 +530,7 @@ export function drawKuski({
     shouldery,
     lgrSprites.q1forarm,
     handx,
-    handy
+    handy,
   );
 
   ctx.restore();
