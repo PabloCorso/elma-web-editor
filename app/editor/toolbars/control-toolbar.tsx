@@ -1,8 +1,4 @@
-import {
-  CursorIcon,
-  HandIcon,
-  SparkleIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { HandIcon, SparkleIcon } from "@phosphor-icons/react/dist/ssr";
 import { SpriteIcon } from "~/components/sprite-icon";
 import { ToolControlButton, type ToolControlButtonProps } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
@@ -17,6 +13,7 @@ import { PictureToolControl } from "./picture-tool-control";
 import { TextureToolControl } from "./texture-tool-control";
 import { VertexToolControl } from "./vertex-tool-control";
 import { cn } from "~/utils/misc";
+import { SelectToolControl } from "./select-tool-control";
 
 type ControlToolbarProps = ToolbarProps & { isOpenAIEnabled?: boolean };
 
@@ -55,14 +52,6 @@ export function ControlToolbar({
         {isOpenAIEnabled && <AIChatToolControl tooltipSide="right" />}
       </Toolbar>
     </div>
-  );
-}
-
-function SelectToolControl(props: ToolControlButtonProps) {
-  return (
-    <ToolControlButton {...defaultTools.select} {...props}>
-      <CursorIcon weight="light" />
-    </ToolControlButton>
   );
 }
 

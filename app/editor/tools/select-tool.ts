@@ -16,11 +16,12 @@ import {
   uiColors,
   uiStrokeWidths,
 } from "../constants";
-import type { Apple, Polygon, Position } from "../elma-types";
+import type { Apple, Picture, Polygon, Position } from "../elma-types";
 import type { EditorStore, PartialEditorState } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { worldToScreen } from "../helpers/coordinate-helpers";
 import { checkModifierKey } from "~/utils/misc";
+import fastDeepEqual from "fast-deep-equal";
 import {
   getKuskiSelectionCircles,
   isPointInKuskiSelectionBounds,
@@ -29,6 +30,7 @@ import {
 const SELECT_OBJECT_THRESHOLD = 15;
 const SELECT_VERTEX_THRESHOLD = 10;
 export const SELECT_POLYGON_EDGE_THRESHOLD = 8;
+const DUPLICATE_MARGIN = 1;
 
 export type SelectToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -45,9 +47,18 @@ export type SelectToolState = {
 
 type VertexSelection = { polygon: Polygon; vertex: Position };
 type ObjectSelection = Position;
+type SelectionClipboard = {
+  polygons: Polygon[];
+  apples: Apple[];
+  killers: Position[];
+  flowers: Position[];
+  pictures: Picture[];
+};
 
 export class SelectTool extends Tool<SelectToolState> {
   readonly meta = defaultTools.select;
+  private clipboard: SelectionClipboard | null = null;
+  private clipboardPasteCount = 0;
 
   constructor(store: EditorStore) {
     super(store);
@@ -270,6 +281,21 @@ export class SelectTool extends Tool<SelectToolState> {
 
   onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
     this.pruneHiddenSelection();
+    const modifier = checkModifierKey(event);
+
+    if (modifier && event.key.toLowerCase() === "c") {
+      if (this.copySelection()) {
+        event.preventDefault();
+        return true;
+      }
+    }
+
+    if (modifier && event.key.toLowerCase() === "v") {
+      if (this.pasteClipboardWithMargin()) {
+        event.preventDefault();
+        return true;
+      }
+    }
 
     if (event.key === "Delete" || event.key === "Backspace") {
       this.deleteSelection();
@@ -280,6 +306,32 @@ export class SelectTool extends Tool<SelectToolState> {
       return true;
     }
     return false;
+  }
+
+  public hasSelection(): boolean {
+    const { toolState } = this.getState();
+    if (!toolState) return false;
+
+    return (
+      toolState.selectedVertices.length > 0 ||
+      toolState.selectedObjects.length > 0 ||
+      toolState.selectedPictures.length > 0
+    );
+  }
+
+  public deleteCurrentSelection(): boolean {
+    if (!this.hasSelection()) return false;
+    this.deleteSelection();
+    return true;
+  }
+
+  public canDuplicateSelection(): boolean {
+    return Boolean(this.buildClipboardFromSelection());
+  }
+
+  public duplicateSelectionWithOffset(): boolean {
+    if (!this.copySelection()) return false;
+    return this.pasteClipboardWithMargin();
   }
 
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
@@ -1023,6 +1075,202 @@ export class SelectTool extends Tool<SelectToolState> {
     state.actions.setPolygons(state.polygons.filter((_, i) => i !== index));
   }
 
+  private runHistoryBatch(mutate: () => void) {
+    const historyStart = this.getHistorySnapshot();
+    this.store.temporal.getState().pause();
+
+    try {
+      mutate();
+    } finally {
+      this.store.temporal.getState().resume();
+    }
+
+    const historyEnd = this.getHistorySnapshot();
+    if (fastDeepEqual(historyStart, historyEnd)) return;
+
+    const temporalState = this.store.temporal.getState() as {
+      _handleSet?: (
+        pastState: PartialEditorState,
+        replace: undefined,
+        currentState: PartialEditorState,
+        deltaState?: Partial<PartialEditorState> | null,
+      ) => void;
+    };
+
+    temporalState._handleSet?.(historyStart, undefined, historyEnd);
+  }
+
+  private copySelection(): boolean {
+    const clipboard = this.buildClipboardFromSelection();
+    if (!clipboard) return false;
+    this.clipboard = clipboard;
+    this.clipboardPasteCount = 0;
+    return true;
+  }
+
+  private pasteClipboardWithMargin(): boolean {
+    const step = this.clipboardPasteCount + 1;
+    const pasted = this.pasteClipboard({
+      x: DUPLICATE_MARGIN * step,
+      y: DUPLICATE_MARGIN * step,
+    });
+
+    if (pasted) {
+      this.clipboardPasteCount = step;
+    }
+
+    return pasted;
+  }
+
+  private pasteClipboard(offset: Position): boolean {
+    if (!this.clipboard) return false;
+
+    const { state, setToolState } = this.getState();
+    const translatedPolygons = this.clipboard.polygons.map((polygon) => ({
+      ...polygon,
+      vertices: polygon.vertices.map((vertex) =>
+        translatePosition(vertex, offset),
+      ),
+    }));
+    const translatedApples = this.clipboard.apples.map((apple) => ({
+      ...apple,
+      position: translatePosition(apple.position, offset),
+    }));
+    const translatedKillers = this.clipboard.killers.map((killer) =>
+      translatePosition(killer, offset),
+    );
+    const translatedFlowers = this.clipboard.flowers.map((flower) =>
+      translatePosition(flower, offset),
+    );
+    const translatedPictures = this.clipboard.pictures.map((picture) => ({
+      ...picture,
+      position: translatePosition(picture.position, offset),
+    }));
+
+    if (
+      translatedPolygons.length === 0 &&
+      translatedApples.length === 0 &&
+      translatedKillers.length === 0 &&
+      translatedFlowers.length === 0 &&
+      translatedPictures.length === 0
+    ) {
+      return false;
+    }
+
+    this.runHistoryBatch(() => {
+      if (translatedPolygons.length > 0) {
+        state.actions.setPolygons([...state.polygons, ...translatedPolygons]);
+      }
+      if (translatedApples.length > 0) {
+        state.actions.setApples([...state.apples, ...translatedApples]);
+      }
+      if (translatedKillers.length > 0) {
+        state.actions.setKillers([...state.killers, ...translatedKillers]);
+      }
+      if (translatedFlowers.length > 0) {
+        state.actions.setFlowers([...state.flowers, ...translatedFlowers]);
+      }
+      if (translatedPictures.length > 0) {
+        state.actions.setPictures([...state.pictures, ...translatedPictures]);
+      }
+    });
+
+    setToolState({
+      selectedVertices: translatedPolygons.flatMap((polygon) =>
+        polygon.vertices.map((vertex) => ({ polygon, vertex })),
+      ),
+      selectedObjects: [
+        ...translatedApples.map((apple) => apple.position),
+        ...translatedKillers,
+        ...translatedFlowers,
+      ],
+      selectedPictures: translatedPictures.map((picture) => picture.position),
+      hoveredObject: undefined,
+      hoveredPictureBounds: undefined,
+      contextMenuType: undefined,
+    });
+
+    return true;
+  }
+
+  private buildClipboardFromSelection(): SelectionClipboard | null {
+    const { state, toolState } = this.getState();
+    if (!toolState) return null;
+
+    const polygonSelections = new Map<Polygon, Set<Position>>();
+    toolState.selectedVertices.forEach(({ polygon, vertex }) => {
+      const existing = polygonSelections.get(polygon) ?? new Set<Position>();
+      existing.add(vertex);
+      polygonSelections.set(polygon, existing);
+    });
+
+    const polygons = Array.from(polygonSelections.entries())
+      .map(([polygon, selectedVertices]) => {
+        const vertices = polygon.vertices
+          .filter((vertex) => selectedVertices.has(vertex))
+          .map(clonePosition);
+
+        if (vertices.length < 3) return null;
+
+        return {
+          ...polygon,
+          vertices,
+        };
+      })
+      .filter((polygon): polygon is Polygon => Boolean(polygon));
+
+    const apples = toolState.selectedObjects
+      .map((object) => {
+        const apple = state.apples.find((entry) => entry.position === object);
+        return apple
+          ? {
+              ...apple,
+              position: clonePosition(apple.position),
+            }
+          : null;
+      })
+      .filter((apple): apple is Apple => Boolean(apple));
+
+    const killers = toolState.selectedObjects
+      .filter((object) => state.killers.includes(object))
+      .map(clonePosition);
+
+    const flowers = toolState.selectedObjects
+      .filter((object) => state.flowers.includes(object))
+      .map(clonePosition);
+
+    const pictures = toolState.selectedPictures
+      .map((position) => {
+        const picture = state.pictures.find(
+          (entry) => entry.position === position,
+        );
+        return picture
+          ? {
+              ...picture,
+              position: clonePosition(picture.position),
+            }
+          : null;
+      })
+      .filter((picture): picture is Picture => Boolean(picture));
+
+    const hasContent =
+      polygons.length > 0 ||
+      apples.length > 0 ||
+      killers.length > 0 ||
+      flowers.length > 0 ||
+      pictures.length > 0;
+
+    return hasContent
+      ? {
+          polygons,
+          apples,
+          killers,
+          flowers,
+          pictures,
+        }
+      : null;
+  }
+
   private deleteSelection(): void {
     const { state, toolState } = this.getState();
     if (!toolState) return;
@@ -1041,52 +1289,65 @@ export class SelectTool extends Tool<SelectToolState> {
       },
     );
 
-    // Delete vertices from each polygon
-    const sortedPolygonIndices = Array.from(verticesByPolygonIndex.keys()).sort(
-      (a, b) => b - a,
-    );
-    sortedPolygonIndices.forEach((polygonIndex) => {
-      const polygon = state.polygons[polygonIndex];
-      const verticesToDelete = verticesByPolygonIndex.get(polygonIndex)!;
+    this.runHistoryBatch(() => {
+      // Delete vertices from each polygon
+      const sortedPolygonIndices = Array.from(
+        verticesByPolygonIndex.keys(),
+      ).sort((a, b) => b - a);
+      sortedPolygonIndices.forEach((polygonIndex) => {
+        const polygon = state.polygons[polygonIndex];
+        const verticesToDelete = verticesByPolygonIndex.get(polygonIndex)!;
 
-      if (polygon) {
-        const updatedVertices = polygon.vertices.filter(
-          (vertex: Position) => !verticesToDelete.includes(vertex),
-        );
+        if (polygon) {
+          const updatedVertices = polygon.vertices.filter(
+            (vertex: Position) => !verticesToDelete.includes(vertex),
+          );
 
-        if (updatedVertices.length < 3) {
-          this.removePolygon(polygonIndex);
-        } else {
-          this.updatePolygon(polygonIndex, {
-            ...polygon,
-            vertices: updatedVertices,
-          });
+          if (updatedVertices.length < 3) {
+            this.removePolygon(polygonIndex);
+          } else {
+            this.updatePolygon(polygonIndex, {
+              ...polygon,
+              vertices: updatedVertices,
+            });
+          }
         }
-      }
-    });
+      });
 
-    // Delete selected objects
-    toolState.selectedObjects.forEach((object: ObjectSelection) => {
-      const apple = state.apples.find((a) => a.position === object);
-      if (apple) {
-        state.actions.removeApple(apple);
-      } else if (state.killers.some((k) => k === object)) {
-        state.actions.removeKiller(object);
-      } else if (state.flowers.some((f) => f === object)) {
-        state.actions.removeFlower(object);
-      }
-    });
+      // Delete selected objects
+      toolState.selectedObjects.forEach((object: ObjectSelection) => {
+        const apple = state.apples.find((a) => a.position === object);
+        if (apple) {
+          state.actions.removeApple(apple);
+        } else if (state.killers.some((k) => k === object)) {
+          state.actions.removeKiller(object);
+        } else if (state.flowers.some((f) => f === object)) {
+          state.actions.removeFlower(object);
+        }
+      });
 
-    // Delete selected pictures
-    toolState.selectedPictures.forEach((picturePos: Position) => {
-      const picture = state.pictures.find((p) => p.position === picturePos);
-      if (picture) {
-        state.actions.removePicture(picture);
-      }
+      // Delete selected pictures
+      toolState.selectedPictures.forEach((picturePos: Position) => {
+        const picture = state.pictures.find((p) => p.position === picturePos);
+        if (picture) {
+          state.actions.removePicture(picture);
+        }
+      });
     });
 
     this.clear();
   }
+}
+
+function clonePosition(position: Position): Position {
+  return { x: position.x, y: position.y };
+}
+
+function translatePosition(position: Position, offset: Position): Position {
+  return {
+    x: position.x + offset.x,
+    y: position.y + offset.y,
+  };
 }
 
 function drawSelectMarquee({

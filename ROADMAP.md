@@ -68,8 +68,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Delete tool (mobile delete)
     - In-game editor: "You cannot delete the Start object!", "You cannot delete the Exit object!" (last one maybe) and "This is the only polygon, so you cannot delete it." (last polygon can be grass).
 
-- Show defaults for object, start and images while loading.
-
 - Better save changes affordance.
   - Track latest downloaded state vs current state and show an alert on close if unsaved.
   - Save state to local storage and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
