@@ -6,7 +6,6 @@ import { useEditor, useEditorActions } from "~/editor/use-editor-store";
 import {
   ArrowsClockwiseIcon,
   LayoutIcon,
-  PaletteIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { useClickOutside } from "@mantine/hooks";
 import { SpriteIcon } from "~/components/sprite-icon";
@@ -28,7 +27,7 @@ import {
 } from "~/components/ui/tooltip";
 import { cn } from "~/utils/misc";
 import { useState } from "react";
-import { colors } from "../constants";
+import { colors, OBJECT_FRAME_PX } from "../constants";
 import { VertexIcon } from "./vertex-tool-control";
 
 export function LevelVisibilityControl() {
@@ -85,7 +84,7 @@ export function LevelVisibilityControls({
     <>
       <VisibilityToggleButton
         label="Ground/Sky textures"
-        icon={<PaletteIcon />}
+        icon={<GroundSkyTexturesIcon />}
         active={levelVisibility.useGroundSkyTextures}
         onClick={() => onToggle("useGroundSkyTextures")}
       />
@@ -95,10 +94,16 @@ export function LevelVisibilityControls({
         active={levelVisibility.showPolygonHandles}
         onClick={() => onToggle("showPolygonHandles")}
       />
+      <VisibilityToggleButton
+        label="Object animations"
+        icon={<ObjectAnimationsIcon />}
+        active={levelVisibility.showObjectAnimations}
+        onClick={() => onToggle("showObjectAnimations")}
+      />
       <ToolbarSeparator />
       <VisibilityToggleButton
         label="Objects"
-        icon={<ObjectsMixIcon />}
+        icon={<ObjectsIcon />}
         active={levelVisibility.showObjects}
         onClick={() => onToggle("showObjects")}
       />
@@ -185,7 +190,67 @@ function VisibilityToggleButton({
   );
 }
 
-function ObjectsMixIcon({
+function GroundSkyTexturesIcon({
+  className,
+  ...props
+}: React.ComponentPropsWithRef<"span">) {
+  const ground = useLgrSprite("ground");
+  const sky = useLgrSprite("sky");
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "relative inline-block h-full w-full overflow-hidden rounded-[4px]",
+        className,
+      )}
+      {...props}
+    >
+      <span
+        className="absolute inset-0 bg-repeat"
+        style={{
+          backgroundImage: ground.src ? `url(${ground.src})` : undefined,
+          backgroundSize: "8px 8px",
+        }}
+      />
+      <span
+        className="absolute inset-0"
+        style={{
+          backgroundImage: sky.src ? `url(${sky.src})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          clipPath: "polygon(0 0, 100% 0, 0 100%)",
+        }}
+      />
+    </span>
+  );
+}
+
+function PolygonHandlesIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <VertexIcon handles {...props} />;
+}
+
+function ObjectAnimationsIcon({
+  className,
+  ...props
+}: React.ComponentPropsWithRef<"span">) {
+  const apple = useLgrSprite("qfood1");
+
+  return (
+    <span aria-hidden="true" className={cn("relative", className)} {...props}>
+      <span
+        className="absolute inset-0 bg-no-repeat"
+        style={{
+          backgroundImage: apple.src ? `url(${apple.src})` : undefined,
+          backgroundSize: "auto 100%",
+          backgroundPosition: `calc(50% - ${OBJECT_FRAME_PX / 2}px) center`,
+        }}
+      />
+    </span>
+  );
+}
+
+function ObjectsIcon({
   className,
   ...props
 }: React.ComponentPropsWithRef<"span">) {
@@ -209,10 +274,6 @@ function ObjectsMixIcon({
       />
     </span>
   );
-}
-
-function PolygonHandlesIcon(props: React.SVGProps<SVGSVGElement>) {
-  return <VertexIcon handles {...props} />;
 }
 
 function PicturesIcon({

@@ -969,7 +969,8 @@ export class EditorEngine {
         }
       }
     } else if (item.type === "apple") {
-      const { showObjects, showObjectBounds } = state.levelVisibility;
+      const { showObjects, showObjectBounds, showObjectAnimations } =
+        state.levelVisibility;
       const shouldShowBounds = showObjectBounds || isSelectedObject;
       if (!showObjects && !shouldShowBounds) return;
       const sprite = this.lgrAssets.getAppleSprite(
@@ -977,7 +978,12 @@ export class EditorEngine {
       );
       if (showObjects) {
         if (!sprite) return;
-        drawObject({ ctx, sprite, position, animate: state.animateSprites });
+        drawObject({
+          ctx,
+          sprite,
+          position,
+          animate: state.animateSprites && showObjectAnimations,
+        });
       }
       if (shouldShowBounds) {
         drawObjectBounds({
@@ -990,13 +996,19 @@ export class EditorEngine {
         drawGravityArrow({ ctx, position, gravity: item.gravity });
       }
     } else if (item.type === "killer") {
-      const { showObjects, showObjectBounds } = state.levelVisibility;
+      const { showObjects, showObjectBounds, showObjectAnimations } =
+        state.levelVisibility;
       const shouldShowBounds = showObjectBounds || isSelectedObject;
       if (!showObjects && !shouldShowBounds) return;
       const sprite = this.lgrAssets.getKillerSprite();
       if (showObjects) {
         if (!sprite) return;
-        drawObject({ ctx, sprite, position, animate: state.animateSprites });
+        drawObject({
+          ctx,
+          sprite,
+          position,
+          animate: state.animateSprites && showObjectAnimations,
+        });
       }
       if (shouldShowBounds) {
         drawObjectBounds({
@@ -1006,13 +1018,19 @@ export class EditorEngine {
         });
       }
     } else if (item.type === "flower") {
-      const { showObjects, showObjectBounds } = state.levelVisibility;
+      const { showObjects, showObjectBounds, showObjectAnimations } =
+        state.levelVisibility;
       const shouldShowBounds = showObjectBounds || isSelectedObject;
       if (!showObjects && !shouldShowBounds) return;
       const sprite = this.lgrAssets.getFlowerSprite();
       if (showObjects) {
         if (!sprite) return;
-        drawObject({ ctx, sprite, position, animate: state.animateSprites });
+        drawObject({
+          ctx,
+          sprite,
+          position,
+          animate: state.animateSprites && showObjectAnimations,
+        });
       }
       if (shouldShowBounds) {
         drawObjectBounds({

@@ -459,6 +459,7 @@ export function createEditorStore({
               ground: level.ground || "ground",
               sky: level.sky || "sky",
               levelVisibility: defaultLevelVisibility,
+              mouseOnCanvas: false,
             });
             const temporal = (store as EditorStore).temporal.getState();
             temporal.clear();
