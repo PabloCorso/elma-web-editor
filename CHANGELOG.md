@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-03-10
+
+- Align vertex creation with Internal Level Editor.
+- Keep Smibu Level Editor vertex creation style from edges behind mod+click.
+- Add copy/paste and erase options from the select tool.
+- Improve toolbars positioning and responsiveness on mobile.
+
 ## 2026-03-09
 
 - Add "always show all vertices" kind of option @roope
