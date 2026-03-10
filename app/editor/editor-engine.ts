@@ -803,7 +803,6 @@ export class EditorEngine {
       : this.buildViewportPath(state);
     this.drawGroundFill(state, groundPath);
     this.drawPolygons(state, groundPath);
-    this.drawPolygonHandles(state);
 
     const queue = this.getDrawItemQueue(state);
     for (const item of queue) {
@@ -826,7 +825,11 @@ export class EditorEngine {
       activeTool.onRender(this.ctx, this.lgrAssets);
     }
 
+    this.drawPictureBoundsOverlay(state);
+
     this.ctx.restore();
+
+    this.drawPolygonHandlesOverlay(state);
 
     // Screen-space overlay (tools, UI)
     if (activeTool?.onRenderOverlay) {
@@ -905,68 +908,32 @@ export class EditorEngine {
 
     if (item.type === "picture") {
       const {
-        showPictureBounds,
-        showTextureBounds,
         showPictures,
         showTextures,
       } = state.levelVisibility;
-      const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
-        (selected) => selected.x === position.x && selected.y === position.y,
-      );
-      const boundsLineWidth = isSelectedPicture
-        ? uiStrokeWidths.boundsSelectedScreen / state.zoom
-        : uiStrokeWidths.boundsIdleScreen / state.zoom;
 
       if (item.texture && item.mask) {
-        const shouldRenderContent = showTextures;
-        const shouldShowBounds = showTextureBounds || isSelectedPicture;
-        if (!shouldRenderContent && !shouldShowBounds) return;
+        if (!showTextures) return;
         const textureSprite = this.lgrAssets.getSprite(item.texture);
         const maskSprite = this.lgrAssets.getSprite(item.mask);
-        if (!maskSprite) return;
+        if (!maskSprite || !textureSprite) return;
 
-        if (shouldRenderContent && textureSprite) {
-          drawMaskedTexturePicture({
-            ctx,
-            textureSprite,
-            maskSprite,
-            position,
-            showBounds: shouldShowBounds,
-            boundsLineWidth,
-          });
-        } else if (shouldShowBounds) {
-          drawPictureBounds({
-            ctx,
-            position,
-            width: maskSprite.width,
-            height: maskSprite.height,
-            boundsLineWidth,
-          });
-        }
+        drawMaskedTexturePicture({
+          ctx,
+          textureSprite,
+          maskSprite,
+          position,
+        });
       } else {
-        const shouldRenderContent = showPictures;
-        const shouldShowBounds = showPictureBounds || isSelectedPicture;
-        if (!shouldRenderContent && !shouldShowBounds) return;
+        if (!showPictures) return;
         const sprite = item.name ? this.lgrAssets.getSprite(item.name) : null;
         if (!sprite) return;
 
-        if (shouldRenderContent) {
-          drawPicture({
-            ctx,
-            sprite,
-            position,
-            showBounds: shouldShowBounds,
-            boundsLineWidth,
-          });
-        } else if (shouldShowBounds) {
-          drawPictureBounds({
-            ctx,
-            position,
-            width: sprite.width,
-            height: sprite.height,
-            boundsLineWidth,
-          });
-        }
+        drawPicture({
+          ctx,
+          sprite,
+          position,
+        });
       }
     } else if (item.type === "apple") {
       const { showObjects, showObjectBounds, showObjectAnimations } =
@@ -1522,22 +1489,61 @@ export class EditorEngine {
     });
   }
 
-  private drawPolygonHandles(state: EditorState) {
+  private drawPictureBoundsOverlay(state: EditorState) {
+    const selectState = state.actions.getToolState<SelectToolState>("select");
+
+    state.pictures.forEach((picture) => {
+      const hasTexture = Boolean(picture.texture && picture.mask);
+      const shouldShowBounds = hasTexture
+        ? state.levelVisibility.showTextureBounds
+        : state.levelVisibility.showPictureBounds;
+      const isSelectedPicture = (selectState?.selectedPictures ?? []).some(
+        (selected) =>
+          selected.x === picture.position.x && selected.y === picture.position.y,
+      );
+      if (!shouldShowBounds && !isSelectedPicture) return;
+
+      const dimensions = this.getPictureWorldDimensions(picture);
+      if (!dimensions) return;
+
+      const boundsLineWidth = isSelectedPicture
+        ? uiStrokeWidths.boundsSelectedScreen / state.zoom
+        : uiStrokeWidths.boundsIdleScreen / state.zoom;
+
+      drawPictureBounds({
+        ctx: this.ctx,
+        position: picture.position,
+        width: dimensions.width / PICTURE_SCALE,
+        height: dimensions.height / PICTURE_SCALE,
+        boundsLineWidth,
+      });
+    });
+  }
+
+  private drawPolygonHandlesOverlay(state: EditorState) {
     if (!state.levelVisibility.showPolygonHandles) return;
     if (state.polygons.length === 0) return;
 
-    const size = 3 / state.zoom;
+    const size = 3;
     const side = size * 2;
+    this.ctx.save();
     this.ctx.fillStyle = uiColors.selectionHandleFill;
     this.ctx.strokeStyle = uiColors.selectionHandleStroke;
-    this.ctx.lineWidth = uiStrokeWidths.boundsIdleScreen / state.zoom;
+    this.ctx.lineWidth = uiStrokeWidths.boundsIdleScreen;
 
     state.polygons.forEach((polygon) => {
       polygon.vertices.forEach((vertex) => {
-        this.ctx.fillRect(vertex.x - size, vertex.y - size, side, side);
-        this.ctx.strokeRect(vertex.x - size, vertex.y - size, side, side);
+        const position = worldToScreen(
+          vertex,
+          state.viewPortOffset,
+          state.zoom,
+        );
+        this.ctx.fillRect(position.x - size, position.y - size, side, side);
+        this.ctx.strokeRect(position.x - size, position.y - size, side, side);
       });
     });
+
+    this.ctx.restore();
   }
 
   public destroy() {
