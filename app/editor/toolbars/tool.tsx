@@ -11,7 +11,7 @@ import {
   type TooltipContentProps,
 } from "~/components/ui/tooltip";
 import type { ButtonProps } from "~/components/ui/button";
-import { Portal, type PortalProps } from "@radix-ui/react-portal";
+import { FloatingViewportToolbar } from "./floating-toolbar";
 
 export type ToolButtonProps = ButtonProps & {
   name?: string;
@@ -50,6 +50,7 @@ export function ToolButton({
 export type ToolControlButtonProps = ToolButtonProps & {
   id?: string;
   isActive?: boolean;
+  isLoading?: boolean;
 };
 
 export function ToolControlButton({
@@ -58,6 +59,7 @@ export function ToolControlButton({
   className,
   children,
   onClick,
+  isLoading,
   ...props
 }: ToolControlButtonProps) {
   const activeTool = useEditorActiveTool();
@@ -65,7 +67,13 @@ export function ToolControlButton({
   const isActive = isActiveProp ?? (id ? activeTool?.meta.id === id : false);
   return (
     <ToolButton
-      className={cn({ "bg-primary-hover/50": isActive }, className)}
+      className={cn(
+        {
+          "bg-primary-hover/50": isActive,
+          "animate-pulse bg-primary": isLoading,
+        },
+        className,
+      )}
       onClick={(event) => {
         if (id) activateTool(id);
         onClick?.(event);
@@ -77,17 +85,40 @@ export function ToolControlButton({
   );
 }
 
-export function ToolMenu({ id, className, ...props }: PortalProps) {
+export function ToolMenu({
+  id,
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<"div"> & {
+  id: string;
+  children: React.ReactNode;
+}) {
   const activeTool = useEditorActiveTool();
   const isActive = activeTool?.meta.id === id;
   if (!isActive) return null;
   return (
-    <Portal
-      className={cn(
-        "h-fit fixed max-h-[80vh] left-20 shadow-lg inset-y-4 my-auto overflow-y-auto",
-        className,
-      )}
-      {...props}
-    />
+    <FloatingViewportToolbar className={className} {...props}>
+      {children}
+    </FloatingViewportToolbar>
+  );
+}
+
+type ToolControlMenuProps = {
+  id: string;
+  button: React.ReactNode;
+  children: React.ReactNode;
+};
+
+export function ToolControlMenu({
+  id,
+  button,
+  children,
+}: ToolControlMenuProps) {
+  return (
+    <>
+      {button}
+      <ToolMenu id={id}>{children}</ToolMenu>
+    </>
   );
 }

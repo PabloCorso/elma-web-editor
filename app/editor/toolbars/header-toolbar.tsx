@@ -94,7 +94,13 @@ export function HeaderToolbar({
 
   return (
     <>
-      <Toolbar className={cn("absolute left-4 top-4", className)} {...props}>
+      <Toolbar
+        className={cn(
+          "absolute left-4 top-4 max-w-[calc(100vw-2rem)] overflow-auto",
+          className,
+        )}
+        {...props}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger>
             <ToolbarButton
@@ -156,17 +162,18 @@ export function HeaderToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="px-2 flex items-center gap-2">
-          {!isLoading && (
-            <input
-              type="text"
-              value={levelName}
-              onChange={(e) => setLevelName(e.target.value)}
-              className={cn(
-                "focus-visible:focus-ring w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 text-sm",
-              )}
-              placeholder="Enter level name…"
-            />
-          )}
+          <input
+            type="text"
+            name="level-name"
+            value={isLoading ? "" : levelName}
+            onChange={(e) => setLevelName(e.target.value)}
+            className={cn(
+              "focus-visible:focus-ring w-full px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 text-sm",
+              { "animate-pulse": isLoading },
+            )}
+            placeholder={isLoading ? "" : "Enter level name…"}
+            disabled={isLoading}
+          />
           <LevelPropertiesControl />
           <LevelVisibilityControl />
           {filename ? (

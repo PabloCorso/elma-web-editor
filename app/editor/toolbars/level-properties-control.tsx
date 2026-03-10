@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useClickOutside } from "@mantine/hooks";
-import { Toolbar, ToolbarButton } from "~/components/ui/toolbar";
+import { ToolbarButton } from "~/components/ui/toolbar";
 import { cn } from "~/utils/misc";
 import { useTextureSprites } from "~/components/use-lgr-assets";
 import { standardSprites } from "~/components/standard-sprites";
@@ -12,10 +11,16 @@ import {
 } from "~/components/ui/tooltip";
 import { IconButton } from "~/components/ui/button";
 import { useEditor, useEditorActions } from "../use-editor-store";
+import {
+  FloatingToolbar,
+  FloatingToolbarAnchor,
+  FloatingToolbarContent,
+  FloatingToolbarPanel,
+  FloatingToolbarTrigger,
+} from "./floating-toolbar";
 
 export function LevelPropertiesControl() {
   const [open, setOpen] = useState(false);
-  const rootRef = useClickOutside(() => setOpen(false));
   const { setGround, setSky } = useEditorActions();
 
   const textureSprites = useTextureSprites();
@@ -54,52 +59,52 @@ export function LevelPropertiesControl() {
     setGround(nextGround);
   };
 
+  const skySrc = skyTextureSprite?.maskedSrc ?? skyTextureSprite?.src;
+  const groundSrc = groundTextureSprite?.maskedSrc ?? groundTextureSprite?.src;
+  const isLoading = !skySrc || !groundSrc;
   return (
-    <div ref={rootRef} className="relative">
-      <Tooltip>
-        <TooltipTrigger>
-          <ToolbarButton
-            aria-label="Level properties"
-            aria-expanded={open}
-            onClick={() => setOpen((isOpen) => !isOpen)}
-          >
-            <LevelTextureIcon
-              skySrc={skyTextureSprite?.maskedSrc ?? skyTextureSprite?.src}
-              groundSrc={
-                groundTextureSprite?.maskedSrc ?? groundTextureSprite?.src
-              }
-            />
-          </ToolbarButton>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">
-          Level properties
-        </TooltipContent>
-      </Tooltip>
-      {open && (
-        <div className="fixed z-10 top-20 left-20 right-4 overflow-x-auto pointer-events-none">
-          <Toolbar
-            orientation="vertical"
-            className="min-w-max pl-4 gap-2 pointer-events-auto flex-col items-stretch"
-          >
-            <TexturePickerRow
-              label="Sky"
-              selectedTexture={skyTexture}
-              textures={allTextures}
-              textureSprites={textureSprites}
-              onSelect={handleSkyTextureSelect}
-              tooltipSide="top"
-            />
-            <TexturePickerRow
-              label="Ground"
-              selectedTexture={groundTexture}
-              textures={allTextures}
-              textureSprites={textureSprites}
-              onSelect={handleGroundTextureSelect}
-            />
-          </Toolbar>
-        </div>
-      )}
-    </div>
+    <FloatingToolbar open={open} onOpenChange={setOpen}>
+      <FloatingToolbarAnchor>
+        <Tooltip>
+          <TooltipTrigger>
+            <FloatingToolbarTrigger>
+            <ToolbarButton
+              aria-label="Level properties"
+              aria-expanded={open}
+              className={cn({ "animate-pulse": isLoading })}
+            >
+              <LevelTextureIcon skySrc={skySrc} groundSrc={groundSrc} />
+            </ToolbarButton>
+            </FloatingToolbarTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Level properties
+          </TooltipContent>
+        </Tooltip>
+      </FloatingToolbarAnchor>
+      <FloatingToolbarContent side="bottom" align="center">
+        <FloatingToolbarPanel
+          orientation="vertical"
+          className="min-w-max pl-4 gap-2 flex-col items-stretch"
+        >
+          <TexturePickerRow
+            label="Sky"
+            selectedTexture={skyTexture}
+            textures={allTextures}
+            textureSprites={textureSprites}
+            onSelect={handleSkyTextureSelect}
+            tooltipSide="top"
+          />
+          <TexturePickerRow
+            label="Ground"
+            selectedTexture={groundTexture}
+            textures={allTextures}
+            textureSprites={textureSprites}
+            onSelect={handleGroundTextureSelect}
+          />
+        </FloatingToolbarPanel>
+      </FloatingToolbarContent>
+    </FloatingToolbar>
   );
 }
 

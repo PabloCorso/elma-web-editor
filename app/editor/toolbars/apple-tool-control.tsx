@@ -4,8 +4,8 @@ import {
 } from "~/editor/use-editor-store";
 import { SpriteIcon } from "~/components/sprite-icon";
 import {
-  ToolMenu,
   ToolControlButton,
+  ToolControlMenu,
   type ToolControlButtonProps,
 } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
@@ -46,22 +46,25 @@ export function AppleToolControl(props: ToolControlButtonProps) {
   const apple = { 1: apple1, 2: apple2 }[currentAnimation];
 
   return (
-    <>
-      <ToolControlButton
-        className="relative"
-        iconAfter={<AppleArrowIcon gravity={currentGravity} />}
-        {...defaultTools.apple}
-        {...props}
-      >
-        <SpriteIcon src={apple.src} />
-      </ToolControlButton>
-      <ToolMenu id={defaultTools.apple.id}>
-        <AppleToolbar
-          onAnimationChange={handleAppleAnimationChange}
-          onGravityChange={handleGravityChange}
-        />
-      </ToolMenu>
-    </>
+    <ToolControlMenu
+      id={defaultTools.apple.id}
+      button={
+        <ToolControlButton
+          className="relative"
+          isLoading={!apple.src}
+          iconAfter={<AppleArrowIcon gravity={currentGravity} />}
+          {...defaultTools.apple}
+          {...props}
+        >
+          <SpriteIcon src={apple.src} />
+        </ToolControlButton>
+      }
+    >
+      <AppleToolbar
+        onAnimationChange={handleAppleAnimationChange}
+        onGravityChange={handleGravityChange}
+      />
+    </ToolControlMenu>
   );
 }
 

@@ -26,27 +26,35 @@ export function ControlToolbar({
   ...props
 }: ControlToolbarProps) {
   return (
-    <Toolbar
-      orientation="vertical"
-      className={cn(
-        "flex flex-col gap-2 absolute inset-y-0 h-fit m-auto left-4",
-        className,
-      )}
-      {...props}
+    <div
+      className="absolute inset-y-0 left-4 grid"
+      style={{
+        gridTemplateRows:
+          "minmax(var(--toolbar-space), 1fr) auto minmax(1rem, 1fr)",
+      }}
     >
-      <SelectToolControl tooltipSide="right" />
-      <HandToolControl tooltipSide="right" />
+      <Toolbar
+        orientation="vertical"
+        className={cn(
+          "row-start-2 flex flex-col h-fit max-h-full self-center gap-2 overflow-auto",
+          className,
+        )}
+        {...props}
+      >
+        <SelectToolControl tooltipSide="right" />
+        <HandToolControl tooltipSide="right" />
 
-      <ToolbarSeparator />
+        <ToolbarSeparator />
 
-      <VertexToolControl tooltipSide="right" />
-      <AppleToolControl tooltipSide="right" />
-      <KillerToolControl tooltipSide="right" />
-      <FlowerToolControl tooltipSide="right" />
-      <PictureToolControl tooltipSide="right" />
-      <TextureToolControl tooltipSide="right" />
-      {isOpenAIEnabled && <AIChatToolControl tooltipSide="right" />}
-    </Toolbar>
+        <VertexToolControl tooltipSide="right" />
+        <AppleToolControl tooltipSide="right" />
+        <KillerToolControl tooltipSide="right" />
+        <FlowerToolControl tooltipSide="right" />
+        <PictureToolControl tooltipSide="right" />
+        <TextureToolControl tooltipSide="right" />
+        {isOpenAIEnabled && <AIChatToolControl tooltipSide="right" />}
+      </Toolbar>
+    </div>
   );
 }
 
@@ -69,7 +77,11 @@ function HandToolControl(props: ToolControlButtonProps) {
 function KillerToolControl(props: ToolControlButtonProps) {
   const killerSprite = useLgrSprite("qkiller");
   return (
-    <ToolControlButton {...defaultTools.killer} {...props}>
+    <ToolControlButton
+      isLoading={!killerSprite.src}
+      {...defaultTools.killer}
+      {...props}
+    >
       <SpriteIcon src={killerSprite.src} />
     </ToolControlButton>
   );
@@ -78,7 +90,11 @@ function KillerToolControl(props: ToolControlButtonProps) {
 function FlowerToolControl(props: ToolControlButtonProps) {
   const flowerSprite = useLgrSprite("qexit");
   return (
-    <ToolControlButton {...defaultTools.flower} {...props}>
+    <ToolControlButton
+      isLoading={!flowerSprite.src}
+      {...defaultTools.flower}
+      {...props}
+    >
       <SpriteIcon src={flowerSprite.src} />
     </ToolControlButton>
   );

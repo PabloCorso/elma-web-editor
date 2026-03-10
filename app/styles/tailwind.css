@@ -7,6 +7,8 @@
 :root {
   color-scheme: dark;
 
+  --toolbar-space: calc(3.375rem + 2rem);
+
   --primary: #5ec8ff;
   --ground: #181048;
 

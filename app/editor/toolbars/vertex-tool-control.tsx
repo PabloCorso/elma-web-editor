@@ -1,6 +1,6 @@
 import {
-  ToolMenu,
   ToolControlButton,
+  ToolControlMenu,
   type ToolControlButtonProps,
 } from "./tool";
 import { defaultTools } from "~/editor/tools/default-tools";
@@ -23,20 +23,22 @@ export function VertexToolControl(props: ToolControlButtonProps) {
   const { setToolState } = useEditorActions();
 
   return (
-    <>
-      <ToolControlButton {...defaultTools.vertex} {...props}>
-        <VertexIcon {...getVertexIconProps(vertexToolState?.variant)} />
-      </ToolControlButton>
-      <ToolMenu id={defaultTools.vertex.id}>
-        <VertexToolbar
-          onVariantChange={(variant: VertexToolVariant) => {
-            setToolState<VertexToolState>(defaultTools.vertex.id, {
-              variant,
-            });
-          }}
-        />
-      </ToolMenu>
-    </>
+    <ToolControlMenu
+      id={defaultTools.vertex.id}
+      button={
+        <ToolControlButton {...defaultTools.vertex} {...props}>
+          <VertexIcon {...getVertexIconProps(vertexToolState?.variant)} />
+        </ToolControlButton>
+      }
+    >
+      <VertexToolbar
+        onVariantChange={(variant: VertexToolVariant) => {
+          setToolState<VertexToolState>(defaultTools.vertex.id, {
+            variant,
+          });
+        }}
+      />
+    </ToolControlMenu>
   );
 }
 

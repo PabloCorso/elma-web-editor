@@ -7,7 +7,6 @@ import {
   ArrowsClockwiseIcon,
   LayoutIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { useClickOutside } from "@mantine/hooks";
 import { SpriteIcon } from "~/components/sprite-icon";
 import {
   useLgrSprite,
@@ -15,11 +14,7 @@ import {
   useTextureSprites,
 } from "~/components/use-lgr-assets";
 import { IconButton } from "~/components/ui/button";
-import {
-  Toolbar,
-  ToolbarButton,
-  ToolbarSeparator,
-} from "~/components/ui/toolbar";
+import { ToolbarButton, ToolbarSeparator } from "~/components/ui/toolbar";
 import {
   Tooltip,
   TooltipContent,
@@ -29,44 +24,51 @@ import { cn } from "~/utils/misc";
 import { useState } from "react";
 import { colors, OBJECT_FRAME_PX } from "../constants";
 import { VertexIcon } from "./vertex-tool-control";
+import {
+  FloatingToolbar,
+  FloatingToolbarAnchor,
+  FloatingToolbarContent,
+  FloatingToolbarPanel,
+  FloatingToolbarTrigger,
+} from "./floating-toolbar";
 
 export function LevelVisibilityControl() {
   const levelVisibility = useEditor((state) => state.levelVisibility);
   const { toggleLevelVisibility, resetLevelVisibility } = useEditorActions();
   const [open, setOpen] = useState(false);
-  const rootRef = useClickOutside(() => setOpen(false));
 
   return (
-    <div ref={rootRef} className="relative">
-      <Tooltip>
-        <TooltipTrigger>
-          <ToolbarButton
-            aria-label="Visibility options"
-            aria-expanded={open}
-            onClick={() => setOpen((isOpen) => !isOpen)}
-          >
-            <LayoutIcon />
-          </ToolbarButton>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">
-          Visibility options
-        </TooltipContent>
-      </Tooltip>
-      {open && (
-        <div className="fixed z-10 top-20 left-24 right-4 overflow-x-auto pointer-events-none">
-          <Toolbar
-            orientation="horizontal"
-            className="min-w-max p-2 gap-1 pointer-events-auto"
-          >
-            <LevelVisibilityControls
-              levelVisibility={levelVisibility}
-              onToggle={toggleLevelVisibility}
-              onReset={resetLevelVisibility}
-            />
-          </Toolbar>
-        </div>
-      )}
-    </div>
+    <FloatingToolbar open={open} onOpenChange={setOpen}>
+      <FloatingToolbarAnchor>
+        <Tooltip>
+          <TooltipTrigger>
+            <FloatingToolbarTrigger>
+            <ToolbarButton
+              aria-label="Visibility options"
+              aria-expanded={open}
+            >
+              <LayoutIcon />
+            </ToolbarButton>
+            </FloatingToolbarTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Visibility options
+          </TooltipContent>
+        </Tooltip>
+      </FloatingToolbarAnchor>
+      <FloatingToolbarContent side="bottom" align="center">
+        <FloatingToolbarPanel
+          orientation="horizontal"
+          className="min-w-max p-2 gap-1"
+        >
+          <LevelVisibilityControls
+            levelVisibility={levelVisibility}
+            onToggle={toggleLevelVisibility}
+            onReset={resetLevelVisibility}
+          />
+        </FloatingToolbarPanel>
+      </FloatingToolbarContent>
+    </FloatingToolbar>
   );
 }
 
