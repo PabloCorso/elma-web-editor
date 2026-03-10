@@ -286,7 +286,7 @@ export class SelectTool extends Tool<SelectToolState> {
     const { state, toolState } = this.getState();
     if (!toolState) return;
 
-    if (!this.isMarqueeSelecting) {
+    if (!this.isMarqueeSelecting && state.mouseOnCanvas) {
       const { hoveredObject, hoveredPictureBounds } = toolState;
       const isHoveredPictureSelected =
         hoveredPictureBounds &&
@@ -468,8 +468,8 @@ export class SelectTool extends Tool<SelectToolState> {
   private isSelectablePolygonEdge = (polygon: Polygon, edgeIndex: number) => {
     const { toolState } = this.getState();
     const polygonSelectionCount =
-      toolState?.selectedVertices.filter((sv) => sv.polygon === polygon).length ??
-      0;
+      toolState?.selectedVertices.filter((sv) => sv.polygon === polygon)
+        .length ?? 0;
     const isPolygonFullySelected =
       polygonSelectionCount === polygon.vertices.length &&
       polygonSelectionCount > 0;
@@ -617,15 +617,15 @@ export class SelectTool extends Tool<SelectToolState> {
     state.pictures
       .filter((picture) => this.isPictureSelectable(picture))
       .forEach((picture) => {
-      if (isPointInRect(picture.position, bounds)) {
-        const isSelected = toolState.selectedPictures.includes(
-          picture.position,
-        );
-        if (!isSelected) {
-          this.selectPicture(picture.position);
+        if (isPointInRect(picture.position, bounds)) {
+          const isSelected = toolState.selectedPictures.includes(
+            picture.position,
+          );
+          if (!isSelected) {
+            this.selectPicture(picture.position);
+          }
         }
-      }
-    });
+      });
   }
 
   private isPolygonSelectable(): boolean {
@@ -687,7 +687,9 @@ export class SelectTool extends Tool<SelectToolState> {
             if (!vertex) return null;
             return { polygon, vertex };
           })
-          .filter((selection): selection is VertexSelection => Boolean(selection))
+          .filter((selection): selection is VertexSelection =>
+            Boolean(selection),
+          )
       : [];
 
     const selectedObjects = this.isObjectSelectable()
@@ -723,7 +725,9 @@ export class SelectTool extends Tool<SelectToolState> {
           previous?.vertex !== selection.vertex
         );
       }) ||
-      selectedObjects.some((object, index) => object !== toolState.selectedObjects[index]) ||
+      selectedObjects.some(
+        (object, index) => object !== toolState.selectedObjects[index],
+      ) ||
       selectedPictures.some(
         (position, index) => position !== toolState.selectedPictures[index],
       )
