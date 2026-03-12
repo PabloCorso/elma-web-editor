@@ -5,7 +5,6 @@ import {
   type EventContext,
 } from "./helpers/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./helpers/camera-helpers";
-import { correctPolygonWinding } from "./helpers/polygon-helpers";
 import {
   colors,
   debugColors,
@@ -36,6 +35,7 @@ import {
   type Apple,
   type EditorLevel,
   type Picture,
+  type Polygon,
   type Position,
 } from "./elma-types";
 import { defaultLevel } from "./helpers/level-parser";
@@ -800,19 +800,20 @@ export class EditorEngine {
     this.ctx.save();
     this.applyCameraTransform(state);
 
-    const skyPath = this.buildSkyPath(state);
+    const scenePolygons = this.getScenePolygons(state);
+    const skyPath = this.buildPolygonPath(scenePolygons);
     const groundPath = state.levelVisibility.showPolygons
       ? this.buildGroundPath(state, skyPath)
       : this.buildViewportPath(state);
     this.drawGroundFill(state, groundPath);
-    this.drawPolygons(state, groundPath);
+    this.drawPolygons(state, scenePolygons, groundPath, skyPath);
 
     const queue = this.getDrawItemQueue(state);
     for (const item of queue) {
       this.ctx.save();
 
       if (item.clip === Clip.Sky) {
-        this.ctx.clip(skyPath);
+        this.ctx.clip(skyPath, "evenodd");
       } else if (item.clip === Clip.Ground) {
         this.ctx.clip(groundPath, "evenodd");
       }
@@ -896,6 +897,12 @@ export class EditorEngine {
           ]
         : []),
     ].sort((a, b) => b.distance - a.distance);
+  }
+
+  private getScenePolygons(state: EditorState): Polygon[] {
+    const activeTool = state.actions.getActiveTool();
+    const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
+    return [...state.polygons, ...draftPolygons];
   }
 
   private drawItem(state: EditorState, item: RenderItem) {
@@ -1163,28 +1170,16 @@ export class EditorEngine {
     };
   }
 
-  private buildSkyPath(state: EditorState): Path2D {
-    // Union of all non-grass polygons with corrected winding
-    const activeTool = state.actions.getActiveTool();
-    const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
-    const allPolygons = [...state.polygons, ...draftPolygons];
-
-    const correctedPolygons = allPolygons.map((polygon) => {
-      if (polygon.vertices.length < 3 || polygon.grass) {
-        return polygon;
-      }
-      return correctPolygonWinding(polygon, allPolygons);
-    });
-
+  private buildPolygonPath(polygons: Polygon[]): Path2D {
     const path = new Path2D();
-    correctedPolygons.forEach((polygon) => {
+    polygons.forEach((polygon) => {
       if (polygon.vertices.length < 3 || polygon.grass) return;
 
       path.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
       for (let i = 1; i < polygon.vertices.length; i++) {
         path.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
       }
-      path.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
+      path.closePath();
     });
 
     return path;
@@ -1412,50 +1407,32 @@ export class EditorEngine {
     this.ctx.restore();
   }
 
-  private drawPolygons(state: EditorState, groundPath: Path2D) {
+  private drawPolygons(
+    state: EditorState,
+    polygons: Polygon[],
+    groundPath: Path2D,
+    skyPath: Path2D,
+  ) {
     const { showPolygons, showPolygonBounds } = state.levelVisibility;
     if (!showPolygons && !showPolygonBounds) return;
 
-    const activeTool = state.actions.getActiveTool();
-    const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
-    const allPolygons = [...state.polygons, ...draftPolygons];
+    if (polygons.length === 0) return;
 
-    if (allPolygons.length === 0) return;
-
-    const correctedPolygons = allPolygons.map((polygon) => {
-      if (polygon.vertices.length < 3 || polygon.grass) {
-        return polygon;
-      }
-
-      return correctPolygonWinding(polygon, allPolygons);
-    });
-
-    // Draw non-grass polygons with fill
+    // Use even-odd filling in the editor so temporary overlaps stay visible
+    // and deterministic while editing invalid intermediate geometry.
     if (showPolygons) {
       const skyFill = state.levelVisibility.useGroundSkyTextures
         ? this.getTexturePattern(state.sky)
         : null;
       const skyColor = this.getFlatTextureColor(state.sky, colors.sky);
+      this.ctx.save();
       this.ctx.fillStyle = skyFill ?? skyColor;
-      this.ctx.beginPath();
-
-      correctedPolygons.forEach((polygon) => {
-        if (polygon.vertices.length < 3 || polygon.grass) return;
-
-        this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
-        for (let i = 1; i < polygon.vertices.length; i++) {
-          this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
-        }
-
-        this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
-      });
-
-      this.ctx.closePath();
-      this.ctx.fill(); // Fill all polygons at once according to even-odd (winding) rule
+      this.ctx.fill(skyPath, "evenodd");
+      this.ctx.restore();
     }
 
     // Draw grass interior shading and thin idle polygon outlines.
-    correctedPolygons.forEach((polygon) => {
+    polygons.forEach((polygon) => {
       if (polygon.vertices.length < 3) return;
 
       if (polygon.grass) {
