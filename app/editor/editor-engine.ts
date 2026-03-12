@@ -657,6 +657,9 @@ export class EditorEngine {
     const modifier = checkModifierKey(event);
 
     if (modifier && key === "A") {
+      if (state.activeToolId !== "select") {
+        state.actions.activateTool("select");
+      }
       this.selectAllVisible();
       event.preventDefault();
       return;
