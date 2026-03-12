@@ -6,7 +6,7 @@ import { Tool } from "./tool-interface";
 import { type Picture } from "../elma-types";
 import { drawPicture } from "../draw-picture";
 import { standardSprites } from "~/components/standard-sprites";
-import { uiStrokeWidths } from "../constants";
+import { DRAFT_PREVIEW_OPACITY, uiStrokeWidths } from "../constants";
 
 export type PictureToolState = Pick<Picture, "name" | "distance" | "clip">;
 
@@ -55,7 +55,7 @@ export class PictureTool extends Tool<PictureToolState> {
         ctx,
         sprite,
         position: state.mousePosition,
-        opacity: 0.5,
+        opacity: DRAFT_PREVIEW_OPACITY,
         showBounds: true,
         boundsLineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
       });

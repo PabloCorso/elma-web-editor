@@ -11,14 +11,19 @@ import {
   findPolygonVertexForEditing,
 } from "../helpers/selection-helpers";
 import { isPolygonClockwise } from "../helpers/polygon-helpers";
-import { colors, uiColors, uiStrokeWidths } from "../constants";
+import {
+  colors,
+  selectionThresholds,
+  uiColors,
+  uiSelectionHandle,
+  uiStrokeWidths,
+} from "../constants";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { Polygon, Position } from "../elma-types";
-import { SELECT_POLYGON_EDGE_THRESHOLD } from "./select-tool";
 import { checkModifierKey } from "~/utils/misc";
 
-const VERTEX_THRESHOLD = 15;
+const CLOSE_POLYGON_THRESHOLD = 15;
 const DEFAULT_VARIANT: VertexToolVariant = "default";
 
 export type VertexToolVariant = "default" | "grass";
@@ -99,7 +104,11 @@ export class VertexTool extends Tool<VertexToolState> {
       if (toolState.drawingPolygon.vertices.length >= 3) {
         const firstPoint = toolState.drawingPolygon.vertices[0];
         if (
-          isWithinThreshold(worldPos, firstPoint, VERTEX_THRESHOLD / state.zoom)
+          isWithinThreshold(
+            worldPos,
+            firstPoint,
+            CLOSE_POLYGON_THRESHOLD / state.zoom,
+          )
         ) {
           const newPolygon = {
             vertices: [...toolState.drawingPolygon.vertices],
@@ -127,7 +136,7 @@ export class VertexTool extends Tool<VertexToolState> {
     const vertexResult = findPolygonVertexForEditing(
       worldPos,
       state.polygons,
-      10,
+      selectionThresholds.vertex,
       state.zoom,
     );
     if (vertexResult) {
@@ -141,7 +150,7 @@ export class VertexTool extends Tool<VertexToolState> {
       const lineResult = findPolygonLineForEditing(
         worldPos,
         state.polygons,
-        8,
+        selectionThresholds.polygonEdge,
         state.zoom,
       );
       if (lineResult) {
@@ -239,7 +248,7 @@ export class VertexTool extends Tool<VertexToolState> {
     const polygon = findPolygonEdgeNearPosition(
       context.worldPos,
       state.polygons,
-      SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+      selectionThresholds.polygonEdge / state.zoom,
     );
     if (polygon) {
       this.updatePolygon(state.polygons.indexOf(polygon), {
@@ -290,7 +299,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // Draw vertex handles (square, matching selection handle styling)
     toolState.drawingPolygon.vertices.forEach((vertex) => {
-      const size = 3 / state.zoom;
+      const size = uiSelectionHandle.halfWidthPx / state.zoom;
       const side = size * 2;
       ctx.fillStyle = uiColors.vertexDraftPointFill;
       ctx.fillRect(vertex.x - size, vertex.y - size, side, side);

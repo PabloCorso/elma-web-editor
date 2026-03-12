@@ -4,6 +4,7 @@ import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { LgrAssets } from "~/components/lgr-assets";
 import { drawObject } from "../draw-object";
+import { DRAFT_PREVIEW_OPACITY } from "../constants";
 
 export class KillerTool extends Tool {
   readonly meta = defaultTools.killer;
@@ -27,7 +28,7 @@ export class KillerTool extends Tool {
           ctx,
           sprite: killerSprite,
           position: killer,
-          opacity: 0.5,
+          opacity: DRAFT_PREVIEW_OPACITY,
         });
       });
     }

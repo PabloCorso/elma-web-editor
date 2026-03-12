@@ -5,6 +5,7 @@ import { defaultTools } from "./default-tools";
 import { Gravity, type Apple, type AppleAnimation } from "../elma-types";
 import type { LgrAssets } from "~/components/lgr-assets";
 import { drawGravityArrow, drawObject } from "../draw-object";
+import { DRAFT_PREVIEW_OPACITY } from "../constants";
 
 export type AppleToolState = { animation: AppleAnimation; gravity: Gravity };
 
@@ -61,13 +62,13 @@ export class AppleTool extends Tool<AppleToolState> {
           ctx,
           sprite,
           position: apple.position,
-          opacity: 0.5,
+          opacity: DRAFT_PREVIEW_OPACITY,
         });
         drawGravityArrow({
           ctx,
           position: apple.position,
           gravity: apple.gravity,
-          opacity: 0.5,
+          opacity: DRAFT_PREVIEW_OPACITY,
         });
       }
     });

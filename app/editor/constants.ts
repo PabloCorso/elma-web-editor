@@ -1,7 +1,21 @@
+export const ELMA_PIXELS_PER_WORLD_UNIT = 48;
+export const ELMA_PIXEL_SCALE = 1 / ELMA_PIXELS_PER_WORLD_UNIT;
 export const OBJECT_FRAME_PX = 40; // width of a single frame in object sprite sheet
 export const OBJECT_FPS = 30; // animation speed for object sprites
 export const OBJECT_DIAMETER = 0.8;
-export const GRASS_FILL_DEPTH_PX = 20 / 48; // 2 is random
+export const GRASS_FILL_DEPTH = 20 * ELMA_PIXEL_SCALE;
+export const DRAFT_PREVIEW_OPACITY = 0.5;
+
+export const selectionThresholds = {
+  object: 15,
+  vertex: 10,
+  polygonEdge: 8,
+} as const;
+
+export const uiSelectionHandle = {
+  halfWidthPx: 3,
+  strokeWidthPx: 0.75,
+} as const;
 
 export const colors = {
   apple: "#dc0000",

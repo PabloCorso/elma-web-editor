@@ -1,9 +1,10 @@
 import type { Position } from "../elma-types";
+import { selectionThresholds } from "../constants";
 
 export function screenToWorld(
   screen: Position,
   viewPortOffset: Position,
-  zoom: number
+  zoom: number,
 ): Position {
   return {
     x: (screen.x - viewPortOffset.x) / zoom,
@@ -14,7 +15,7 @@ export function screenToWorld(
 export function worldToScreen(
   world: Position,
   viewPortOffset: Position,
-  zoom: number
+  zoom: number,
 ): Position {
   return {
     x: world.x * zoom + viewPortOffset.x,
@@ -29,7 +30,7 @@ export function distance(pos1: Position, pos2: Position): number {
 export function isWithinThreshold(
   pos1: Position,
   pos2: Position,
-  threshold = 15
+  threshold: number = selectionThresholds.object,
 ) {
   return distance(pos1, pos2) <= threshold;
 }
@@ -37,7 +38,7 @@ export function isWithinThreshold(
 export function getClosestPointOnLineSegment(
   point: Position,
   lineStart: Position,
-  lineEnd: Position
+  lineEnd: Position,
 ): Position {
   const A = point.x - lineStart.x;
   const B = point.y - lineStart.y;

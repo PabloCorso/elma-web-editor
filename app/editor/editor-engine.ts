@@ -8,9 +8,11 @@ import { updateCamera, updateZoom, fitToView } from "./helpers/camera-helpers";
 import {
   colors,
   debugColors,
-  GRASS_FILL_DEPTH_PX,
+  ELMA_PIXEL_SCALE,
+  GRASS_FILL_DEPTH,
   OBJECT_DIAMETER,
   uiColors,
+  uiSelectionHandle,
   uiStrokeWidths,
 } from "./constants";
 import type { Tool } from "./tools/tool-interface";
@@ -41,7 +43,7 @@ import {
 import { defaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
 import { defaultAppleState } from "./tools/apple-tools";
-import type { SelectToolState } from "./tools/select-tool";
+import { SelectTool, type SelectToolState } from "./tools/select-tool";
 
 enum RenderType {
   Picture = "picture",
@@ -76,6 +78,15 @@ type EditorEngineOptions = {
   store?: EditorStore;
   lgrAssets?: LgrAssets;
 };
+
+const DEFAULT_OBJECT_RENDER_DISTANCE = 500;
+const KEYBOARD_PAN_STEP = 200;
+const KEYBOARD_ZOOM_STEP_DIVISOR = 100;
+const WHEEL_PAN_MULTIPLIER = 0.5;
+const GRASS_TINY_CANVAS_UNIT_PX = 1;
+const MIN_ZOOM_EPSILON = 0.0001;
+const GRASS_VERTICAL_EDGE_THRESHOLD = 0.05;
+const GRASS_COLLINEAR_DOT_THRESHOLD = 0.98;
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -594,8 +605,8 @@ export class EditorEngine {
     const isTouchpadScroll = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL;
     if (isTouchpadScroll) {
       updateCamera({
-        deltaX: -event.deltaX * 0.5,
-        deltaY: -event.deltaY * 0.5,
+        deltaX: -event.deltaX * WHEEL_PAN_MULTIPLIER,
+        deltaY: -event.deltaY * WHEEL_PAN_MULTIPLIER,
         currentOffset: state.viewPortOffset,
         setCamera: state.actions.setCamera,
         panSpeed: this.panSpeed,
@@ -606,7 +617,7 @@ export class EditorEngine {
 
     if (event.shiftKey) {
       const delta = event.deltaX !== 0 ? event.deltaX : event.deltaY;
-      const panAmount = -delta * 0.5;
+      const panAmount = -delta * WHEEL_PAN_MULTIPLIER;
       updateCamera({
         deltaX: panAmount,
         deltaY: 0,
@@ -618,7 +629,7 @@ export class EditorEngine {
       return;
     }
 
-    const panAmount = -event.deltaY * 0.5;
+    const panAmount = -event.deltaY * WHEEL_PAN_MULTIPLIER;
     updateCamera({
       deltaX: 0,
       deltaY: panAmount,
@@ -643,6 +654,13 @@ export class EditorEngine {
     }
 
     const key = event.key.toUpperCase();
+    const modifier = checkModifierKey(event);
+
+    if (modifier && key === "A") {
+      this.selectAllVisible();
+      event.preventDefault();
+      return;
+    }
 
     for (const tool of state.toolsMap.values()) {
       if (tool.meta.shortcut.toUpperCase() === key) {
@@ -664,7 +682,6 @@ export class EditorEngine {
       }
     }
 
-    const modifier = checkModifierKey(event);
     if (modifier) {
       if (event.key === "y" || (event.key === "z" && event.shiftKey)) {
         this.store.temporal.getState().redo();
@@ -684,7 +701,7 @@ export class EditorEngine {
     }
 
     // Handle arrow keys
-    const panAmount = 200;
+    const panAmount = KEYBOARD_PAN_STEP;
     const arrowDeltas: Record<string, { deltaX: number; deltaY: number }> = {
       ArrowLeft: { deltaX: panAmount, deltaY: 0 },
       ArrowRight: { deltaX: -panAmount, deltaY: 0 },
@@ -720,7 +737,7 @@ export class EditorEngine {
     const state = this.store.getState();
     const anchor = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
     const stepSize = Math.max(0, Math.abs(step));
-    const stepFactor = 1 + stepSize / 100;
+    const stepFactor = 1 + stepSize / KEYBOARD_ZOOM_STEP_DIVISOR;
     const zoomFactor = step >= 0 ? stepFactor : 1 / stepFactor;
 
     this.zoomAtAnchor(state.zoom * zoomFactor, anchor);
@@ -732,6 +749,16 @@ export class EditorEngine {
 
   public zoomOut(step = this.zoomStep) {
     this.zoomInOut(-step);
+  }
+
+  private selectAllVisible(): boolean {
+    const state = this.store.getState();
+    const selectTool = state.actions.getTool<SelectTool>("select");
+    if (!selectTool) return false;
+
+    return selectTool.selectAllVisible((picture) =>
+      Boolean(this.getPictureWorldDimensions(picture)),
+    );
   }
 
   private handleResize = () => {
@@ -847,7 +874,10 @@ export class EditorEngine {
   }
 
   private getDrawItemQueue(state: EditorState): RenderItem[] {
-    const objectProperties = { distance: 500, clip: Clip.Unclipped };
+    const objectProperties = {
+      distance: DEFAULT_OBJECT_RENDER_DISTANCE,
+      clip: Clip.Unclipped,
+    };
     const {
       showObjects,
       showPictures,
@@ -1292,14 +1322,14 @@ export class EditorEngine {
     groundPath: Path2D,
     zoom: number,
   ) {
-    const depth = GRASS_FILL_DEPTH_PX;
-    const joinOverlap = 1 / 48; // 1 Elma pixel in world units to hide AA seams
-    const tinyCanvasUnitPx = 1;
-    const tinyCanvasUnit = tinyCanvasUnitPx / Math.max(zoom, 0.0001);
+    const depth = GRASS_FILL_DEPTH;
+    const joinOverlap = ELMA_PIXEL_SCALE; // 1 Elma pixel in world units to hide AA seams
+    const tinyCanvasUnit =
+      GRASS_TINY_CANVAS_UNIT_PX / Math.max(zoom, MIN_ZOOM_EPSILON);
     const minTwoSidedOvershoot = tinyCanvasUnit;
     const verticalGapFix = tinyCanvasUnit;
-    const verticalThreshold = 0.05;
-    const collinearDotThreshold = 0.98;
+    const verticalThreshold = GRASS_VERTICAL_EDGE_THRESHOLD;
+    const collinearDotThreshold = GRASS_COLLINEAR_DOT_THRESHOLD;
     const n = polygon.vertices.length;
     const grassEdgeIndices = this.getGrassEdgeIndices(polygon.vertices);
     const grassEdgesSet = new Set(grassEdgeIndices);
@@ -1509,12 +1539,12 @@ export class EditorEngine {
     if (!state.levelVisibility.showPolygonHandles) return;
     if (state.polygons.length === 0) return;
 
-    const size = 3;
+    const size = uiSelectionHandle.halfWidthPx;
     const side = size * 2;
     this.ctx.save();
     this.ctx.fillStyle = uiColors.selectionHandleFill;
     this.ctx.strokeStyle = uiColors.selectionHandleStroke;
-    this.ctx.lineWidth = uiStrokeWidths.boundsIdleScreen;
+    this.ctx.lineWidth = uiSelectionHandle.strokeWidthPx;
 
     state.polygons.forEach((polygon) => {
       polygon.vertices.forEach((vertex) => {

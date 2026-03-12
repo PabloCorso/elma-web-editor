@@ -29,7 +29,7 @@ export function Toolbar({
         className={cn(
           "inline-flex items-center rounded-xl border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
           "aria-[orientation=vertical]:flex-col",
-          className
+          className,
         )}
         {...props}
       />
@@ -65,7 +65,7 @@ export function ToolbarSeparator({
         "bg-separator",
         "aria-[orientation=horizontal]:w-px aria-[orientation=horizontal]:h-6 aria-[orientation=horizontal]:mx-1",
         "aria-[orientation=vertical]:h-px aria-[orientation=vertical]:w-6 aria-[orientation=vertical]:my-1",
-        className
+        className,
       )}
       {...props}
     />

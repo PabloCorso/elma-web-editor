@@ -7,14 +7,13 @@ import {
 import { SelectTool, type SelectToolState } from "./tools/select-tool";
 import { defaultTools } from "./tools/default-tools";
 import { worldToScreen } from "./helpers/coordinate-helpers";
-import { OBJECT_DIAMETER } from "elmajs";
 import { AppleToolbar } from "~/editor/toolbars/apple-tool-control";
-import { OBJECT_FRAME_PX } from "./constants";
+import { OBJECT_DIAMETER, OBJECT_FRAME_PX } from "./constants";
 
 export function EditorContextMenu() {
   const { updateApple } = useEditorActions();
   const selectToolState = useEditorToolState<SelectToolState>(
-    defaultTools.select.id
+    defaultTools.select.id,
   );
   const selectTool = useEditorActiveTool<SelectTool>();
   const viewPortOffset = useEditor((state) => state.viewPortOffset);
@@ -38,7 +37,7 @@ export function EditorContextMenu() {
     const applePosition = worldToScreen(
       { ...selectedApple, y: selectedApple.y - OBJECT_DIAMETER / 2 },
       viewPortOffset,
-      zoom
+      zoom,
     );
     // position above the apple
     const appleSize = OBJECT_FRAME_PX;

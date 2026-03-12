@@ -1,7 +1,7 @@
 import type { Position } from "./elma-types";
-import { uiColors, uiStrokeWidths } from "./constants";
+import { ELMA_PIXEL_SCALE, uiColors, uiStrokeWidths } from "./constants";
 
-export const PICTURE_SCALE = 1 / 48;
+export const PICTURE_SCALE = ELMA_PIXEL_SCALE;
 const binaryMaskCache = new WeakMap<ImageBitmap, HTMLCanvasElement>();
 const scratchCanvasCache = new Map<
   string,

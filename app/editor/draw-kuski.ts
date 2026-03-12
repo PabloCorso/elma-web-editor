@@ -1,10 +1,27 @@
 // Original code at https://github.com/elmadev/recplayer
 
 import { standardSprites } from "~/components/standard-sprites";
-import { debugColors, OBJECT_DIAMETER, uiColors } from "./constants";
+import {
+  debugColors,
+  ELMA_PIXEL_SCALE,
+  OBJECT_DIAMETER,
+  uiColors,
+} from "./constants";
 
 function hypot(a: number, b: number) {
   return Math.sqrt(a * a + b * b);
+}
+
+function worldUnitsFromElmaPixels(pixels: number) {
+  return pixels * ELMA_PIXEL_SCALE;
+}
+
+function worldUnitsFromThirdElmaPixels(pixels: number) {
+  return worldUnitsFromElmaPixels(pixels) / 3;
+}
+
+function elmaPixelsFromWorldUnits(worldUnits: number) {
+  return worldUnits / ELMA_PIXEL_SCALE;
 }
 
 // (x1, y1)–(x2, y2): line to draw image along
@@ -107,18 +124,18 @@ function limb(
 const legLimb = limb(
   false,
   {
-    length: 26.25 / 48,
+    length: worldUnitsFromElmaPixels(26.25),
     bx: 0,
     by: 0.6,
-    br: 6 / 48,
-    ih: 39.4 / 48 / 3,
+    br: worldUnitsFromElmaPixels(6),
+    ih: worldUnitsFromThirdElmaPixels(39.4),
   },
   {
-    length: 1 - 26.25 / 48,
-    bx: 5 / 48 / 3,
+    length: 1 - worldUnitsFromElmaPixels(26.25),
+    bx: worldUnitsFromThirdElmaPixels(5),
     by: 0.45,
-    br: 4 / 48,
-    ih: 60 / 48 / 3,
+    br: worldUnitsFromElmaPixels(4),
+    ih: worldUnitsFromThirdElmaPixels(60),
   },
 );
 
@@ -126,17 +143,17 @@ const armLimb = limb(
   true,
   {
     length: 0.3234,
-    bx: 12.2 / 48 / 3,
+    bx: worldUnitsFromThirdElmaPixels(12.2),
     by: 0.5,
-    br: 13 / 48 / 3,
-    ih: -32 / 48 / 3,
+    br: worldUnitsFromThirdElmaPixels(13),
+    ih: worldUnitsFromThirdElmaPixels(-32),
   },
   {
     length: 0.3444,
-    bx: 3 / 48,
+    bx: worldUnitsFromElmaPixels(3),
     by: 0.5,
-    br: 13.2 / 48 / 3,
-    ih: 22.8 / 48 / 3,
+    br: worldUnitsFromThirdElmaPixels(13.2),
+    ih: worldUnitsFromThirdElmaPixels(22.8),
   },
 );
 
@@ -150,7 +167,7 @@ function wheel(
   ctx.save();
   ctx.translate(wheelX, -wheelY);
   ctx.rotate(-wheelR);
-  ctx.scale(38.4 / 48, 38.4 / 48);
+  ctx.scale(worldUnitsFromElmaPixels(38.4), worldUnitsFromElmaPixels(38.4));
   ctx.translate(-0.5, -0.5);
   ctx.drawImage(lgrSprites.q1wheel, 0, 0, 1, 1);
   ctx.restore();
@@ -272,11 +289,11 @@ export function getKuskiSelectionCircles({
   const wx = headRadius * Math.cos(headAngle);
   const wy = headRadius * Math.sin(headAngle);
 
-  // Head sprite is drawn at (-15.5/48, -42/48) with scale (23/48, 23/48),
-  // so its center is offset by (-4/48, -30.5/48) from the translated head origin.
+  // Head sprite is drawn at (-15.5, -42) Elma pixels with a 23px square size,
+  // so its center is offset by (-4, -30.5) Elma pixels from the translated head origin.
   const headCenterInRotatedSpace = {
-    x: wx - 4 / 48,
-    y: wy - 30.5 / 48,
+    x: wx - worldUnitsFromElmaPixels(4),
+    y: wy - worldUnitsFromElmaPixels(30.5),
   };
   const headOffset = transformBikeLocalPoint({
     point: headCenterInRotatedSpace,
@@ -289,7 +306,7 @@ export function getKuskiSelectionCircles({
   };
 
   const wheelRadius = OBJECT_DIAMETER / 2;
-  const headBoundsRadius = 11.5 / 48;
+  const headBoundsRadius = worldUnitsFromElmaPixels(11.5);
   return [
     { x: backCenter.x, y: backCenter.y, radius: wheelRadius },
     { x: frontCenter.x, y: frontCenter.y, radius: wheelRadius },
@@ -426,7 +443,7 @@ export function drawKuski({
   const hbarsX = -21.5,
     hbarsY = -17;
   ctx.save();
-  ctx.scale(1 / 48, 1 / 48);
+  ctx.scale(ELMA_PIXEL_SCALE, ELMA_PIXEL_SCALE);
 
   // front suspension
   wx = turn ? rightX : leftX;
@@ -440,8 +457,8 @@ export function drawKuski({
     0.5,
     5,
     6,
-    48 * r * Math.cos(a),
-    48 * r * Math.sin(a),
+    elmaPixelsFromWorldUnits(r * Math.cos(a)),
+    elmaPixelsFromWorldUnits(r * Math.sin(a)),
     hbarsX,
     hbarsY,
   );
@@ -451,7 +468,7 @@ export function drawKuski({
   wy = turn ? -leftY : -rightY;
   a = Math.atan2(wy, (turn ? -1 : 1) * wx) + (turn ? -1 : 1) * bikeR;
   r = hypot(wx, wy);
-  //skewimage(ctx, lgrSprites.q1susp2, 5, 0.5, 5, 6.5, 48*r*Math.cos(a), 48*r*Math.sin(a), 10, 20);
+  // Original rear suspension call kept for reference with Elma-pixel coordinates.
   skewimage(
     ctx,
     lgrSprites.q1susp2,
@@ -461,15 +478,18 @@ export function drawKuski({
     6,
     9,
     20,
-    48 * r * Math.cos(a),
-    48 * r * Math.sin(a),
+    elmaPixelsFromWorldUnits(r * Math.cos(a)),
+    elmaPixelsFromWorldUnits(r * Math.sin(a)),
   );
   ctx.restore();
 
   ctx.save(); // bike
-  ctx.translate(-43 / 48, -12 / 48);
+  ctx.translate(worldUnitsFromElmaPixels(-43), worldUnitsFromElmaPixels(-12));
   ctx.rotate(-Math.PI * 0.197);
-  ctx.scale((0.215815 * 380) / 48, (0.215815 * 301) / 48);
+  ctx.scale(
+    worldUnitsFromElmaPixels(0.215815 * 380),
+    worldUnitsFromElmaPixels(0.215815 * 301),
+  );
   ctx.drawImage(lgrSprites.q1bike, 0, 0, 1, 1);
   ctx.restore();
 
@@ -481,15 +501,15 @@ export function drawKuski({
   ctx.translate(wx, wy);
 
   ctx.save(); // head
-  ctx.translate(-15.5 / 48, -42 / 48);
-  ctx.scale(23 / 48, 23 / 48);
+  ctx.translate(worldUnitsFromElmaPixels(-15.5), worldUnitsFromElmaPixels(-42));
+  ctx.scale(worldUnitsFromElmaPixels(23), worldUnitsFromElmaPixels(23));
   ctx.drawImage(lgrSprites.q1head, 0, 0, 1, 1);
   ctx.restore();
 
-  const bumx = 19.5 / 48,
+  const bumx = worldUnitsFromElmaPixels(19.5),
     bumy = 0;
-  const pedalx = -wx + 10.2 / 48 / 3,
-    pedaly = -wy + 65 / 48 / 3;
+  const pedalx = -wx + worldUnitsFromThirdElmaPixels(10.2),
+    pedaly = -wy + worldUnitsFromThirdElmaPixels(65);
   legLimb(
     ctx,
     lgrSprites.q1thigh,
@@ -501,9 +521,12 @@ export function drawKuski({
   );
 
   ctx.save(); // torso
-  ctx.translate(17 / 48, 9.25 / 48);
+  ctx.translate(worldUnitsFromElmaPixels(17), worldUnitsFromElmaPixels(9.25));
   ctx.rotate(Math.PI + 2 / 3);
-  ctx.scale(100 / 48 / 3, 58 / 48 / 3);
+  ctx.scale(
+    worldUnitsFromThirdElmaPixels(100),
+    worldUnitsFromThirdElmaPixels(58),
+  );
   if (shirt && shirt.getImage()) {
     // assumes shirts are rotated as on EOL site
     ctx.translate(0.5, 0.5);
@@ -516,10 +539,10 @@ export function drawKuski({
 
   ctx.restore();
 
-  const shoulderx = 0 / 48,
-    shouldery = -17.5 / 48;
-  const handlex = -wx - 64.5 / 48 / 3,
-    handley = -wy - 59.6 / 48 / 3;
+  const shoulderx = 0,
+    shouldery = worldUnitsFromElmaPixels(-17.5);
+  const handlex = -wx - worldUnitsFromThirdElmaPixels(64.5),
+    handley = -wy - worldUnitsFromThirdElmaPixels(59.6);
   const handx = handlex,
     handy = handley;
 

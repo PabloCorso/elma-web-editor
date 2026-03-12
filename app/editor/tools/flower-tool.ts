@@ -4,6 +4,7 @@ import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { LgrAssets } from "~/components/lgr-assets";
 import { drawObject } from "../draw-object";
+import { DRAFT_PREVIEW_OPACITY } from "../constants";
 
 export class FlowerTool extends Tool {
   readonly meta = defaultTools.flower;
@@ -27,7 +28,7 @@ export class FlowerTool extends Tool {
           ctx,
           sprite: flowerSprite,
           position: flower,
-          opacity: 0.5,
+          opacity: DRAFT_PREVIEW_OPACITY,
         });
       });
     }

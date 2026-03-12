@@ -1,4 +1,5 @@
 import type { Polygon, Position } from "../elma-types";
+import { selectionThresholds } from "../constants";
 import {
   isWithinThreshold,
   getClosestPointOnLineSegment,
@@ -12,7 +13,7 @@ export type SelectedVertex = {
 export function findVertexNearPosition(
   pos: Position,
   polygons: Polygon[],
-  threshold: number = 10,
+  threshold: number = selectionThresholds.vertex,
 ): { polygon: Polygon; vertex: Position } | null {
   for (const polygon of polygons) {
     for (const vertex of polygon.vertices) {
@@ -27,7 +28,7 @@ export function findVertexNearPosition(
 export function findObjectNearPosition(
   position: Position,
   objects: Position[],
-  threshold = 15,
+  threshold: number = selectionThresholds.object,
 ): Position | null {
   for (const object of objects) {
     if (isWithinThreshold(position, object, threshold)) {
@@ -94,7 +95,7 @@ export function getSelectionBounds(
 export function findPolygonEdgeNearPosition(
   pos: Position,
   polygons: Polygon[],
-  threshold = 8,
+  threshold: number = selectionThresholds.polygonEdge,
   shouldConsiderEdge: (polygon: Polygon, edgeIndex: number) => boolean = () =>
     true,
 ): Polygon | null {
@@ -160,7 +161,7 @@ function distanceToLineSegment(
 export function findPolygonVertexForEditing(
   pos: Position,
   polygons: Polygon[],
-  threshold: number = 10,
+  threshold: number = selectionThresholds.vertex,
   zoom: number,
 ): { polygon: Polygon; vertexIndex: number; vertex: Position } | null {
   for (const polygon of polygons) {
@@ -177,7 +178,7 @@ export function findPolygonVertexForEditing(
 export function findPolygonLineForEditing(
   pos: Position,
   polygons: Polygon[],
-  threshold: number = 8,
+  threshold: number = selectionThresholds.polygonEdge,
   zoom: number,
 ): {
   polygon: Polygon;

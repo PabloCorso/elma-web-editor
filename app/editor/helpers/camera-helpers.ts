@@ -1,6 +1,10 @@
 import type { Apple, Polygon, Position } from "../elma-types";
 import { calculateBoundingBox } from "./level-helpers";
 
+const DEFAULT_FIT_TO_VIEW_ZOOM = 1;
+const FIT_TO_VIEW_PADDING = 2;
+const FIT_TO_VIEW_VIEWPORT_RATIO = 0.9;
+
 export function updateCamera({
   deltaX,
   deltaY,
@@ -16,7 +20,7 @@ export function updateCamera({
 }) {
   setCamera(
     currentOffset.x + deltaX * panSpeed,
-    currentOffset.y + deltaY * panSpeed
+    currentOffset.y + deltaY * panSpeed,
   );
 }
 
@@ -115,16 +119,15 @@ export function fitToView({
   // If no polygons and no objects, center on origin
   if (minX === Infinity || maxX === -Infinity) {
     setCamera(canvas.width / 2, canvas.height / 2);
-    setZoom(Math.max(minZoom, Math.min(maxZoom, 1)));
+    setZoom(Math.max(minZoom, Math.min(maxZoom, DEFAULT_FIT_TO_VIEW_ZOOM)));
     return;
   }
 
   // Add padding
-  const padding = 2;
-  minX -= padding;
-  minY -= padding;
-  maxX += padding;
-  maxY += padding;
+  minX -= FIT_TO_VIEW_PADDING;
+  minY -= FIT_TO_VIEW_PADDING;
+  maxX += FIT_TO_VIEW_PADDING;
+  maxY += FIT_TO_VIEW_PADDING;
 
   // Calculate center and size
   const centerX = (minX + maxX) / 2;
@@ -133,8 +136,8 @@ export function fitToView({
   const polygonHeight = maxY - minY;
 
   // Calculate optimal zoom
-  const zoomX = (canvas.width * 0.9) / polygonWidth;
-  const zoomY = (canvas.height * 0.9) / polygonHeight;
+  const zoomX = (canvas.width * FIT_TO_VIEW_VIEWPORT_RATIO) / polygonWidth;
+  const zoomY = (canvas.height * FIT_TO_VIEW_VIEWPORT_RATIO) / polygonHeight;
   const newZoom = Math.max(minZoom, Math.min(maxZoom, Math.min(zoomX, zoomY)));
 
   // Set camera and zoom

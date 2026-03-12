@@ -13,7 +13,9 @@ import {
 import {
   colors,
   OBJECT_DIAMETER,
+  selectionThresholds,
   uiColors,
+  uiSelectionHandle,
   uiStrokeWidths,
 } from "../constants";
 import type { Apple, Picture, Polygon, Position } from "../elma-types";
@@ -27,10 +29,7 @@ import {
   isPointInKuskiSelectionBounds,
 } from "../draw-kuski";
 
-const SELECT_OBJECT_THRESHOLD = 15;
-const SELECT_VERTEX_THRESHOLD = 10;
-export const SELECT_POLYGON_EDGE_THRESHOLD = 8;
-const DUPLICATE_MARGIN = 1;
+const DUPLICATE_OFFSET_STEP = 1;
 
 export type SelectToolState = {
   selectedVertices: Array<{ polygon: Polygon; vertex: Position }>;
@@ -115,7 +114,7 @@ export class SelectTool extends Tool<SelectToolState> {
       ? findPolygonEdgeNearPosition(
           context.worldPos,
           state.polygons,
-          SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+          selectionThresholds.polygonEdge / state.zoom,
           this.isSelectablePolygonEdge,
         )
       : null;
@@ -158,7 +157,7 @@ export class SelectTool extends Tool<SelectToolState> {
       ? findVertexNearPosition(
           context.worldPos,
           state.polygons,
-          SELECT_VERTEX_THRESHOLD / state.zoom,
+          selectionThresholds.vertex / state.zoom,
         )
       : null;
     if (vertex) {
@@ -177,7 +176,7 @@ export class SelectTool extends Tool<SelectToolState> {
       ? findPolygonEdgeNearPosition(
           context.worldPos,
           state.polygons,
-          SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+          selectionThresholds.polygonEdge / state.zoom,
           this.isSelectablePolygonEdge,
         )
       : null;
@@ -221,7 +220,7 @@ export class SelectTool extends Tool<SelectToolState> {
     const picture = findObjectNearPosition(
       context.worldPos,
       selectablePictures.map((p) => p.position),
-      SELECT_OBJECT_THRESHOLD / state.zoom,
+      selectionThresholds.object / state.zoom,
     );
     if (picture) {
       const isSelected = toolState?.selectedPictures.includes(picture);
@@ -334,6 +333,52 @@ export class SelectTool extends Tool<SelectToolState> {
     return this.pasteClipboardWithMargin();
   }
 
+  public selectAllVisible(
+    pictureFilter: (picture: Picture) => boolean = () => true,
+  ): boolean {
+    const { state, setToolState } = this.getState();
+
+    const selectedVertices = this.isPolygonSelectable()
+      ? state.polygons.flatMap((polygon) =>
+          polygon.vertices.map((vertex) => ({ polygon, vertex })),
+        )
+      : [];
+    const selectedObjects = this.isObjectSelectable()
+      ? getAllObjects(
+          state.apples.map((apple) => apple.position),
+          state.killers,
+          state.flowers,
+          state.start,
+        ).map(({ obj }) => obj)
+      : [];
+    const selectedPictures = state.pictures
+      .filter(
+        (picture) =>
+          this.isPictureSelectable(picture) && pictureFilter(picture),
+      )
+      .map((picture) => picture.position);
+
+    this.isDragging = false;
+    this.isMarqueeSelecting = false;
+    this.dragOriginPositions = [];
+    this.endDragHistoryBatch(false);
+
+    setToolState({
+      selectedVertices,
+      selectedObjects,
+      selectedPictures,
+      hoveredObject: undefined,
+      hoveredPictureBounds: undefined,
+      contextMenuType: undefined,
+    });
+
+    return (
+      selectedVertices.length > 0 ||
+      selectedObjects.length > 0 ||
+      selectedPictures.length > 0
+    );
+  }
+
   onRenderOverlay(ctx: CanvasRenderingContext2D): void {
     this.pruneHiddenSelection();
     const { state, toolState } = this.getState();
@@ -403,7 +448,7 @@ export class SelectTool extends Tool<SelectToolState> {
         const hoveredVertex = findVertexNearPosition(
           state.mousePosition,
           state.polygons,
-          SELECT_VERTEX_THRESHOLD / state.zoom,
+          selectionThresholds.vertex / state.zoom,
         );
         if (hoveredVertex) {
           const hoveredVertexScreenPos = worldToScreen(
@@ -417,7 +462,7 @@ export class SelectTool extends Tool<SelectToolState> {
         const hoveredPolygon = findPolygonEdgeNearPosition(
           state.mousePosition,
           state.polygons,
-          SELECT_POLYGON_EDGE_THRESHOLD / state.zoom,
+          selectionThresholds.polygonEdge / state.zoom,
           this.isSelectablePolygonEdge,
         );
         if (!hoveredVertex && hoveredPolygon) {
@@ -510,21 +555,21 @@ export class SelectTool extends Tool<SelectToolState> {
     const apple = findObjectNearPosition(
       position,
       state.apples.map((a) => a.position),
-      SELECT_OBJECT_THRESHOLD / state.zoom,
+      selectionThresholds.object / state.zoom,
     );
     if (apple) return apple;
 
     const killer = findObjectNearPosition(
       position,
       state.killers,
-      SELECT_OBJECT_THRESHOLD / state.zoom,
+      selectionThresholds.object / state.zoom,
     );
     if (killer) return killer;
 
     const flower = findObjectNearPosition(
       position,
       state.flowers,
-      SELECT_OBJECT_THRESHOLD / state.zoom,
+      selectionThresholds.object / state.zoom,
     );
     if (flower) return flower;
 
@@ -1111,8 +1156,8 @@ export class SelectTool extends Tool<SelectToolState> {
   private pasteClipboardWithMargin(): boolean {
     const step = this.clipboardPasteCount + 1;
     const pasted = this.pasteClipboard({
-      x: DUPLICATE_MARGIN * step,
-      y: DUPLICATE_MARGIN * step,
+      x: DUPLICATE_OFFSET_STEP * step,
+      y: DUPLICATE_OFFSET_STEP * step,
     });
 
     if (pasted) {
@@ -1378,7 +1423,7 @@ function drawSelectMarquee({
   ctx.fillRect(screenMinX, screenMinY, screenWidth, screenHeight);
 
   ctx.strokeStyle = uiColors.marqueeStroke;
-  ctx.lineWidth = 0.75;
+  ctx.lineWidth = uiSelectionHandle.strokeWidthPx;
   ctx.strokeRect(screenMinX, screenMinY, screenWidth, screenHeight);
   ctx.setLineDash([]);
 }
@@ -1386,12 +1431,12 @@ function drawSelectMarquee({
 function drawSelectHandle(
   ctx: CanvasRenderingContext2D,
   position: Position,
-  size = 3,
+  size = uiSelectionHandle.halfWidthPx,
 ): void {
   const side = size * 2;
   ctx.fillStyle = uiColors.selectionHandleFill;
   ctx.fillRect(position.x - size, position.y - size, side, side);
   ctx.strokeStyle = uiColors.selectionHandleStroke;
-  ctx.lineWidth = 0.75;
+  ctx.lineWidth = uiSelectionHandle.strokeWidthPx;
   ctx.strokeRect(position.x - size, position.y - size, side, side);
 }

@@ -4,7 +4,7 @@ import type { EditorStore } from "../editor-store";
 import type { Picture } from "../elma-types";
 import { drawMaskedTexturePicture } from "../draw-picture";
 import type { EventContext } from "../helpers/event-handler";
-import { uiStrokeWidths } from "../constants";
+import { DRAFT_PREVIEW_OPACITY, uiStrokeWidths } from "../constants";
 import { defaultTools } from "./default-tools";
 import { Tool } from "./tool-interface";
 
@@ -41,7 +41,8 @@ export class TextureTool extends Tool<TextureToolState> {
       standardSprites.textures.find(
         (texture) => texture.texture === toolState.texture,
       ) || defaultTextureState;
-    const mask = toolState.mask || defaults.mask || standardSprites.textureMasks[0];
+    const mask =
+      toolState.mask || defaults.mask || standardSprites.textureMasks[0];
 
     state.actions.addPicture({
       ...defaults,
@@ -68,7 +69,7 @@ export class TextureTool extends Tool<TextureToolState> {
         textureSprite,
         maskSprite,
         position: state.mousePosition,
-        opacity: 0.5,
+        opacity: DRAFT_PREVIEW_OPACITY,
         showBounds: true,
         boundsLineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
       });
