@@ -1,6 +1,11 @@
 export async function getFileHandle() {
   if (!("showOpenFilePicker" in window)) return;
-  return window.showOpenFilePicker().then((handles) => handles[0]);
+  try {
+    return await window.showOpenFilePicker().then((handles) => handles[0]);
+  } catch (error) {
+    if (isAbortError(error) || isActivePickerError(error)) return;
+    throw error;
+  }
 }
 
 export async function getNewFileHandle() {
@@ -13,7 +18,12 @@ export async function getNewFileHandle() {
       },
     ],
   };
-  return window.showSaveFilePicker(opts);
+  try {
+    return await window.showSaveFilePicker(opts);
+  } catch (error) {
+    if (isAbortError(error) || isActivePickerError(error)) return;
+    throw error;
+  }
 }
 
 export async function readFile(file: File): Promise<ArrayBuffer> {
@@ -47,4 +57,12 @@ export async function verifyPermission(
   if ((await fileHandle.queryPermission(opts)) === "granted") return true;
   if ((await fileHandle.requestPermission(opts)) === "granted") return true;
   return false;
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function isActivePickerError(error: unknown) {
+  return error instanceof DOMException && error.name === "NotAllowedError";
 }

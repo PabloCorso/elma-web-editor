@@ -35,7 +35,6 @@ import { screenToWorld, worldToScreen } from "./helpers/coordinate-helpers";
 import {
   Clip,
   type Apple,
-  type EditorLevel,
   type Picture,
   type Polygon,
   type Position,
@@ -44,6 +43,7 @@ import { defaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
 import { defaultAppleState } from "./tools/apple-tools";
 import { SelectTool, type SelectToolState } from "./tools/select-tool";
+import type { EditorDocumentInput } from "./editor-state";
 
 enum RenderType {
   Picture = "picture",
@@ -64,7 +64,7 @@ type RenderItem =
   | (Apple & { type: RenderType.Apple; distance: number; clip: Clip });
 
 type EditorEngineOptions = {
-  initialLevel?: EditorLevel;
+  initialDocument?: EditorDocumentInput;
   initialToolId?: string;
   tools?: Array<new (store: EditorStore) => Tool>;
   widgets?: Array<new (store: EditorStore) => Widget>;
@@ -118,7 +118,12 @@ export class EditorEngine {
   constructor(
     canvas: HTMLCanvasElement,
     {
-      initialLevel = defaultLevel,
+      initialDocument = {
+        level: defaultLevel,
+        origin: { kind: "default", label: "Untitled", canOverwrite: false },
+        displayName: "Untitled",
+        hasExternalHandle: false,
+      },
       initialToolId = "select",
       tools = [],
       widgets = [],
@@ -166,7 +171,7 @@ export class EditorEngine {
     this.setupStoreListeners();
 
     // Initialize with level data
-    state.actions.loadLevel(initialLevel);
+    state.actions.replaceDocument(initialDocument);
     this.startRenderLoop();
     this.fitToView();
     this.updateCanvasCursor();

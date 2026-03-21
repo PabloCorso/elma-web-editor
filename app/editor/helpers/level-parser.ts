@@ -22,6 +22,37 @@ export type ImportResult = {
   error?: string;
 };
 
+const _defaultInternalEditorLevel = {
+  polygons: [
+    {
+      vertices: [
+        { x: -24, y: -8 },
+        { x: 24, y: -8 },
+        { x: 24, y: 2 },
+        { x: -24, y: 2 },
+      ],
+    },
+  ],
+  flowers: [{ x: -2, y: 0.5 }],
+  start: { x: 2, y: 0.5 },
+};
+
+ 
+const _defaultSmibuLevelEditorLevel = {
+  polygons: [
+    {
+      vertices: [
+        { x: 0, y: -50 },
+        { x: 50, y: -50 },
+        { x: 50, y: 0 },
+        { x: 0, y: 0 },
+      ],
+    },
+  ],
+  flowers: [{ x: 37.5, y: -25 }],
+  start: { x: 25, y: -25 },
+};
+
 export const defaultLevel: EditorLevel = {
   levelName: "",
   ground: Texture.Ground,
@@ -87,7 +118,11 @@ async function editorLevelFromBuffer(data: ArrayBuffer) {
         flowers.push(position);
         break;
       case ObjectType.Apple:
-        apples.push({ position, animation: 1, gravity: Gravity.None });
+        apples.push({
+          position,
+          animation: parseAppleAnimation(obj.animation),
+          gravity: obj.gravity,
+        });
         break;
       case ObjectType.Killer:
         killers.push(position);
@@ -117,6 +152,10 @@ async function editorLevelFromBuffer(data: ArrayBuffer) {
 
 function parseMask(mask: string): Mask | "" {
   return Object.values(Mask).includes(mask as Mask) ? (mask as Mask) : "";
+}
+
+function parseAppleAnimation(animation: number): 1 | 2 {
+  return animation === 2 ? 2 : 1;
 }
 
 export function elmaLevelFromEditorState(state: EditorState) {
@@ -150,8 +189,8 @@ export function elmaLevelFromEditorState(state: EditorState) {
     ...state.apples.map((apple) => ({
       type: ObjectType.Apple,
       position: correctPositionPrecision(apple.position),
-      gravity: Gravity.None,
-      animation: 1,
+      gravity: apple.gravity,
+      animation: apple.animation,
     })),
     ...state.killers.map((pos) => ({
       type: ObjectType.Killer,

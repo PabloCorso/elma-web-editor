@@ -5,6 +5,7 @@ import {
   useInitialLevel,
 } from "../components/editor-view";
 import { EditorProvider } from "../editor/use-editor-store";
+import { EditorDocumentGuardProvider } from "~/editor/document-guard";
 import { ControlToolbar } from "~/editor/toolbars/control-toolbar";
 import { HeaderToolbar } from "~/editor/toolbars/header-toolbar";
 import { CanvasToolbar } from "~/editor/toolbars/canvas-toolbar";
@@ -32,12 +33,14 @@ export default function Home({ params, loaderData }: Route.ComponentProps) {
     <TooltipProvider>
       <LgrAssetsProvider>
         <EditorProvider>
-          <div className="flex h-[100dvh]">
-            <Editor
-              isOpenAIEnabled={loaderData.isOpenAIEnabled}
-              initialLevelName={params.level}
-            />
-          </div>
+          <EditorDocumentGuardProvider>
+            <div className="flex h-[100dvh]">
+              <Editor
+                isOpenAIEnabled={loaderData.isOpenAIEnabled}
+                initialLevelName={params.level}
+              />
+            </div>
+          </EditorDocumentGuardProvider>
         </EditorProvider>
       </LgrAssetsProvider>
     </TooltipProvider>
@@ -47,9 +50,9 @@ export default function Home({ params, loaderData }: Route.ComponentProps) {
 type EditorProps = { initialLevelName?: string; isOpenAIEnabled?: boolean };
 
 function Editor({ initialLevelName, isOpenAIEnabled }: EditorProps) {
-  const initialLevel = useInitialLevel(initialLevelName);
+  const initialDocument = useInitialLevel(initialLevelName);
   const { canvasRef, engineRef } = useEditorView({
-    initialLevel,
+    initialDocument,
     isOpenAIEnabled,
   });
 
@@ -57,7 +60,7 @@ function Editor({ initialLevelName, isOpenAIEnabled }: EditorProps) {
     <>
       <EditorToolbars
         engineRef={engineRef}
-        isLoading={initialLevel.status === "loading"}
+        isLoading={initialDocument.status === "loading"}
       />
       <EditorContextMenu />
       <div className="flex-1">

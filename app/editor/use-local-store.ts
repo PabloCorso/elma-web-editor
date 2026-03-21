@@ -35,16 +35,26 @@ export function useLocalStorageSync(key = "elma-web-store") {
 
         // Import the level data into the store
         const state = store.getState();
-        state.actions.loadLevel({
-          levelName: savedData.levelName,
-          ground: savedData.ground ?? "ground",
-          sky: savedData.sky ?? "sky",
-          polygons: savedData.polygons,
-          apples: savedData.apples,
-          killers: savedData.killers,
-          flowers: savedData.flowers,
-          start: savedData.start,
-          pictures: savedData.pictures || [],
+        state.actions.replaceDocument({
+          level: {
+            levelName: savedData.levelName,
+            ground: savedData.ground ?? "ground",
+            sky: savedData.sky ?? "sky",
+            polygons: savedData.polygons,
+            apples: savedData.apples,
+            killers: savedData.killers,
+            flowers: savedData.flowers,
+            start: savedData.start,
+            pictures: savedData.pictures || [],
+          },
+          origin: {
+            kind: "recovery",
+            label: "Recovered session",
+            canOverwrite: false,
+          },
+          displayName: savedData.levelName || "Recovered session",
+          hasExternalHandle: false,
+          pendingRecovery: true,
         });
 
         // Restore other state

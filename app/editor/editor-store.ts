@@ -1,6 +1,11 @@
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { temporal, type TemporalState } from "zundo";
-import type { EditorState } from "./editor-state";
+import type {
+  EditorDocumentInput,
+  EditorDocumentOrigin,
+  EditorDocumentSaveState,
+  EditorState,
+} from "./editor-state";
 import type { Widget } from "./widgets/widget-interface";
 import type { Tool, ToolState } from "./tools/tool-interface";
 import { FileSession } from "~/editor/helpers/file-session";
@@ -35,6 +40,33 @@ export type EditorStore = UseBoundStore<StoreApi<EditorState>> & {
   temporal: StoreApi<TemporalEditorState>;
 };
 
+export function getLevelSnapshot(
+  state: Pick<
+    EditorState,
+    | "levelName"
+    | "ground"
+    | "sky"
+    | "polygons"
+    | "apples"
+    | "killers"
+    | "flowers"
+    | "start"
+    | "pictures"
+  >,
+): PartialEditorState {
+  return {
+    levelName: state.levelName,
+    ground: state.ground,
+    sky: state.sky,
+    polygons: state.polygons,
+    apples: state.apples,
+    killers: state.killers,
+    flowers: state.flowers,
+    start: state.start,
+    pictures: state.pictures,
+  };
+}
+
 type PositionSnapshot = { x: number; y: number };
 type ObjectSelectionSnapshot = PositionSnapshot & {
   kind?: "start" | "apple" | "killer" | "flower";
@@ -45,6 +77,48 @@ type SelectionMemento = {
   selectedObjects: ObjectSelectionSnapshot[];
   selectedPictures: PositionSnapshot[];
 };
+
+const DEFAULT_DOCUMENT_ORIGIN: EditorDocumentOrigin = {
+  kind: "default",
+  label: "Untitled",
+  canOverwrite: false,
+};
+
+function normalizeLevelSnapshot(
+  level: PartialEditorState,
+  defaultLevelTitle: string,
+): PartialEditorState {
+  return {
+    levelName: level.levelName || defaultLevelTitle,
+    ground: level.ground || "ground",
+    sky: level.sky || "sky",
+    polygons: level.polygons,
+    apples: level.apples,
+    killers: level.killers,
+    flowers: level.flowers,
+    start: level.start,
+    pictures: level.pictures ?? [],
+  };
+}
+
+function createDocumentSession(
+  document: EditorDocumentInput,
+  defaultLevelTitle: string,
+) {
+  const baselineLevel = normalizeLevelSnapshot(document.level, defaultLevelTitle);
+  return {
+    baselineLevel,
+    origin: document.origin,
+    displayName:
+      document.displayName || baselineLevel.levelName || defaultLevelTitle,
+    hasExternalHandle: document.hasExternalHandle ?? false,
+    pendingRecovery: document.pendingRecovery,
+    dirty: false,
+    saveState: "clean" as EditorDocumentSaveState,
+    lastSavedAt: undefined,
+    lastError: undefined,
+  };
+}
 
 export function createEditorStore({
   initialToolId = "select",
@@ -255,6 +329,25 @@ export function createEditorStore({
         flowers: [],
         start: { x: 0, y: 0 },
         pictures: [],
+        documentSession: createDocumentSession(
+          {
+            level: {
+              levelName: defaultLevelTitle,
+              ground: "ground",
+              sky: "sky",
+              polygons: [],
+              apples: [],
+              killers: [],
+              flowers: [],
+              start: { x: 0, y: 0 },
+              pictures: [],
+            },
+            origin: DEFAULT_DOCUMENT_ORIGIN,
+            displayName: defaultLevelTitle,
+            hasExternalHandle: false,
+          },
+          defaultLevelTitle,
+        ),
 
         // Editor state
         activeToolId: initialToolId,
@@ -452,18 +545,53 @@ export function createEditorStore({
           resetLevelVisibility: () =>
             set({ levelVisibility: defaultLevelVisibility }),
 
-          loadLevel: (level) => {
+          replaceDocument: (document) => {
+            const normalizedLevel = normalizeLevelSnapshot(
+              document.level,
+              defaultLevelTitle,
+            );
             set({
-              ...level,
-              levelName: level.levelName || defaultLevelTitle,
-              ground: level.ground || "ground",
-              sky: level.sky || "sky",
+              ...normalizedLevel,
+              documentSession: createDocumentSession(
+                { ...document, level: normalizedLevel },
+                defaultLevelTitle,
+              ),
               levelVisibility: defaultLevelVisibility,
               mouseOnCanvas: false,
             });
             const temporal = (store as EditorStore).temporal.getState();
             temporal.clear();
           },
+
+          markDocumentSaved: (next = {}) =>
+            set((state) => ({
+              documentSession: {
+                ...state.documentSession,
+                baselineLevel: next.baselineLevel ?? getLevelSnapshot(state),
+                origin: next.origin ?? state.documentSession.origin,
+                displayName: next.displayName ?? state.documentSession.displayName,
+                hasExternalHandle:
+                  next.hasExternalHandle ?? state.documentSession.hasExternalHandle,
+                pendingRecovery:
+                  next.pendingRecovery ?? state.documentSession.pendingRecovery,
+                dirty: false,
+                saveState: "clean",
+                lastSavedAt: Date.now(),
+                lastError: undefined,
+              },
+            })),
+
+          setDocumentSaveState: (saveState, lastError) =>
+            set((state) => ({
+              documentSession: {
+                ...state.documentSession,
+                saveState,
+                lastError:
+                  saveState === "error"
+                    ? lastError ?? "Save failed."
+                    : undefined,
+              },
+            })),
 
           triggerFitToView: () =>
             set((state) => ({
@@ -556,6 +684,39 @@ export function createEditorStore({
   });
 
   currentSelection = captureSelectionMemento(editorStore.getState());
+
+  const syncDocumentSession = () => {
+    const state = editorStore.getState();
+    const dirty = !fastDeepEqual(
+      getLevelSnapshot(state),
+      state.documentSession.baselineLevel,
+    );
+    const currentSaveState = state.documentSession.saveState;
+    const nextSaveState =
+      currentSaveState === "saving" || currentSaveState === "error"
+        ? currentSaveState
+        : dirty
+          ? "dirty"
+          : "clean";
+
+    if (
+      state.documentSession.dirty === dirty &&
+      state.documentSession.saveState === nextSaveState
+    ) {
+      return;
+    }
+
+    editorStore.setState({
+      documentSession: {
+        ...state.documentSession,
+        dirty,
+        saveState: nextSaveState,
+      },
+    });
+  };
+
+  editorStore.subscribe(syncDocumentSession);
+  syncDocumentSession();
 
   return editorStore;
 }

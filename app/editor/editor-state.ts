@@ -11,7 +11,59 @@ import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 import type { LevelVisibilitySettings } from "./level-visibility";
 
+type EditorDocumentSnapshot = Pick<
+  EditorLevel,
+  | "levelName"
+  | "ground"
+  | "sky"
+  | "polygons"
+  | "apples"
+  | "killers"
+  | "flowers"
+  | "start"
+  | "pictures"
+>;
+
+export type EditorDocumentOriginKind =
+  | "default"
+  | "builtin"
+  | "file"
+  | "download"
+  | "api"
+  | "workspace"
+  | "recovery";
+
+export type EditorDocumentOrigin = {
+  kind: EditorDocumentOriginKind;
+  label: string;
+  canOverwrite: boolean;
+};
+
+export type EditorDocumentSaveState = "clean" | "dirty" | "saving" | "error";
+
+export type EditorDocumentSession = {
+  baselineLevel: EditorLevel;
+  origin: EditorDocumentOrigin;
+  displayName: string;
+  hasExternalHandle: boolean;
+  pendingRecovery?: boolean;
+  dirty: boolean;
+  saveState: EditorDocumentSaveState;
+  lastSavedAt?: number;
+  lastError?: string;
+};
+
+export type EditorDocumentInput = {
+  level: EditorLevel;
+  origin: EditorDocumentOrigin;
+  displayName?: string;
+  hasExternalHandle?: boolean;
+  pendingRecovery?: boolean;
+};
+
 export type EditorState = EditorLevel & {
+  documentSession: EditorDocumentSession;
+
   // Editor state
   activeToolId: string;
   mousePosition: Position;
@@ -93,7 +145,18 @@ export type EditorState = EditorLevel & {
     setLevelVisibility: (settings: Partial<LevelVisibilitySettings>) => void;
     toggleLevelVisibility: (key: keyof LevelVisibilitySettings) => void;
     resetLevelVisibility: () => void;
-    loadLevel: (level: EditorLevel) => void;
+    replaceDocument: (document: EditorDocumentInput) => void;
+    markDocumentSaved: (next?: {
+      baselineLevel?: EditorDocumentSnapshot;
+      origin?: EditorDocumentOrigin;
+      displayName?: string;
+      hasExternalHandle?: boolean;
+      pendingRecovery?: boolean;
+    }) => void;
+    setDocumentSaveState: (
+      saveState: EditorDocumentSaveState,
+      lastError?: string,
+    ) => void;
     triggerFitToView: () => void;
   };
 };

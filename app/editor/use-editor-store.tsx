@@ -2,7 +2,7 @@ import { createContext, useContext, useRef } from "react";
 import { useStore as useZustand } from "zustand";
 import { createEditorStore, type EditorStore } from "./editor-store";
 import type { Tool, ToolState } from "./tools/tool-interface";
-import type { EditorState } from "./editor-state";
+import type { EditorDocumentSession, EditorState } from "./editor-state";
 
 const EditorContext = createContext<EditorStore | null>(null);
 
@@ -60,6 +60,14 @@ export function useLevelName() {
 
 export function useZoom() {
   return useEditor((state) => state.zoom);
+}
+
+export function useEditorDocumentSession(): EditorDocumentSession {
+  return useEditor((state) => state.documentSession);
+}
+
+export function useEditorIsDirty() {
+  return useEditor((state) => state.documentSession.dirty);
 }
 
 export function useEditorActions() {

@@ -15,6 +15,8 @@ import { HandTool } from "~/editor/tools/hand-tool";
 import { TextureTool } from "~/editor/tools/texture-tool";
 import { cn } from "~/utils/misc";
 import type { EditorLevel } from "~/editor/elma-types";
+import type { EditorDocumentInput } from "~/editor/editor-state";
+import { defaultLevel } from "~/editor/helpers/level-parser";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
 
@@ -28,12 +30,12 @@ export function EditorView({ className, ...props }: EditorViewProps) {
 }
 
 type UseEditorViewOptions = {
-  initialLevel?: InitialLevel;
+  initialDocument?: InitialDocument;
   isOpenAIEnabled?: boolean;
 };
 
 export function useEditorView({
-  initialLevel,
+  initialDocument,
   isOpenAIEnabled,
 }: UseEditorViewOptions) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -49,7 +51,11 @@ export function useEditorView({
   useEffect(
     function initializeEditorEngine() {
       const canvas = canvasRef.current;
-      if (!canvas || engineRef.current || initialLevel?.status === "loading") {
+      if (
+        !canvas ||
+        engineRef.current ||
+        initialDocument?.status === "loading"
+      ) {
         return;
       }
 
@@ -123,7 +129,7 @@ export function useEditorView({
         tools,
         widgets,
         lgrAssets: lgrAssets.lgr ?? undefined,
-        initialLevel: initialLevel?.data,
+        initialDocument: initialDocument?.document,
       });
 
       // Add resize observer to handle parent size changes (batched to avoid flicker)
@@ -144,19 +150,19 @@ export function useEditorView({
         }
       };
     },
-    [store, initialLevel, isOpenAIEnabled, lgrAssets],
+    [store, initialDocument, isOpenAIEnabled, lgrAssets],
   );
 
   return { canvasRef, engineRef };
 }
 
-type InitialLevel = {
-  data: EditorLevel | undefined;
+type InitialDocument = {
+  document: EditorDocumentInput | undefined;
   status: "loading" | "done" | "error";
 };
 
 // TODO: should this move to FileSession or EditorStore?
-export function useInitialLevel(levelName?: string): InitialLevel {
+export function useInitialLevel(levelName?: string): InitialDocument {
   const [data, setData] = useState<EditorLevel | undefined>(undefined);
   const [status, setStatus] = useState<"loading" | "done" | "error">(
     levelName ? "loading" : "done",
@@ -179,5 +185,25 @@ export function useInitialLevel(levelName?: string): InitialLevel {
     loadInitialLevel();
   }, [levelName]);
 
-  return { data, status };
+  const document = React.useMemo<EditorDocumentInput | undefined>(() => {
+    if (status === "loading") return undefined;
+
+    if (!levelName || !data) {
+      return {
+        level: defaultLevel,
+        origin: { kind: "default", label: "Untitled", canOverwrite: false },
+        displayName: "Untitled",
+        hasExternalHandle: false,
+      };
+    }
+
+    return {
+      level: data,
+      origin: { kind: "builtin", label: "Built-in level", canOverwrite: false },
+      displayName: data.levelName || levelName,
+      hasExternalHandle: false,
+    };
+  }, [data, levelName, status]);
+
+  return React.useMemo(() => ({ document, status }), [document, status]);
 }

@@ -22,7 +22,7 @@ export function DropdownMenuTrigger({
 export const DropdownMenuTriggerIcon = CaretDownIcon;
 
 const itemClassName = cn(
-  "relative flex items-center gap-1 rounded-xs px-2 py-1.5 text-sm outline-hidden transition-colors select-none bg-primary hover:bg-primary-hover active:bg-primary-active data-disabled:pointer-events-none data-disabled:opacity-50",
+  "relative flex items-center gap-1.5 rounded-xs px-2 py-1.5 text-sm outline-hidden transition-colors select-none bg-primary hover:bg-primary-hover active:bg-primary-active data-disabled:pointer-events-none data-disabled:opacity-50",
 );
 
 export function DropdownMenuItem({
@@ -30,10 +30,12 @@ export function DropdownMenuItem({
   children,
   iconBefore,
   iconAfter,
+  shortcut,
   ...props
 }: Omit<React.ComponentProps<typeof DropdownMenuPrimitive.Item>, "asChild"> & {
   iconBefore?: React.ReactNode;
   iconAfter?: React.ReactNode;
+  shortcut?: React.ReactNode;
 }) {
   return (
     <DropdownMenuPrimitive.Item
@@ -42,6 +44,9 @@ export function DropdownMenuItem({
     >
       {iconBefore ? <Icon className="opacity-75">{iconBefore}</Icon> : null}
       {children}
+      {shortcut ? (
+        <span className="ml-auto text-xs text-white/45">{shortcut}</span>
+      ) : null}
       {iconAfter ? <Icon className="ml-auto">{iconAfter}</Icon> : null}
     </DropdownMenuPrimitive.Item>
   );

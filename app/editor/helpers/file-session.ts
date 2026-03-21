@@ -9,11 +9,20 @@ import type { EditorStore } from "~/editor/editor-store";
 import { elmaLevelFromEditorState } from "~/editor/helpers/level-parser";
 import type { ElmaLevel } from "~/editor/elma-types";
 
+export type FileSessionOpenResult = {
+  contents: ArrayBuffer;
+  fileName: string;
+};
+
+export type FileSessionSaveResult = {
+  mode: "file" | "download";
+  fileName?: string;
+};
+
 export class FileSession {
   private store: EditorStore;
   private handle?: FileSystemFileHandle;
   private name?: string;
-  private modified = false;
 
   constructor(store: EditorStore) {
     this.store = store;
@@ -27,14 +36,17 @@ export class FileSession {
     return Boolean(this.handle);
   }
 
-  get isModified() {
-    return this.modified;
+  clear() {
+    this.handle = undefined;
+    this.name = undefined;
   }
 
   /**
    * Open a file via picker (or provided handle) and keep the handle for later saves.
    */
-  async open(handle?: FileSystemFileHandle): Promise<ArrayBuffer | false> {
+  async open(
+    handle?: FileSystemFileHandle,
+  ): Promise<FileSessionOpenResult | false> {
     if (!isClient()) return false;
     if (!supportsFilePickers()) return false;
 
@@ -49,9 +61,8 @@ export class FileSession {
 
     this.handle = fileHandle;
     this.name = file.name;
-    this.modified = false;
 
-    return contents;
+    return { contents, fileName: file.name };
   }
 
   async save() {
@@ -59,21 +70,22 @@ export class FileSession {
 
     const level = elmaLevelFromEditorState(this.store.getState());
     if (!supportsFilePickers()) {
+      this.clear();
       downloadLevel(level);
-      return true;
+      return { mode: "download", fileName: `${level.name}.lev` };
     }
 
     if (!this.handle) return false;
 
     const canWrite = await verifyPermission(this.handle, { withWrite: true });
     if (!canWrite) {
+      this.clear();
       downloadLevel(level);
-      return false;
+      return { mode: "download", fileName: `${level.name}.lev` };
     }
 
     await writeFile(this.handle, levelToBlob(level));
-    // this.modified handling can be added when implemented.
-    return true;
+    return { mode: "file", fileName: this.name };
   }
 
   async saveAs(level: ElmaLevel) {
@@ -81,8 +93,9 @@ export class FileSession {
 
     // No picker support: download instead.
     if (!supportsFilePickers()) {
+      this.clear();
       downloadLevel(level);
-      return true;
+      return { mode: "download", fileName: `${level.name}.lev` };
     }
 
     const fileHandle = await getNewFileHandle();
@@ -90,15 +103,16 @@ export class FileSession {
 
     const canWrite = await verifyPermission(fileHandle, { withWrite: true });
     if (!canWrite) {
+      this.clear();
       downloadLevel(level);
-      return false;
+      return { mode: "download", fileName: `${level.name}.lev` };
     }
 
     const blob = levelToBlob(level);
     await writeFile(fileHandle, blob);
     this.handle = fileHandle;
     this.name = fileHandle.name;
-    return true;
+    return { mode: "file", fileName: fileHandle.name };
   }
 }
 
