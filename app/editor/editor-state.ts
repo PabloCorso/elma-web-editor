@@ -42,6 +42,7 @@ export type EditorDocumentOrigin = {
 export type EditorDocumentSaveState = "clean" | "dirty" | "saving" | "error";
 
 export type EditorDocumentSession = {
+  clipboardSessionId: string;
   baselineLevel: EditorLevel;
   origin: EditorDocumentOrigin;
   displayName: string;

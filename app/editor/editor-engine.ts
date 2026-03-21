@@ -560,6 +560,24 @@ export class EditorEngine {
     return worldToScreen(state.mousePosition, state.viewPortOffset, state.zoom);
   }
 
+  private getKeyboardEventContext(state: EditorState): EventContext {
+    const screenPoint = {
+      x: this.canvas.width / 2,
+      y: this.canvas.height / 2,
+    };
+    const worldPos = screenToWorld(
+      screenPoint,
+      state.viewPortOffset,
+      state.zoom,
+    );
+
+    return {
+      worldPos,
+      screenX: screenPoint.x,
+      screenY: screenPoint.y,
+    };
+  }
+
   private syncMousePositionFromScreenPoint(screenPoint: Position) {
     const state = this.store.getState();
     const worldPos = screenToWorld(
@@ -660,12 +678,12 @@ export class EditorEngine {
     if (isUserTyping()) return;
 
     const state = this.store.getState();
+    const keyboardContext = this.getKeyboardEventContext(state);
 
     // Let active tool handle the key first
     const activeTool = state.actions.getActiveTool();
     if (activeTool?.onKeyDown) {
-      const context = { worldPos: { x: 0, y: 0 }, screenX: 0, screenY: 0 };
-      const consumed = activeTool.onKeyDown(event, context);
+      const consumed = activeTool.onKeyDown(event, keyboardContext);
       if (consumed) return;
     }
 

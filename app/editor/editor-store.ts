@@ -84,6 +84,12 @@ const DEFAULT_DOCUMENT_ORIGIN: EditorDocumentOrigin = {
   canOverwrite: false,
 };
 
+let nextClipboardSessionId = 1;
+
+function createClipboardSessionId(): string {
+  return `clipboard-session-${nextClipboardSessionId++}`;
+}
+
 function normalizeLevelSnapshot(
   level: PartialEditorState,
   defaultLevelTitle: string,
@@ -107,6 +113,7 @@ function createDocumentSession(
 ) {
   const baselineLevel = normalizeLevelSnapshot(document.level, defaultLevelTitle);
   return {
+    clipboardSessionId: createClipboardSessionId(),
     baselineLevel,
     origin: document.origin,
     displayName:

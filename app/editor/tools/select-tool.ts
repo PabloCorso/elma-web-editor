@@ -54,6 +54,16 @@ type SelectionClipboard = {
   pictures: Picture[];
 };
 
+type SerializedSelectionClipboard = {
+  type: "elma-selection";
+  version: 1;
+  sourceClipboardSessionId: string;
+  payload: SelectionClipboard;
+};
+
+const SELECTION_CLIPBOARD_TYPE = "elma-selection";
+const SELECTION_CLIPBOARD_VERSION = 1;
+
 export class SelectTool extends Tool<SelectToolState> {
   readonly meta = defaultTools.select;
   private clipboard: SelectionClipboard | null = null;
@@ -278,19 +288,21 @@ export class SelectTool extends Tool<SelectToolState> {
     return false;
   }
 
-  onKeyDown(event: KeyboardEvent, _context: EventContext): boolean {
+  onKeyDown(event: KeyboardEvent, context: EventContext): boolean {
     this.pruneHiddenSelection();
     const modifier = checkModifierKey(event);
 
     if (modifier && event.key.toLowerCase() === "c") {
       if (this.copySelection()) {
+        void this.copySelectionToSystemClipboard();
         event.preventDefault();
         return true;
       }
     }
 
     if (modifier && event.key.toLowerCase() === "v") {
-      if (this.pasteClipboardWithMargin()) {
+      if (this.canPasteSelection()) {
+        void this.pasteFromSystemClipboard(context.worldPos);
         event.preventDefault();
         return true;
       }
@@ -326,6 +338,10 @@ export class SelectTool extends Tool<SelectToolState> {
 
   public canDuplicateSelection(): boolean {
     return Boolean(this.buildClipboardFromSelection());
+  }
+
+  public canPasteSelection(): boolean {
+    return this.clipboard !== null || this.canAccessSystemClipboard();
   }
 
   public duplicateSelectionWithOffset(): boolean {
@@ -1167,6 +1183,63 @@ export class SelectTool extends Tool<SelectToolState> {
     return pasted;
   }
 
+  private async copySelectionToSystemClipboard(): Promise<void> {
+    const { state } = this.getState();
+    if (!this.clipboard || !this.canAccessSystemClipboard()) return;
+
+    try {
+      await navigator.clipboard.writeText(
+        JSON.stringify(
+          this.serializeClipboard(
+            this.clipboard,
+            state.documentSession.clipboardSessionId,
+          ),
+        ),
+      );
+    } catch {
+      // Browser clipboard access can fail if permissions or context are missing.
+    }
+  }
+
+  private async pasteFromSystemClipboard(anchor: Position): Promise<void> {
+    const { state } = this.getState();
+    if (this.canAccessSystemClipboard()) {
+      try {
+        const text = await navigator.clipboard.readText();
+        const serializedClipboard = this.deserializeClipboard(text);
+        if (serializedClipboard) {
+          this.clipboard = serializedClipboard.payload;
+          this.clipboardPasteCount = 0;
+          if (
+            serializedClipboard.sourceClipboardSessionId ===
+            state.documentSession.clipboardSessionId
+          ) {
+            this.pasteClipboardWithMargin();
+          } else {
+            this.pasteClipboardAtAnchor(anchor);
+          }
+          return;
+        }
+      } catch {
+        // Fall back to the in-memory clipboard when system clipboard reads fail.
+      }
+    }
+
+    this.pasteClipboardAtAnchor(anchor);
+  }
+
+  private pasteClipboardAtAnchor(anchor: Position): boolean {
+    if (!this.clipboard) return false;
+
+    const clipboardCenter = getClipboardCenter(this.clipboard);
+    if (!clipboardCenter) return false;
+
+    return this.pasteClipboard({
+      x: anchor.x - clipboardCenter.x,
+      y: anchor.y - clipboardCenter.y,
+    });
+  }
+
   private pasteClipboard(offset: Position): boolean {
     if (!this.clipboard) return false;
 
@@ -1316,6 +1389,53 @@ export class SelectTool extends Tool<SelectToolState> {
       : null;
   }
 
+  private canAccessSystemClipboard(): boolean {
+    return (
+      typeof navigator !== "undefined" &&
+      typeof navigator.clipboard?.readText === "function" &&
+      typeof navigator.clipboard?.writeText === "function"
+    );
+  }
+
+  private serializeClipboard(
+    clipboard: SelectionClipboard,
+    sourceClipboardSessionId: string,
+  ): SerializedSelectionClipboard {
+    return {
+      type: SELECTION_CLIPBOARD_TYPE,
+      version: SELECTION_CLIPBOARD_VERSION,
+      sourceClipboardSessionId,
+      payload: clipboard,
+    };
+  }
+
+  private deserializeClipboard(text: string): SerializedSelectionClipboard | null {
+    try {
+      const parsed = JSON.parse(text) as Partial<SerializedSelectionClipboard>;
+      if (
+        parsed.type !== SELECTION_CLIPBOARD_TYPE ||
+        parsed.version !== SELECTION_CLIPBOARD_VERSION ||
+        typeof parsed.sourceClipboardSessionId !== "string"
+      ) {
+        return null;
+      }
+
+      const payload = parsed.payload;
+      if (!isSelectionClipboard(payload)) {
+        return null;
+      }
+
+      return {
+        type: SELECTION_CLIPBOARD_TYPE,
+        version: SELECTION_CLIPBOARD_VERSION,
+        sourceClipboardSessionId: parsed.sourceClipboardSessionId,
+        payload,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   private deleteSelection(): void {
     const { state, toolState } = this.getState();
     if (!toolState) return;
@@ -1386,6 +1506,111 @@ export class SelectTool extends Tool<SelectToolState> {
 
 function clonePosition(position: Position): Position {
   return { x: position.x, y: position.y };
+}
+
+function getClipboardCenter(clipboard: SelectionClipboard): Position | null {
+  const positions: Position[] = [
+    ...clipboard.polygons.flatMap((polygon) => polygon.vertices),
+    ...clipboard.apples.map((apple) => apple.position),
+    ...clipboard.killers,
+    ...clipboard.flowers,
+    ...clipboard.pictures.map((picture) => picture.position),
+  ];
+
+  if (positions.length === 0) return null;
+
+  const bounds = positions.reduce(
+    (acc, position) => ({
+      minX: Math.min(acc.minX, position.x),
+      maxX: Math.max(acc.maxX, position.x),
+      minY: Math.min(acc.minY, position.y),
+      maxY: Math.max(acc.maxY, position.y),
+    }),
+    {
+      minX: positions[0].x,
+      maxX: positions[0].x,
+      minY: positions[0].y,
+      maxY: positions[0].y,
+    },
+  );
+
+  return {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: (bounds.minY + bounds.maxY) / 2,
+  };
+}
+
+function isSelectionClipboard(value: unknown): value is SelectionClipboard {
+  if (!isRecord(value)) return false;
+
+  return (
+    isPolygonArray(value.polygons) &&
+    isAppleArray(value.apples) &&
+    isPositionArray(value.killers) &&
+    isPositionArray(value.flowers) &&
+    isPictureArray(value.pictures)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPosition(value: unknown): value is Position {
+  return (
+    isRecord(value) &&
+    typeof value.x === "number" &&
+    Number.isFinite(value.x) &&
+    typeof value.y === "number" &&
+    Number.isFinite(value.y)
+  );
+}
+
+function isPositionArray(value: unknown): value is Position[] {
+  return Array.isArray(value) && value.every(isPosition);
+}
+
+function isPolygon(value: unknown): value is Polygon {
+  return (
+    isRecord(value) &&
+    typeof value.grass === "boolean" &&
+    isPositionArray(value.vertices) &&
+    value.vertices.length >= 3
+  );
+}
+
+function isPolygonArray(value: unknown): value is Polygon[] {
+  return Array.isArray(value) && value.every(isPolygon);
+}
+
+function isApple(value: unknown): value is Apple {
+  return (
+    isRecord(value) &&
+    isPosition(value.position) &&
+    (value.animation === 1 || value.animation === 2) &&
+    typeof value.gravity === "number"
+  );
+}
+
+function isAppleArray(value: unknown): value is Apple[] {
+  return Array.isArray(value) && value.every(isApple);
+}
+
+function isPicture(value: unknown): value is Picture {
+  return (
+    isRecord(value) &&
+    typeof value.name === "string" &&
+    typeof value.texture === "string" &&
+    typeof value.mask === "string" &&
+    isPosition(value.position) &&
+    typeof value.distance === "number" &&
+    Number.isFinite(value.distance) &&
+    typeof value.clip === "number"
+  );
+}
+
+function isPictureArray(value: unknown): value is Picture[] {
+  return Array.isArray(value) && value.every(isPicture);
 }
 
 function translatePosition(position: Position, offset: Position): Position {

@@ -51,7 +51,7 @@ export function HeaderToolbar({
   ...props
 }: HeaderToolbarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { handleNew, handleOpenFile, handleSave } = useMainMenuActions();
+  const { handleOpenFile, handleSave } = useMainMenuActions();
 
   useEffect(
     function registerMainMenuHotkeys() {
