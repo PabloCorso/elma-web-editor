@@ -18,6 +18,7 @@ import {
 import type { Tool } from "./tools/tool-interface";
 import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
+import type { DefaultLevelPreset } from "./helpers/level-parser";
 import {
   drawKuski,
   drawKuskiBounds,
@@ -39,7 +40,7 @@ import {
   type Polygon,
   type Position,
 } from "./elma-types";
-import { defaultLevel } from "./helpers/level-parser";
+import { getDefaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
 import { defaultAppleState } from "./tools/apple-tools";
 import { SelectTool, type SelectToolState } from "./tools/select-tool";
@@ -66,6 +67,8 @@ type RenderItem =
 type EditorEngineOptions = {
   initialDocument?: EditorDocumentInput;
   initialToolId?: string;
+  defaultLevelPreset?: DefaultLevelPreset;
+  readOnly?: boolean;
   tools?: Array<new (store: EditorStore) => Tool>;
   widgets?: Array<new (store: EditorStore) => Widget>;
   minZoom?: number;
@@ -96,6 +99,7 @@ export class EditorEngine {
   private store: EditorStore;
   private lgrAssets: LgrAssets;
   private currentCursor: string | null = null;
+  private unsubscribeStore?: () => void;
 
   // Camera system
   private minZoom;
@@ -118,13 +122,10 @@ export class EditorEngine {
   constructor(
     canvas: HTMLCanvasElement,
     {
-      initialDocument = {
-        level: defaultLevel,
-        origin: { kind: "default", label: "Untitled", canOverwrite: false },
-        displayName: "Untitled",
-        hasExternalHandle: false,
-      },
+      initialDocument,
       initialToolId = "select",
+      defaultLevelPreset = "default",
+      readOnly = false,
       tools = [],
       widgets = [],
       minZoom = 0.2,
@@ -159,19 +160,29 @@ export class EditorEngine {
 
     this.store = store || createEditorStore();
     const state = this.store.getState();
+    const resolvedInitialDocument = initialDocument ?? {
+      level: getDefaultLevel(defaultLevelPreset),
+      origin: { kind: "default", label: "Untitled", canOverwrite: false },
+      displayName: "Untitled",
+      hasExternalHandle: false,
+    };
 
     tools.forEach((tool) => state.actions.registerTool(new tool(this.store)));
-    state.actions.activateTool(initialToolId);
+    if (tools.length > 0) {
+      state.actions.activateTool(initialToolId);
+    }
 
     widgets.forEach((widget) =>
       state.actions.registerWidget(new widget(this.store)),
     );
 
-    this.setupEventListeners();
+    if (!readOnly) {
+      this.setupEventListeners();
+    }
     this.setupStoreListeners();
 
     // Initialize with level data
-    state.actions.replaceDocument(initialDocument);
+    state.actions.replaceDocument(resolvedInitialDocument);
     this.startRenderLoop();
     this.fitToView();
     this.updateCanvasCursor();
@@ -807,7 +818,7 @@ export class EditorEngine {
     let lastFitToViewTrigger = state.fitToViewTrigger;
     let lastCurrentTool = state.activeToolId;
 
-    this.store.subscribe((state) => {
+    this.unsubscribeStore = this.store.subscribe((state) => {
       const currentTrigger = state.fitToViewTrigger;
       if (currentTrigger !== lastFitToViewTrigger) {
         lastFitToViewTrigger = currentTrigger;
@@ -1573,6 +1584,8 @@ export class EditorEngine {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
     }
+
+    this.unsubscribeStore?.();
 
     this.canvas.removeEventListener("pointerdown", this.handlePointerDown);
     this.canvas.removeEventListener("pointermove", this.handlePointerMove);

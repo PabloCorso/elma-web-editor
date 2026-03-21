@@ -14,12 +14,13 @@ import {
   type ToolbarProps,
 } from "../../components/ui/toolbar";
 import {
+  DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { DropdownMenu, DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 import {
   CaretDownIcon,
   FilePlusIcon,
@@ -28,10 +29,11 @@ import {
   GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import {
-  defaultLevel,
+  getDefaultLevel,
   editorLevelFromFile,
   elmaLevelFromEditorState,
 } from "~/editor/helpers/level-parser";
+import { useDefaultLevelPreset } from "~/editor/default-level-preset";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
 import { SettingsDialog } from "../../components/settings";
@@ -48,41 +50,78 @@ export function HeaderToolbar({
   isLoading,
   ...props
 }: HeaderToolbarProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { handleNew, handleOpenFile, handleSave } = useMainMenuActions();
+
+  useEffect(
+    function registerMainMenuHotkeys() {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        const isModifierPressed = checkModifierKey(event);
+        if (!isModifierPressed) return;
+
+        const key = event.key.toLowerCase();
+        if (key === "s") {
+          event.preventDefault();
+          void handleSave();
+          return;
+        }
+
+        if (key === "o") {
+          event.preventDefault();
+          void handleOpenFile();
+          return;
+        }
+
+        if (key === ",") {
+          event.preventDefault();
+          setSettingsOpen(true);
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    },
+    [handleOpenFile, handleSave],
+  );
+
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-x-4 top-4 z-10",
-        className,
-      )}
-      {...props}
-    >
-      <Toolbar className="pointer-events-auto max-w-full overflow-auto sm:hidden pr-3 relative">
-        <MainDropdownMenu />
-        <LevelVisibilityControl />
-        <LevelPropertiesControl />
-        <LevelTitleInput isLoading={isLoading} />
-        <LevelSaveStateIndicator />
-        <LevelFileName />
-      </Toolbar>
-
-      <div className="hidden grid-cols-[120px_minmax(0,1fr)_120px] gap-4 sm:grid">
-        <Toolbar className="pointer-events-auto">
-          <MainDropdownMenu />
+    <>
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-4 top-4 z-10",
+          className,
+        )}
+        {...props}
+      >
+        <Toolbar className="pointer-events-auto max-w-full overflow-auto sm:hidden pr-3 relative">
+          <MainDropdownMenu onOpenSettings={() => setSettingsOpen(true)} />
           <LevelVisibilityControl />
-        </Toolbar>
-
-        <Toolbar className="pointer-events-auto w-fit justify-self-center pr-3 relative">
           <LevelPropertiesControl />
           <LevelTitleInput isLoading={isLoading} />
           <LevelSaveStateIndicator />
           <LevelFileName />
         </Toolbar>
+
+        <div className="hidden grid-cols-[120px_minmax(0,1fr)_120px] gap-4 sm:grid">
+          <Toolbar className="pointer-events-auto">
+            <MainDropdownMenu onOpenSettings={() => setSettingsOpen(true)} />
+            <LevelVisibilityControl />
+          </Toolbar>
+
+          <Toolbar className="pointer-events-auto w-fit justify-self-center pr-3 relative">
+            <LevelPropertiesControl />
+            <LevelTitleInput isLoading={isLoading} />
+            <LevelSaveStateIndicator />
+            <LevelFileName />
+          </Toolbar>
+        </div>
       </div>
-    </div>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 }
 
-function MainDropdownMenu() {
+function useMainMenuActions() {
   const {
     replaceDocument,
     triggerFitToView,
@@ -93,23 +132,24 @@ function MainDropdownMenu() {
   const store = useEditorStore();
   const activeTool = useEditorActiveTool();
   const { confirmDiscardChanges } = useEditorDocumentGuard();
-
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const modifier = useModifier();
+  const defaultLevelPreset = useDefaultLevelPreset();
   const isPickerActionRunningRef = useRef(false);
 
-  const runWithPickerGuard = useCallback(async <T,>(action: () => Promise<T>) => {
-    if (isPickerActionRunningRef.current) {
-      return undefined;
-    }
+  const runWithPickerGuard = useCallback(
+    async <T,>(action: () => Promise<T>) => {
+      if (isPickerActionRunningRef.current) {
+        return undefined;
+      }
 
-    isPickerActionRunningRef.current = true;
-    try {
-      return await action();
-    } finally {
-      isPickerActionRunningRef.current = false;
-    }
-  }, []);
+      isPickerActionRunningRef.current = true;
+      try {
+        return await action();
+      } finally {
+        isPickerActionRunningRef.current = false;
+      }
+    },
+    [],
+  );
 
   const handleOpenFile = useCallback(async () => {
     await runWithPickerGuard(async () => {
@@ -139,7 +179,9 @@ function MainDropdownMenu() {
         });
         triggerFitToView();
       } catch (error) {
-        alert(`Import failed: ${error instanceof Error ? error.message : error}`);
+        alert(
+          `Import failed: ${error instanceof Error ? error.message : error}`,
+        );
       }
     });
   }, [
@@ -157,6 +199,7 @@ function MainDropdownMenu() {
 
     activeTool?.clear?.();
     store.getState().fileSession.clear();
+    const defaultLevel = getDefaultLevel(defaultLevelPreset);
     replaceDocument({
       level: defaultLevel,
       origin: { kind: "default", label: "Untitled", canOverwrite: false },
@@ -167,6 +210,7 @@ function MainDropdownMenu() {
   }, [
     activeTool,
     confirmDiscardChanges,
+    defaultLevelPreset,
     replaceDocument,
     store,
     triggerFitToView,
@@ -261,42 +305,13 @@ function MainDropdownMenu() {
     store,
   ]);
 
-  useEffect(
-    function registerMainMenuHotkeys() {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        const isModifierPressed = checkModifierKey(event);
-        if (!isModifierPressed) return;
+  return { handleNew, handleOpenFile, handleSave, handleSaveAs };
+}
 
-        const key = event.key.toLowerCase();
-        if (key === "s") {
-          event.preventDefault();
-          void handleSave();
-          return;
-        }
-
-        if (key === "o") {
-          event.preventDefault();
-          void handleOpenFile();
-          return;
-        }
-
-        if (key === "n") {
-          event.preventDefault();
-          void handleNew();
-          return;
-        }
-
-        if (key === ",") {
-          event.preventDefault();
-          setSettingsOpen(true);
-        }
-      };
-
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    },
-    [handleNew, handleOpenFile, handleSave],
-  );
+function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { handleNew, handleOpenFile, handleSave, handleSaveAs } =
+    useMainMenuActions();
+  const modifier = useModifier();
 
   return (
     <>
@@ -315,11 +330,11 @@ function MainDropdownMenu() {
             </Icon>
           </ToolbarButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-36">
+        <DropdownMenuContent>
           <DropdownMenuGroup>
             <DropdownMenuItem
               iconBefore={<FilePlusIcon />}
-              shortcut={`${modifier} + N`}
+              shortcut={`${modifier} + R`}
               onClick={() => {
                 void handleNew();
               }}
@@ -363,14 +378,13 @@ function MainDropdownMenu() {
             <DropdownMenuItem
               iconBefore={<GearIcon />}
               shortcut={`${modifier} + ,`}
-              onClick={() => setSettingsOpen(true)}
+              onClick={onOpenSettings}
             >
               Settings
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }

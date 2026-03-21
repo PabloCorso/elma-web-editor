@@ -16,7 +16,8 @@ import { TextureTool } from "~/editor/tools/texture-tool";
 import { cn } from "~/utils/misc";
 import type { EditorLevel } from "~/editor/elma-types";
 import type { EditorDocumentInput } from "~/editor/editor-state";
-import { defaultLevel } from "~/editor/helpers/level-parser";
+import { getDefaultLevel } from "~/editor/helpers/level-parser";
+import { useDefaultLevelPreset } from "~/editor/default-level-preset";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
 
@@ -167,6 +168,8 @@ export function useInitialLevel(levelName?: string): InitialDocument {
   const [status, setStatus] = useState<"loading" | "done" | "error">(
     levelName ? "loading" : "done",
   );
+  const defaultLevelPreset = useDefaultLevelPreset();
+  const [initialDefaultLevelPreset] = useState(defaultLevelPreset);
 
   useEffect(() => {
     async function loadInitialLevel() {
@@ -190,7 +193,7 @@ export function useInitialLevel(levelName?: string): InitialDocument {
 
     if (!levelName || !data) {
       return {
-        level: defaultLevel,
+        level: getDefaultLevel(initialDefaultLevelPreset),
         origin: { kind: "default", label: "Untitled", canOverwrite: false },
         displayName: "Untitled",
         hasExternalHandle: false,
@@ -203,7 +206,7 @@ export function useInitialLevel(levelName?: string): InitialDocument {
       displayName: data.levelName || levelName,
       hasExternalHandle: false,
     };
-  }, [data, levelName, status]);
+  }, [data, initialDefaultLevelPreset, levelName, status]);
 
   return React.useMemo(() => ({ document, status }), [document, status]);
 }

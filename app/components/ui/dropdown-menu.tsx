@@ -45,7 +45,7 @@ export function DropdownMenuItem({
       {iconBefore ? <Icon className="opacity-75">{iconBefore}</Icon> : null}
       {children}
       {shortcut ? (
-        <span className="ml-auto text-xs text-white/45">{shortcut}</span>
+        <span className="ml-auto text-xs pl-2 text-white/45">{shortcut}</span>
       ) : null}
       {iconAfter ? <Icon className="ml-auto">{iconAfter}</Icon> : null}
     </DropdownMenuPrimitive.Item>

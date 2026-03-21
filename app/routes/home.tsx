@@ -5,6 +5,7 @@ import {
   useInitialLevel,
 } from "../components/editor-view";
 import { EditorProvider } from "../editor/use-editor-store";
+import { DefaultLevelPresetProvider } from "../editor/default-level-preset";
 import { EditorDocumentGuardProvider } from "~/editor/document-guard";
 import { ControlToolbar } from "~/editor/toolbars/control-toolbar";
 import { HeaderToolbar } from "~/editor/toolbars/header-toolbar";
@@ -32,16 +33,18 @@ export default function Home({ params, loaderData }: Route.ComponentProps) {
   return (
     <TooltipProvider>
       <LgrAssetsProvider>
-        <EditorProvider>
-          <EditorDocumentGuardProvider>
-            <div className="flex h-[100dvh]">
-              <Editor
-                isOpenAIEnabled={loaderData.isOpenAIEnabled}
-                initialLevelName={params.level}
-              />
-            </div>
-          </EditorDocumentGuardProvider>
-        </EditorProvider>
+        <DefaultLevelPresetProvider>
+          <EditorProvider>
+            <EditorDocumentGuardProvider>
+              <div className="flex h-[100dvh]">
+                <Editor
+                  isOpenAIEnabled={loaderData.isOpenAIEnabled}
+                  initialLevelName={params.level}
+                />
+              </div>
+            </EditorDocumentGuardProvider>
+          </EditorProvider>
+        </DefaultLevelPresetProvider>
       </LgrAssetsProvider>
     </TooltipProvider>
   );
