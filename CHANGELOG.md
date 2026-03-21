@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-03-21
+
+- Use clipboard so that can copy/paste works cross tabs.
+- Change default level including Smibu and Internal editor defaults.
+
 ## 2026-03-10
 
 - Align vertex creation with Internal Level Editor.
