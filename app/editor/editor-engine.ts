@@ -44,6 +44,7 @@ import { getDefaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
 import { defaultAppleState } from "./tools/apple-tools";
 import { SelectTool, type SelectToolState } from "./tools/select-tool";
+import type { VertexToolState } from "./tools/vertex-tool";
 import type { EditorDocumentInput } from "./editor-state";
 
 enum RenderType {
@@ -721,12 +722,12 @@ export class EditorEngine {
 
     if (modifier) {
       if (event.key === "y" || (event.key === "z" && event.shiftKey)) {
-        this.store.temporal.getState().redo();
+        this.redo();
         event.preventDefault();
         return;
       }
       if (event.key === "z") {
-        this.store.temporal.getState().undo();
+        this.undo();
         event.preventDefault();
         return;
       }
@@ -788,6 +789,16 @@ export class EditorEngine {
     this.zoomInOut(-step);
   }
 
+  public undo() {
+    this.discardPendingVertexEditBeforeHistory();
+    this.store.temporal.getState().undo();
+  }
+
+  public redo() {
+    this.discardPendingVertexEditBeforeHistory();
+    this.store.temporal.getState().redo();
+  }
+
   private selectAllVisible(): boolean {
     const state = this.store.getState();
     const selectTool = state.actions.getTool<SelectTool>("select");
@@ -820,6 +831,19 @@ export class EditorEngine {
       setCamera: state.actions.setCamera,
       setZoom: state.actions.setZoom,
     });
+  }
+
+  private discardPendingVertexEditBeforeHistory() {
+    const state = this.store.getState();
+    if (state.activeToolId !== "vertex") return;
+
+    const toolState = state.actions.getToolState<VertexToolState>("vertex");
+    if (!toolState?.editingPolygon || toolState.drawingPolygon.vertices.length === 0) {
+      return;
+    }
+
+    const activeTool = state.actions.getActiveTool();
+    activeTool?.clear?.();
   }
 
   private startRenderLoop() {
@@ -969,7 +993,13 @@ export class EditorEngine {
   private getScenePolygons(state: EditorState): Polygon[] {
     const activeTool = state.actions.getActiveTool();
     const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
-    return [...state.polygons, ...draftPolygons];
+    const vertexToolState = state.actions.getToolState<VertexToolState>("vertex");
+    const scenePolygons = vertexToolState?.editingPolygon
+      ? state.polygons.filter(
+          (polygon) => polygon !== vertexToolState.editingPolygon,
+        )
+      : state.polygons;
+    return [...scenePolygons, ...draftPolygons];
   }
 
   private drawItem(state: EditorState, item: RenderItem) {

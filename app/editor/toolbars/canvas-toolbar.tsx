@@ -3,6 +3,7 @@ import {
   useEditorCanRedo,
   useEditorCanUndo,
   useEditorHistory,
+  useEditorToolState,
 } from "~/editor/use-editor-store";
 import { Toolbar, type ToolbarProps } from "~/components/ui/toolbar";
 import {
@@ -15,6 +16,7 @@ import {
 import type { EditorEngine } from "~/editor/editor-engine";
 import { ToolButton, type ToolButtonProps } from "./tool";
 import { cn, useModifier } from "~/utils/misc";
+import type { VertexToolState } from "~/editor/tools/vertex-tool";
 
 type CanvasToolbarProps = ToolbarProps & {
   engineRef: React.RefObject<EditorEngine | null>;
@@ -35,8 +37,8 @@ export function CanvasToolbar({
       {...props}
     >
       <CanvasBar>
-        <UntoToolButton />
-        <RedoToolButton />
+        <UntoToolButton engineRef={engineRef} />
+        <RedoToolButton engineRef={engineRef} />
       </CanvasBar>
       <CanvasBar>
         <CanvasToolButton
@@ -67,17 +69,26 @@ export function CanvasToolbar({
   );
 }
 
-function UntoToolButton(props: ToolButtonProps) {
+function UntoToolButton(
+  props: ToolButtonProps & {
+    engineRef: React.RefObject<EditorEngine | null>;
+  },
+) {
   const { undo } = useEditorHistory();
   const canUndo = useEditorCanUndo();
+  const vertexToolState = useEditorToolState<VertexToolState>("vertex");
+  const hasPendingVertexEdit = Boolean(
+    vertexToolState?.editingPolygon &&
+      vertexToolState.drawingPolygon.vertices.length > 0,
+  );
   const modifier = useModifier();
   return (
     <CanvasToolButton
       id="undo"
       name="Undo"
       shortcut={`${modifier} + Z`}
-      onClick={() => undo()}
-      disabled={!canUndo}
+      onClick={() => props.engineRef?.current?.undo() ?? undo()}
+      disabled={!canUndo && !hasPendingVertexEdit}
       {...props}
     >
       <ArrowArcLeftIcon />
@@ -85,7 +96,11 @@ function UntoToolButton(props: ToolButtonProps) {
   );
 }
 
-function RedoToolButton(props: ToolButtonProps) {
+function RedoToolButton(
+  props: ToolButtonProps & {
+    engineRef: React.RefObject<EditorEngine | null>;
+  },
+) {
   const { redo } = useEditorHistory();
   const canRedo = useEditorCanRedo();
   const modifier = useModifier();
@@ -94,7 +109,7 @@ function RedoToolButton(props: ToolButtonProps) {
       id="redo"
       name="Redo"
       shortcut={`${modifier} + Y`}
-      onClick={() => redo()}
+      onClick={() => props.engineRef?.current?.redo() ?? redo()}
       disabled={!canRedo}
       {...props}
     >

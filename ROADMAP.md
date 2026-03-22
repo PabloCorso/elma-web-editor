@@ -2,13 +2,6 @@
 
 Ideas and plans for Elma Web Editor.
 
-## Feedback
-
-- I haven't used much of internal editor so i didn't realize clicking an edge creates a new vertex instantly at that point, so i accidentally created several "invisible" vertices on a flat wall (i know they can be shown by selecting that area but meh) @roope
-  - Maybe allow creating from edges with shift+click so its easier to start new polygons near edges and so that we avoid this situation overall, or remove that and allow only to start edits from vertex.
-- If you select 2+ vertices and try to move them, the entire polygon moves, not just the selected parts @infe (video in Discord)
-  - Can only select vertices form polys, but if it’s intuitive to move form the selected edge can totally try adding that case. OR this could be better with the improved visual cues of what is going to move.
-
 ## Level correctness
 
 Topology validity

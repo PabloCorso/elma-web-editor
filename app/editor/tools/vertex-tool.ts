@@ -1,6 +1,7 @@
 import { Tool } from "./tool-interface";
 import type { EventContext } from "../helpers/event-handler";
 import type { EditorState } from "../editor-state";
+import type { PartialEditorState } from "../editor-store";
 import {
   isWithinThreshold,
   worldToScreen,
@@ -22,6 +23,7 @@ import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import type { Polygon, Position } from "../elma-types";
 import { checkModifierKey } from "~/utils/misc";
+import fastDeepEqual from "fast-deep-equal";
 
 const CLOSE_POLYGON_THRESHOLD = 15;
 const DEFAULT_VARIANT: VertexToolVariant = "default";
@@ -110,13 +112,7 @@ export class VertexTool extends Tool<VertexToolState> {
             CLOSE_POLYGON_THRESHOLD / state.zoom,
           )
         ) {
-          const newPolygon = {
-            vertices: [...toolState.drawingPolygon.vertices],
-            grass: toolState.drawingPolygon.grass,
-          };
-          this.addPolygon(newPolygon);
-          this.clear();
-          return true;
+          return this.finalizeDrawingOrRestore();
         }
       }
 
@@ -374,26 +370,39 @@ export class VertexTool extends Tool<VertexToolState> {
     state.actions.setPolygons([...state.polygons, polygon]);
   }
 
+  private replacePolygon(previousPolygon: Polygon, nextPolygon: Polygon): void {
+    const { state } = this.getState();
+    const polygonIndex = state.polygons.indexOf(previousPolygon);
+    if (polygonIndex === -1) return;
+
+    state.actions.setPolygons(
+      state.polygons.map((polygon, index) =>
+        index === polygonIndex ? nextPolygon : polygon,
+      ),
+    );
+  }
+
   private finalizeDrawingOrRestore(): boolean {
-    const { state, toolState } = this.getState();
+    const { toolState } = this.getState();
     if (!toolState) return false;
 
     if (toolState.drawingPolygon.vertices.length >= 3) {
-      this.addPolygon({
+      const finalizedPolygon = {
         vertices: [...toolState.drawingPolygon.vertices],
         grass: toolState.drawingPolygon.grass,
+      };
+      this.runHistoryBatch(() => {
+        if (toolState.editingPolygon) {
+          this.replacePolygon(toolState.editingPolygon, finalizedPolygon);
+        } else {
+          this.addPolygon(finalizedPolygon);
+        }
+        this.clear();
       });
-      this.clear();
       return true;
     }
 
     if (toolState.drawingPolygon.vertices.length > 0) {
-      if (toolState.editingPolygon) {
-        state.actions.setPolygons([
-          ...state.polygons,
-          toolState.editingPolygon,
-        ]);
-      }
       this.clear();
       return true;
     }
@@ -402,7 +411,7 @@ export class VertexTool extends Tool<VertexToolState> {
   }
 
   private startEditingFromVertex(
-    state: EditorState,
+    _state: EditorState,
     vertexResult: {
       polygon: Polygon;
       vertexIndex: number;
@@ -412,11 +421,7 @@ export class VertexTool extends Tool<VertexToolState> {
     const { setToolState } = this.getState();
     const { polygon, vertexIndex } = vertexResult;
 
-    // Store the original polygon for potential restoration on ESCAPE
     const editingPolygon = polygon;
-
-    // Remove the original polygon from the store
-    state.actions.setPolygons(state.polygons.filter((p) => p !== polygon));
 
     // Always start vertex editing in the same canvas direction regardless of
     // the stored polygon winding. Clockwise polygons move to the next vertex;
@@ -441,7 +446,7 @@ export class VertexTool extends Tool<VertexToolState> {
   }
 
   private startEditingFromLine(
-    state: EditorState,
+    _state: EditorState,
     lineResult: {
       polygon: Polygon;
       pivotVertexIndex: number;
@@ -451,11 +456,7 @@ export class VertexTool extends Tool<VertexToolState> {
     const { setToolState } = this.getState();
     const { polygon, pivotVertexIndex, side } = lineResult;
 
-    // Store the original polygon for potential restoration on ESCAPE
     const editingPolygon = polygon;
-
-    // Remove the original polygon from the store
-    state.actions.setPolygons(state.polygons.filter((p) => p !== polygon));
 
     // Start from the closest endpoint and follow the side of that endpoint
     // that belongs to the clicked edge.
@@ -495,5 +496,45 @@ export class VertexTool extends Tool<VertexToolState> {
     }
 
     return result;
+  }
+
+  private getHistorySnapshot(): PartialEditorState {
+    const { state } = this.getState();
+    return {
+      levelName: state.levelName,
+      ground: state.ground,
+      sky: state.sky,
+      polygons: state.polygons,
+      apples: state.apples,
+      killers: state.killers,
+      flowers: state.flowers,
+      start: state.start,
+      pictures: state.pictures,
+    };
+  }
+
+  private runHistoryBatch(mutate: () => void) {
+    const historyStart = this.getHistorySnapshot();
+    this.store.temporal.getState().pause();
+
+    try {
+      mutate();
+    } finally {
+      this.store.temporal.getState().resume();
+    }
+
+    const historyEnd = this.getHistorySnapshot();
+    if (fastDeepEqual(historyStart, historyEnd)) return;
+
+    const temporalState = this.store.temporal.getState() as {
+      _handleSet?: (
+        pastState: PartialEditorState,
+        replace: undefined,
+        currentState: PartialEditorState,
+        deltaState?: Partial<PartialEditorState> | null,
+      ) => void;
+    };
+
+    temporalState._handleSet?.(historyStart, undefined, historyEnd);
   }
 }
