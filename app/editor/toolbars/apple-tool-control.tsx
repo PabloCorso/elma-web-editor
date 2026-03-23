@@ -80,44 +80,57 @@ export function AppleToolbar({
   onGravityChange,
   ...props
 }: AppleToolbarProps) {
+  const appleToolState = useEditorToolState<AppleToolState>(
+    defaultTools.apple.id,
+  );
   const apple1 = useLgrSprite("qfood1");
   const apple2 = useLgrSprite("qfood2");
   const apple = useLgrSprite("qfood1");
+  const currentAnimation =
+    appleToolState?.animation ?? defaultAppleState.animation;
+  const currentGravity = appleToolState?.gravity ?? defaultAppleState.gravity;
 
   return (
     <Toolbar orientation="vertical" {...props}>
       <AppleButton
         shortcut={withShortcuts ? "1" : undefined}
+        isActive={currentAnimation === 1}
         iconBefore={<SpriteIcon src={apple1.src} />}
         onClick={() => onAnimationChange(1)}
       />
       <AppleButton
         shortcut={withShortcuts ? "2" : undefined}
+        isActive={currentAnimation === 2}
         iconBefore={<SpriteIcon src={apple2.src} />}
         onClick={() => onAnimationChange(2)}
       />
       <ToolbarSeparator />
       <AppleButton
         shortcut={withShortcuts ? "N" : undefined}
+        isActive={currentGravity === Gravity.None}
         iconBefore={<SpriteIcon src={apple.src} />}
         onClick={() => onGravityChange(Gravity.None)}
       />
       <AppleButton
+        isActive={currentGravity === Gravity.Down}
         onClick={() => onGravityChange(Gravity.Down)}
         iconBefore={<SpriteIcon src={apple.src} />}
         iconAfter={<AppleArrowIcon gravity={Gravity.Down} />}
       />
       <AppleButton
+        isActive={currentGravity === Gravity.Left}
         onClick={() => onGravityChange(Gravity.Left)}
         iconBefore={<SpriteIcon src={apple.src} />}
         iconAfter={<AppleArrowIcon gravity={Gravity.Left} />}
       />
       <AppleButton
+        isActive={currentGravity === Gravity.Up}
         onClick={() => onGravityChange(Gravity.Up)}
         iconBefore={<SpriteIcon src={apple.src} />}
         iconAfter={<AppleArrowIcon gravity={Gravity.Up} />}
       />
       <AppleButton
+        isActive={currentGravity === Gravity.Right}
         onClick={() => onGravityChange(Gravity.Right)}
         iconBefore={<SpriteIcon src={apple.src} />}
         iconAfter={<AppleArrowIcon gravity={Gravity.Right} />}
@@ -152,12 +165,13 @@ function GravityIcon(props: React.SVGAttributes<SVGSVGElement>) {
 function AppleButton({
   className,
   shortcut,
+  isActive,
   ...props
-}: ButtonProps & { shortcut?: string }) {
+}: ButtonProps & { shortcut?: string; isActive?: boolean }) {
   return (
     <ToolbarButton
       size="sm"
-      className={cn("relative", className)}
+      className={cn("relative", isActive && "bg-primary-hover/50", className)}
       iconAfter={shortcut && <ShortcutIndicator>{shortcut}</ShortcutIndicator>}
       {...props}
     />
