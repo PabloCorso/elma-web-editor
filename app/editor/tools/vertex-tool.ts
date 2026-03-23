@@ -37,6 +37,43 @@ export type VertexToolState = {
   variant?: VertexToolVariant;
 };
 
+export function canToggleVertexToolDirection(
+  toolState?: VertexToolState,
+): toolState is VertexToolState {
+  return (toolState?.drawingPolygon.vertices.length ?? 0) > 1;
+}
+
+export function getToggledVertexToolState(
+  toolState: VertexToolState,
+): Pick<VertexToolState, "drawingPolygon" | "editPivot"> | null {
+  if (!canToggleVertexToolDirection(toolState)) {
+    return null;
+  }
+
+  const pivot =
+    toolState.editPivot ??
+    toolState.drawingPolygon.vertices[
+      toolState.drawingPolygon.vertices.length - 1
+    ];
+  const pivotIndex = toolState.drawingPolygon.vertices.indexOf(pivot);
+  if (pivotIndex === -1) {
+    return null;
+  }
+
+  const surroundingVertices = [
+    ...toolState.drawingPolygon.vertices.slice(pivotIndex + 1),
+    ...toolState.drawingPolygon.vertices.slice(0, pivotIndex),
+  ];
+
+  return {
+    drawingPolygon: {
+      ...toolState.drawingPolygon,
+      vertices: [pivot, ...surroundingVertices.reverse()],
+    },
+    editPivot: pivot,
+  };
+}
+
 export class VertexTool extends Tool<VertexToolState> {
   readonly meta = defaultTools.vertex;
 
@@ -191,27 +228,9 @@ export class VertexTool extends Tool<VertexToolState> {
     if (event.key === " " || event.key === "Space") {
       // Reverse around the current edit pivot without changing the open-chain
       // behavior used by polygon editing.
-      if (toolState.drawingPolygon.vertices.length > 1) {
-        const pivot =
-          toolState.editPivot ??
-          toolState.drawingPolygon.vertices[
-            toolState.drawingPolygon.vertices.length - 1
-          ];
-        const pivotIndex = toolState.drawingPolygon.vertices.indexOf(pivot);
-        if (pivotIndex === -1) {
-          return true;
-        }
-        const surroundingVertices = [
-          ...toolState.drawingPolygon.vertices.slice(pivotIndex + 1),
-          ...toolState.drawingPolygon.vertices.slice(0, pivotIndex),
-        ];
-        setToolState({
-          drawingPolygon: {
-            ...toolState.drawingPolygon,
-            vertices: [pivot, ...surroundingVertices.reverse()],
-          },
-          editPivot: pivot,
-        });
+      const nextToolState = getToggledVertexToolState(toolState);
+      if (nextToolState) {
+        setToolState(nextToolState);
       }
       return true;
     }

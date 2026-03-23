@@ -2,28 +2,6 @@
 
 Ideas and plans for Elma Web Editor.
 
-## Level correctness
-
-Topology validity
-
-- Ensure vertices aren’t overlapping or too close.
-- Detect duplicate vertices.
-- Make sure that level width and height are <= 188
-
-originally both vertices were at (16.4, 7.2), editor moved the other one to (16.400202, 7.2002801666666665)
-looks like there's some rng, in insguy's fixed version it moved to (16.400261666666665, 7.200239666666667)
-the above was me testing
-tiny changes anyway
-oke this is what it actually does
-
-```
-if |vertex1.x - vertex2.x| < 0.0000002 and |vertex1.y - vertex2.y| < 0.0000002
-vertex1.x += 0.0002 + 0.0002 _ rand(1000)/1200.0
-vertex1.y += 0.0002 + 0.0002 _ rand(1000)/1200.0
-```
-
-Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
-
 ## Planned features
 
 - Match features set of in-game editor:
@@ -66,7 +44,6 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Save state to local storage and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
 
 - Mobile support:
-  - Erase tool
   - Mobile toolbar (drawer)
   - Vertex creation direction
 

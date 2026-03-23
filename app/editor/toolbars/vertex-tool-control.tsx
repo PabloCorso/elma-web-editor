@@ -1,4 +1,6 @@
+import { ArrowsLeftRightIcon } from "@phosphor-icons/react/dist/ssr";
 import {
+  ToolButton,
   ToolControlButton,
   ToolControlMenu,
   type ToolControlButtonProps,
@@ -9,6 +11,8 @@ import {
   useEditorToolState,
 } from "~/editor/use-editor-store";
 import {
+  canToggleVertexToolDirection,
+  getToggledVertexToolState,
   type VertexToolState,
   type VertexToolVariant,
 } from "~/editor/tools/vertex-tool";
@@ -50,10 +54,16 @@ function VertexToolbar({ onVariantChange, ...props }: VertexToolbarProps) {
   const vertexTool = useEditorToolState<VertexToolState>(
     defaultTools.vertex.id,
   );
+  const { setToolState } = useEditorActions();
+  const canToggleDirection = canToggleVertexToolDirection(vertexTool);
+
   return (
     <Toolbar orientation="vertical" {...props}>
       <ToolControlButton
         {...defaultTools.vertex}
+        name={defaultTools.vertex.name}
+        shortcut={defaultTools.vertex.shortcut}
+        tooltipSide="right"
         size="sm"
         isActive={vertexTool?.variant !== "grass"}
         onClick={() => onVariantChange("default")}
@@ -62,12 +72,32 @@ function VertexToolbar({ onVariantChange, ...props }: VertexToolbarProps) {
       </ToolControlButton>
       <ToolControlButton
         {...defaultTools.vertex}
+        name={defaultTools.vertex.variants?.grass?.name}
+        shortcut={defaultTools.vertex.variants?.grass?.shortcut}
+        tooltipSide="right"
         size="sm"
         isActive={vertexTool?.variant === "grass"}
         onClick={() => onVariantChange("grass")}
       >
         <VertexIcon {...getVertexIconProps("grass")} />
       </ToolControlButton>
+      <ToolButton
+        name="Toggle direction"
+        shortcut="Space"
+        tooltipSide="right"
+        size="sm"
+        disabled={!canToggleDirection}
+        onClick={() => {
+          if (!vertexTool) return;
+
+          const nextToolState = getToggledVertexToolState(vertexTool);
+          if (!nextToolState) return;
+
+          setToolState<VertexToolState>(defaultTools.vertex.id, nextToolState);
+        }}
+      >
+        <ArrowsLeftRightIcon />
+      </ToolButton>
     </Toolbar>
   );
 }
