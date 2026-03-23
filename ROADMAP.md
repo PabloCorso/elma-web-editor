@@ -78,6 +78,12 @@ Default in-game lev polygon = (-24, -8), (24, -8), (24, 2), (-24, 2)
   - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
   - Level properties, set LGR file.
 
+- Topology check improvements and completeness
+  - Polygons, vertices and object limits
+  - Help find objects inside polygons as warnings
+  - Show level maximum boundaries
+  - Automatic or action to fix issue when possible
+
 ## Other
 
 - Zoom +/- should be linear (not relative to current zoom level)

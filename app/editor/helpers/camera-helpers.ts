@@ -4,6 +4,9 @@ import { calculateBoundingBox } from "./level-helpers";
 const DEFAULT_FIT_TO_VIEW_ZOOM = 1;
 const FIT_TO_VIEW_PADDING = 2;
 const FIT_TO_VIEW_VIEWPORT_RATIO = 0.9;
+const FOCUS_POSITIONS_PADDING = 2;
+const FOCUS_POSITIONS_VIEWPORT_RATIO = 0.75;
+const FOCUS_POSITIONS_MIN_SPAN = 6;
 
 export function updateCamera({
   deltaX,
@@ -144,5 +147,59 @@ export function fitToView({
   const viewPortX = canvas.width / 2 - centerX * newZoom;
   const viewPortY = canvas.height / 2 - centerY * newZoom;
   setCamera(viewPortX, viewPortY);
+  setZoom(newZoom);
+}
+
+export function focusPositionsInView({
+  positions,
+  viewportWidth,
+  viewportHeight,
+  minZoom,
+  maxZoom,
+  setCamera,
+  setZoom,
+}: {
+  positions: Position[];
+  viewportWidth: number;
+  viewportHeight: number;
+  minZoom: number;
+  maxZoom: number;
+  setCamera: (x: number, y: number) => void;
+  setZoom: (zoom: number) => void;
+}) {
+  if (positions.length === 0) return;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  positions.forEach((position) => {
+    minX = Math.min(minX, position.x);
+    minY = Math.min(minY, position.y);
+    maxX = Math.max(maxX, position.x);
+    maxY = Math.max(maxY, position.y);
+  });
+
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return;
+
+  minX -= FOCUS_POSITIONS_PADDING;
+  minY -= FOCUS_POSITIONS_PADDING;
+  maxX += FOCUS_POSITIONS_PADDING;
+  maxY += FOCUS_POSITIONS_PADDING;
+
+  const width = Math.max(FOCUS_POSITIONS_MIN_SPAN, maxX - minX);
+  const height = Math.max(FOCUS_POSITIONS_MIN_SPAN, maxY - minY);
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+
+  const zoomX = (viewportWidth * FOCUS_POSITIONS_VIEWPORT_RATIO) / width;
+  const zoomY = (viewportHeight * FOCUS_POSITIONS_VIEWPORT_RATIO) / height;
+  const newZoom = Math.max(minZoom, Math.min(maxZoom, Math.min(zoomX, zoomY)));
+
+  setCamera(
+    viewportWidth / 2 - centerX * newZoom,
+    viewportHeight / 2 - centerY * newZoom,
+  );
   setZoom(newZoom);
 }

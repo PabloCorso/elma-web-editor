@@ -69,11 +69,12 @@ export function CanvasToolbar({
   );
 }
 
-function UntoToolButton(
-  props: ToolButtonProps & {
-    engineRef: React.RefObject<EditorEngine | null>;
-  },
-) {
+function UntoToolButton({
+  engineRef,
+  ...props
+}: ToolButtonProps & {
+  engineRef: React.RefObject<EditorEngine | null>;
+}) {
   const { undo } = useEditorHistory();
   const canUndo = useEditorCanUndo();
   const vertexToolState = useEditorToolState<VertexToolState>("vertex");
@@ -87,7 +88,7 @@ function UntoToolButton(
       id="undo"
       name="Undo"
       shortcut={`${modifier} + Z`}
-      onClick={() => props.engineRef?.current?.undo() ?? undo()}
+      onClick={() => engineRef.current?.undo() ?? undo()}
       disabled={!canUndo && !hasPendingVertexEdit}
       {...props}
     >
@@ -96,11 +97,12 @@ function UntoToolButton(
   );
 }
 
-function RedoToolButton(
-  props: ToolButtonProps & {
-    engineRef: React.RefObject<EditorEngine | null>;
-  },
-) {
+function RedoToolButton({
+  engineRef,
+  ...props
+}: ToolButtonProps & {
+  engineRef: React.RefObject<EditorEngine | null>;
+}) {
   const { redo } = useEditorHistory();
   const canRedo = useEditorCanRedo();
   const modifier = useModifier();
@@ -109,7 +111,7 @@ function RedoToolButton(
       id="redo"
       name="Redo"
       shortcut={`${modifier} + Y`}
-      onClick={() => props.engineRef?.current?.redo() ?? redo()}
+      onClick={() => engineRef.current?.redo() ?? redo()}
       disabled={!canRedo}
       {...props}
     >
