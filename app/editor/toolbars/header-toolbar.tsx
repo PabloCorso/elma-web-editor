@@ -463,7 +463,10 @@ function useTopologyCheckAction(
 
   return useCallback(() => {
     const state = store.getState();
-    const result = validateLevelTopology({ polygons: state.polygons });
+    const result = validateLevelTopology({
+      polygons: state.polygons,
+      flowers: state.flowers,
+    });
     setTopologyResult(result);
   }, [setTopologyResult, store]);
 }

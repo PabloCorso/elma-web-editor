@@ -23,18 +23,11 @@ Ideas and plans for Elma Web Editor.
   - Polygon properties:
     - Show grass pictures
       - Grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
-    - Create grass polygon
-    - Convert polygon to grass or normal polygon
   - Level properties:
     - Foreground (with distance?)
     - Background (with distance?)
     - Level name
     - LGR file
-  - Check Topology (see above section)
-    - "Error: Two lines are intersecting each others!
-      After this dialog you will see the intersection.
-      Use Zoom-out to see where it is located!"
-    - "Everything seems to be all right."
   - Zoom level info.
   - Delete tool (mobile delete)
     - In-game editor: "You cannot delete the Start object!", "You cannot delete the Exit object!" (last one maybe) and "This is the only polygon, so you cannot delete it." (last polygon can be grass).
@@ -46,6 +39,7 @@ Ideas and plans for Elma Web Editor.
 - Mobile support:
   - Mobile toolbar (drawer)
   - Vertex creation direction
+  - Delete selection
 
 - Help section / keyboard shortcuts reference
 

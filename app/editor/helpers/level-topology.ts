@@ -10,6 +10,8 @@ export type TopologyIssueType =
   | "nearby-vertex"
   | "crossing-polygons"
   | "self-intersection"
+  | "missing-polygon"
+  | "missing-flower"
   | "bounds";
 
 export type TopologyIssue = {
@@ -41,10 +43,19 @@ type AggregatedIntersection = {
 };
 
 export function validateLevelTopology(
-  level: Pick<EditorLevel, "polygons">,
+  level: Pick<EditorLevel, "polygons"> & { flowers?: EditorLevel["flowers"] },
 ): TopologyCheckResult {
   const issues: TopologyIssue[] = [];
   const intersections = new Map<string, AggregatedIntersection>();
+
+  if (level.polygons.length === 0) {
+    issues.push({
+      type: "missing-polygon",
+      message: "Level must contain at least one polygon.",
+      vertices: [],
+    });
+  }
+
   const vertices = level.polygons.flatMap((polygon, polygonIndex) =>
     polygon.vertices.map((vertex, vertexIndex) => ({
       polygon,
@@ -124,6 +135,14 @@ export function validateLevelTopology(
       }),
     ),
   );
+
+  if ((level.flowers ?? []).length === 0) {
+    issues.push({
+      type: "missing-flower",
+      message: "Level must contain at least one flower.",
+      vertices: [],
+    });
+  }
 
   const { minX, minY, maxX, maxY } = calculateBoundingBox({
     polygons: level.polygons,

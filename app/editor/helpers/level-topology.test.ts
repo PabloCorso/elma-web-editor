@@ -6,6 +6,8 @@ import {
 } from "./level-topology";
 import type { Polygon } from "../elma-types";
 
+const defaultFlowers = [{ x: 0, y: 0 }];
+
 function createPolygon(vertices: Array<{ x: number; y: number }>): Polygon {
   return { grass: false, vertices } as Polygon;
 }
@@ -25,7 +27,10 @@ describe("level topology validation", () => {
       { x: -24, y: 2 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygon] });
+    const result = validateLevelTopology({
+      polygons: [polygon],
+      flowers: defaultFlowers,
+    });
 
     expect(result.issues).toEqual([]);
     expect(result.width).toBe(48);
@@ -44,7 +49,10 @@ describe("level topology validation", () => {
       { x: 11, y: 10 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygonA, polygonB] });
+    const result = validateLevelTopology({
+      polygons: [polygonA, polygonB],
+      flowers: defaultFlowers,
+    });
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]?.type).toBe("duplicate-vertex");
@@ -63,7 +71,10 @@ describe("level topology validation", () => {
       { x: 11, y: 10 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygonA, polygonB] });
+    const result = validateLevelTopology({
+      polygons: [polygonA, polygonB],
+      flowers: defaultFlowers,
+    });
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]?.type).toBe("nearby-vertex");
@@ -86,7 +97,10 @@ describe("level topology validation", () => {
       { x: -1, y: 2 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygonA, polygonB] });
+    const result = validateLevelTopology({
+      polygons: [polygonA, polygonB],
+      flowers: defaultFlowers,
+    });
 
     const crossingIssues = result.issues.filter(
       (issue) => issue.type === "crossing-polygons",
@@ -104,7 +118,10 @@ describe("level topology validation", () => {
       { x: 4, y: 0 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygon] });
+    const result = validateLevelTopology({
+      polygons: [polygon],
+      flowers: defaultFlowers,
+    });
 
     const selfIntersections = result.issues.filter(
       (issue) => issue.type === "self-intersection",
@@ -138,6 +155,7 @@ describe("level topology validation", () => {
 
     const result = validateLevelTopology({
       polygons: [ground, grass, selfCrossingGrass],
+      flowers: defaultFlowers,
     });
 
     expect(
@@ -157,7 +175,10 @@ describe("level topology validation", () => {
       { x: -100, y: 10 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygon] });
+    const result = validateLevelTopology({
+      polygons: [polygon],
+      flowers: defaultFlowers,
+    });
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]?.type).toBe("bounds");
@@ -177,7 +198,10 @@ describe("level topology validation", () => {
       { x: 0, y: 4 },
     ]);
 
-    const result = validateLevelTopology({ polygons: [polygonA, polygonB] });
+    const result = validateLevelTopology({
+      polygons: [polygonA, polygonB],
+      flowers: defaultFlowers,
+    });
     const selection = getTopologySelection(
       [polygonA, polygonB],
       result.issues,
@@ -198,10 +222,43 @@ describe("level topology validation", () => {
           { x: 0, y: 4 },
         ]),
       ],
+      flowers: defaultFlowers,
     });
 
     expect(formatTopologyCheckResult(result)).toContain(
       "Topology check found 1 issue.",
     );
+  });
+
+  it("requires at least one flower", () => {
+    const polygon = createPolygon([
+      { x: -24, y: -8 },
+      { x: 24, y: -8 },
+      { x: 24, y: 2 },
+      { x: -24, y: 2 },
+    ]);
+
+    const result = validateLevelTopology({ polygons: [polygon], flowers: [] });
+
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]?.type).toBe("missing-flower");
+    expect(result.issues[0]?.message).toBe(
+      "Level must contain at least one flower.",
+    );
+  });
+
+  it("requires at least one polygon", () => {
+    const result = validateLevelTopology({
+      polygons: [],
+      flowers: defaultFlowers,
+    });
+
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]?.type).toBe("missing-polygon");
+    expect(result.issues[0]?.message).toBe(
+      "Level must contain at least one polygon.",
+    );
+    expect(result.width).toBe(0);
+    expect(result.height).toBe(0);
   });
 });
