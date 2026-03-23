@@ -21,25 +21,14 @@ Ideas and plans for Elma Web Editor.
       - stone2 750 G
       - stone3 750 S
   - Polygon properties:
-    - Show grass pictures
+    - Show proper grass pictures
       - Grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
   - Level properties:
-    - Foreground (with distance?)
-    - Background (with distance?)
-    - Level name
     - LGR file
   - Zoom level info.
-  - Delete tool (mobile delete)
-    - In-game editor: "You cannot delete the Start object!", "You cannot delete the Exit object!" (last one maybe) and "This is the only polygon, so you cannot delete it." (last polygon can be grass).
 
-- Better save changes affordance.
-  - Track latest downloaded state vs current state and show an alert on close if unsaved.
+- Better save safety.
   - Save state to local storage and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
-
-- Mobile support:
-  - Mobile toolbar (drawer)
-  - Vertex creation direction
-  - Delete selection
 
 - Help section / keyboard shortcuts reference
 
@@ -47,7 +36,6 @@ Ideas and plans for Elma Web Editor.
 
 - Custom LGR support
   - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
-  - Level properties, set LGR file.
 
 - Topology check improvements and completeness
   - Polygons, vertices and object limits
@@ -57,14 +45,8 @@ Ideas and plans for Elma Web Editor.
 
 ## Other
 
-- Zoom +/- should be linear (not relative to current zoom level)
 - Custom lev folder management with preview thumbnails
-- Switch Level and Graphics design modes (toggle pics/grass visibility and show different toolbar)
+- Switch Level / Graphics design modes (toggle pics/grass visibility and show different toolbar)
 - Multi-player level editor
 - Version history info
 - Export to SVG
-- Starter templates dropdown
-  - Internal editor
-  - Web editor
-  - Custom
-  - See settings
