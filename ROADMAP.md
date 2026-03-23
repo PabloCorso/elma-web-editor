@@ -34,6 +34,18 @@ Ideas and plans for Elma Web Editor.
 
 - AI Assistant
 
+- More vertex tool options or new polygon tools
+  - Pipe tool
+  - Roller coaster tool
+  - Frame tool
+  - Auto-grass
+  - Shapes
+  - Cut/connect
+  - Smoothen
+  - Draw
+  - Text
+  - Merge/subtract polygons
+
 - Custom LGR support
   - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
 
