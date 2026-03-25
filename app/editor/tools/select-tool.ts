@@ -41,7 +41,8 @@ export type SelectToolState = {
     width: number;
     height: number;
   };
-  contextMenuType?: "apple" | "killer" | "flower" | "picture";
+  contextMenuType?: "apple" | "killer" | "flower" | "picture" | "vertex";
+  contextMenuPosition?: Position;
 };
 
 type VertexSelection = { polygon: Polygon; vertex: Position };
@@ -96,6 +97,7 @@ export class SelectTool extends Tool<SelectToolState> {
       hoveredObject: undefined,
       hoveredPictureBounds: undefined,
       contextMenuType: undefined,
+      contextMenuPosition: undefined,
     });
     this.isDragging = false;
     this.isMarqueeSelecting = false;
@@ -116,7 +118,10 @@ export class SelectTool extends Tool<SelectToolState> {
     if (object && isApple) {
       this.clear();
       this.selectObject(object);
-      setToolState({ contextMenuType: "apple" });
+      setToolState({
+        contextMenuType: "apple",
+        contextMenuPosition: { x: context.screenX, y: context.screenY },
+      });
       return true;
     }
 
@@ -129,9 +134,11 @@ export class SelectTool extends Tool<SelectToolState> {
         )
       : null;
     if (polygon) {
-      this.updatePolygon(state.polygons.indexOf(polygon), {
-        ...polygon,
-        grass: !polygon.grass,
+      this.clear();
+      this.selectPolygon(polygon);
+      setToolState({
+        contextMenuType: "vertex",
+        contextMenuPosition: { x: context.screenX, y: context.screenY },
       });
       return true;
     }
@@ -1409,7 +1416,9 @@ export class SelectTool extends Tool<SelectToolState> {
     };
   }
 
-  private deserializeClipboard(text: string): SerializedSelectionClipboard | null {
+  private deserializeClipboard(
+    text: string,
+  ): SerializedSelectionClipboard | null {
     try {
       const parsed = JSON.parse(text) as Partial<SerializedSelectionClipboard>;
       if (

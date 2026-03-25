@@ -2,10 +2,7 @@ import { Tool } from "./tool-interface";
 import type { EventContext } from "../helpers/event-handler";
 import type { EditorState } from "../editor-state";
 import type { PartialEditorState } from "../editor-store";
-import {
-  isWithinThreshold,
-  worldToScreen,
-} from "../helpers/coordinate-helpers";
+import { worldToScreen } from "../helpers/coordinate-helpers";
 import {
   findPolygonEdgeNearPosition,
   findPolygonLineForEditing,
@@ -25,10 +22,9 @@ import type { Polygon, Position } from "../elma-types";
 import { checkModifierKey } from "~/utils/misc";
 import fastDeepEqual from "fast-deep-equal";
 
-const CLOSE_POLYGON_THRESHOLD = 15;
-const DEFAULT_VARIANT: VertexToolVariant = "default";
+const DEFAULT_VARIANT: VertexToolVariant = "normal";
 
-export type VertexToolVariant = "default" | "grass";
+export type VertexToolVariant = "normal" | "grass" | "both";
 
 export type VertexToolState = {
   drawingPolygon: Polygon;
@@ -139,20 +135,6 @@ export class VertexTool extends Tool<VertexToolState> {
 
     // If we're already drawing a polygon, continue with normal drawing behavior
     if (toolState.drawingPolygon.vertices.length > 0) {
-      // Check if clicking near the first point to close the polygon
-      if (toolState.drawingPolygon.vertices.length >= 3) {
-        const firstPoint = toolState.drawingPolygon.vertices[0];
-        if (
-          isWithinThreshold(
-            worldPos,
-            firstPoint,
-            CLOSE_POLYGON_THRESHOLD / state.zoom,
-          )
-        ) {
-          return this.finalizeDrawingOrRestore();
-        }
-      }
-
       // When editing an existing polygon, keep inserting from the active
       // start side so the preview direction remains consistent.
       const newVertices = toolState.editingPolygon
@@ -237,7 +219,7 @@ export class VertexTool extends Tool<VertexToolState> {
 
     if (event.key.toUpperCase() === "G" || event.key.toUpperCase() === "V") {
       const targetGrass = event.key.toUpperCase() === "G";
-      const targetVariant = targetGrass ? "grass" : "default";
+      const targetVariant = targetGrass ? "grass" : "normal";
 
       // Only switch if not already in target mode
       if (toolState.drawingPolygon.grass !== targetGrass) {
@@ -460,7 +442,7 @@ export class VertexTool extends Tool<VertexToolState> {
       },
       editingPolygon: editingPolygon,
       editPivot: vertices[vertexIndex],
-      variant: editingPolygon.grass ? "grass" : "default",
+      variant: editingPolygon.grass ? "grass" : "normal",
     });
   }
 
@@ -494,7 +476,7 @@ export class VertexTool extends Tool<VertexToolState> {
       },
       editingPolygon: editingPolygon,
       editPivot: vertices[pivotVertexIndex],
-      variant: editingPolygon.grass ? "grass" : "default",
+      variant: editingPolygon.grass ? "grass" : "normal",
     });
   }
 

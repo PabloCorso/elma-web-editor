@@ -66,9 +66,9 @@ function VertexToolbar({ onVariantChange, ...props }: VertexToolbarProps) {
         tooltipSide="right"
         size="sm"
         isActive={vertexTool?.variant !== "grass"}
-        onClick={() => onVariantChange("default")}
+        onClick={() => onVariantChange("normal")}
       >
-        <VertexIcon {...getVertexIconProps("default")} />
+        <VertexIcon {...getVertexIconProps("normal")} />
       </ToolControlButton>
       <ToolControlButton
         {...defaultTools.vertex}
@@ -97,6 +97,23 @@ function VertexToolbar({ onVariantChange, ...props }: VertexToolbarProps) {
         }}
       >
         <ArrowsLeftRightIcon />
+      </ToolButton>
+    </Toolbar>
+  );
+}
+
+type PolygonToolbarProps = ToolbarProps & {
+  onGrassToggle: () => void;
+};
+
+export function VertexContextMenuToolbar({
+  onGrassToggle,
+  ...props
+}: PolygonToolbarProps) {
+  return (
+    <Toolbar orientation="vertical" {...props}>
+      <ToolButton name="Toggle grass" size="sm" onClick={onGrassToggle}>
+        <VertexIcon {...getVertexIconProps("both")} />
       </ToolButton>
     </Toolbar>
   );
@@ -176,6 +193,15 @@ function getVertexIconProps(variant?: VertexToolVariant): VertexIconProps {
       ground: colors.grass,
       bounds: false,
       handles: true,
+    };
+  }
+
+  if (variant === "both") {
+    return {
+      sky: colors.ground,
+      ground: colors.grass,
+      bounds: true,
+      handles: false,
     };
   }
 

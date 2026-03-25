@@ -1,35 +1,36 @@
 import {
   useEditorToolState,
-  useEditor,
   useEditorActions,
   useEditorActiveTool,
 } from "./use-editor-store";
 import { SelectTool, type SelectToolState } from "./tools/select-tool";
 import { defaultTools } from "./tools/default-tools";
-import { worldToScreen } from "./helpers/coordinate-helpers";
 import { AppleToolbar } from "~/editor/toolbars/apple-tool-control";
+import { VertexContextMenuToolbar } from "~/editor/toolbars/vertex-tool-control";
 import { OBJECT_DIAMETER, OBJECT_FRAME_PX } from "./constants";
+import { worldToScreen } from "./helpers/coordinate-helpers";
+import { useEditor } from "./use-editor-store";
 
 export function EditorContextMenu() {
-  const { updateApple } = useEditorActions();
+  const { updateApple, setPolygons } = useEditorActions();
   const selectToolState = useEditorToolState<SelectToolState>(
     defaultTools.select.id,
   );
   const selectTool = useEditorActiveTool<SelectTool>();
   const viewPortOffset = useEditor((state) => state.viewPortOffset);
   const zoom = useEditor((state) => state.zoom);
+  const polygons = useEditor((state) => state.polygons);
 
   const contextMenuType = selectToolState?.contextMenuType;
   if (!contextMenuType) return null;
 
   const selectedApple = selectToolState.selectedObjects[0];
-  if (!selectedApple) return null;
+  const selectedPolygon = selectToolState.selectedVertices[0]?.polygon;
 
-  let position = { x: 0, y: 0 };
+  let position = selectToolState.contextMenuPosition ?? { x: 0, y: 0 };
   const isAppleContextMenuActive =
     contextMenuType === "apple" &&
-    selectToolState?.selectedObjects &&
-    selectToolState.selectedObjects.length > 0 &&
+    selectedApple &&
     typeof viewPortOffset?.x === "number" &&
     typeof viewPortOffset?.y === "number" &&
     typeof zoom === "number";
@@ -43,6 +44,9 @@ export function EditorContextMenu() {
     const appleSize = OBJECT_FRAME_PX;
     position = { x: applePosition.x, y: applePosition.y - appleSize };
   }
+
+  if (contextMenuType === "apple" && !selectedApple) return null;
+  if (contextMenuType === "vertex" && !selectedPolygon) return null;
 
   return (
     <>
@@ -59,6 +63,25 @@ export function EditorContextMenu() {
           }}
           onGravityChange={(gravity) => {
             updateApple({ position: selectedApple, gravity });
+            selectTool?.clear();
+          }}
+        />
+      )}
+      {contextMenuType === "vertex" && selectedPolygon && (
+        <VertexContextMenuToolbar
+          tabIndex={-1}
+          className="absolute"
+          style={{ left: position.x, top: position.y }}
+          onGrassToggle={() => {
+            const polygonIndex = polygons.indexOf(selectedPolygon);
+            if (polygonIndex === -1) return;
+            setPolygons(
+              polygons.map((polygon, index) =>
+                index === polygonIndex
+                  ? { ...polygon, grass: !polygon.grass }
+                  : polygon,
+              ),
+            );
             selectTool?.clear();
           }}
         />
