@@ -15,7 +15,9 @@ import { VertexToolControl } from "./vertex-tool-control";
 import { cn } from "~/utils/misc";
 import { SelectToolControl } from "./select-tool-control";
 
-type ControlToolbarProps = ToolbarProps & { isOpenAIEnabled?: boolean };
+type ControlToolbarProps = ToolbarProps & {
+  isOpenAIEnabled?: boolean;
+};
 
 export function ControlToolbar({
   className,
@@ -24,7 +26,7 @@ export function ControlToolbar({
 }: ControlToolbarProps) {
   return (
     <div
-      className="absolute inset-y-0 left-4 grid"
+      className={cn("absolute inset-y-0 left-4 grid", className)}
       style={{
         gridTemplateRows:
           "minmax(var(--toolbar-space), 1fr) auto minmax(1rem, 1fr)",
@@ -32,10 +34,7 @@ export function ControlToolbar({
     >
       <Toolbar
         orientation="vertical"
-        className={cn(
-          "row-start-2 flex flex-col h-fit max-h-full self-center gap-2 overflow-auto",
-          className,
-        )}
+        className="row-start-2 flex flex-col h-fit max-h-full self-center gap-2 overflow-auto"
         {...props}
       >
         <SelectToolControl tooltipSide="right" />
