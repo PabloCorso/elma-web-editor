@@ -14,6 +14,7 @@ import type { DefaultToolId } from "./tools/default-tools";
 import fastDeepEqual from "fast-deep-equal";
 import throttle from "just-throttle";
 import { defaultLevelVisibility } from "./level-visibility";
+import { defaultPlaySettings, DEFAULT_PLAY_MODE_ZOOM } from "./play-settings";
 import type { Position } from "./elma-types";
 import type { SelectToolState } from "./tools/select-tool";
 
@@ -111,7 +112,10 @@ function createDocumentSession(
   document: EditorDocumentInput,
   defaultLevelTitle: string,
 ) {
-  const baselineLevel = normalizeLevelSnapshot(document.level, defaultLevelTitle);
+  const baselineLevel = normalizeLevelSnapshot(
+    document.level,
+    defaultLevelTitle,
+  );
   return {
     clipboardSessionId: createClipboardSessionId(),
     baselineLevel,
@@ -364,11 +368,16 @@ export function createEditorStore({
         // Camera state
         viewPortOffset: { x: 0, y: 0 },
         zoom: 1,
+        playModeZoom: DEFAULT_PLAY_MODE_ZOOM,
 
         // View settings
         animateSprites: true,
         showSprites: true,
         levelVisibility: defaultLevelVisibility,
+        playSettings: defaultPlaySettings,
+        isUIVisible: true,
+        isPlayMode: false,
+        playModeSeedKeys: [],
 
         // Fit to view trigger
         fitToViewTrigger: 0,
@@ -441,6 +450,7 @@ export function createEditorStore({
           setMouseOnCanvas: (onCanvas) => set({ mouseOnCanvas: onCanvas }),
           setCamera: (x, y) => set({ viewPortOffset: { x, y } }),
           setZoom: (zoom) => set({ zoom }),
+          setPlayModeZoom: (playModeZoom) => set({ playModeZoom }),
           setPolygons: (polygons) => set({ polygons }),
 
           // Tools
@@ -541,6 +551,17 @@ export function createEditorStore({
               levelVisibility: { ...state.levelVisibility, ...settings },
             })),
 
+          setPlaySettings: (settings) =>
+            set((state) => ({
+              playSettings: {
+                ...state.playSettings,
+                keyBindings: {
+                  ...state.playSettings.keyBindings,
+                  ...(settings.keyBindings ?? {}),
+                },
+              },
+            })),
+
           toggleLevelVisibility: (key) =>
             set((state) => ({
               levelVisibility: {
@@ -551,6 +572,19 @@ export function createEditorStore({
 
           resetLevelVisibility: () =>
             set({ levelVisibility: defaultLevelVisibility }),
+
+          setUIVisible: (isUIVisible) => set({ isUIVisible }),
+
+          toggleUIVisibility: () =>
+            set((state) => ({ isUIVisible: !state.isUIVisible })),
+
+          startPlayMode: (seedKeys = []) =>
+            set({ isPlayMode: true, playModeSeedKeys: seedKeys }),
+
+          stopPlayMode: () => set({ isPlayMode: false, playModeSeedKeys: [] }),
+
+          togglePlayMode: () =>
+            set((state) => ({ isPlayMode: !state.isPlayMode })),
 
           replaceDocument: (document) => {
             const normalizedLevel = normalizeLevelSnapshot(
@@ -564,6 +598,8 @@ export function createEditorStore({
                 defaultLevelTitle,
               ),
               levelVisibility: defaultLevelVisibility,
+              isPlayMode: false,
+              playModeSeedKeys: [],
               mouseOnCanvas: false,
             });
             const temporal = (store as EditorStore).temporal.getState();
@@ -576,9 +612,11 @@ export function createEditorStore({
                 ...state.documentSession,
                 baselineLevel: next.baselineLevel ?? getLevelSnapshot(state),
                 origin: next.origin ?? state.documentSession.origin,
-                displayName: next.displayName ?? state.documentSession.displayName,
+                displayName:
+                  next.displayName ?? state.documentSession.displayName,
                 hasExternalHandle:
-                  next.hasExternalHandle ?? state.documentSession.hasExternalHandle,
+                  next.hasExternalHandle ??
+                  state.documentSession.hasExternalHandle,
                 pendingRecovery:
                   next.pendingRecovery ?? state.documentSession.pendingRecovery,
                 dirty: false,
@@ -595,7 +633,7 @@ export function createEditorStore({
                 saveState,
                 lastError:
                   saveState === "error"
-                    ? lastError ?? "Save failed."
+                    ? (lastError ?? "Save failed.")
                     : undefined,
               },
             })),

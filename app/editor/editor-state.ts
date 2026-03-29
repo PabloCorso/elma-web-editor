@@ -10,6 +10,7 @@ import type { Widget } from "./widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 import type { LevelVisibilitySettings } from "./level-visibility";
+import type { PlayKeyBindings, PlaySettings } from "./play-settings";
 
 type EditorDocumentSnapshot = Pick<
   EditorLevel,
@@ -73,11 +74,16 @@ export type EditorState = EditorLevel & {
   // Camera state
   viewPortOffset: { x: number; y: number };
   zoom: number;
+  playModeZoom: number;
 
   // View settings
   animateSprites: boolean;
   showSprites: boolean;
   levelVisibility: LevelVisibilitySettings;
+  playSettings: PlaySettings;
+  isUIVisible: boolean;
+  isPlayMode: boolean;
+  playModeSeedKeys: string[];
 
   // Fit to view trigger
   fitToViewTrigger: number;
@@ -117,6 +123,7 @@ export type EditorState = EditorLevel & {
     setMouseOnCanvas: (onCanvas: boolean) => void;
     setCamera: (x: number, y: number) => void;
     setZoom: (zoom: number) => void;
+    setPlayModeZoom: (zoom: number) => void;
     setPolygons: (polygons: Polygon[]) => void;
 
     registerTool: (tool: Tool) => void;
@@ -144,8 +151,16 @@ export type EditorState = EditorLevel & {
     toggleAnimateSprites: () => void;
     toggleShowSprites: () => void;
     setLevelVisibility: (settings: Partial<LevelVisibilitySettings>) => void;
+    setPlaySettings: (settings: {
+      keyBindings?: Partial<PlayKeyBindings>;
+    }) => void;
     toggleLevelVisibility: (key: keyof LevelVisibilitySettings) => void;
     resetLevelVisibility: () => void;
+    setUIVisible: (visible: boolean) => void;
+    toggleUIVisibility: () => void;
+    startPlayMode: (seedKeys?: string[]) => void;
+    stopPlayMode: () => void;
+    togglePlayMode: () => void;
     replaceDocument: (document: EditorDocumentInput) => void;
     markDocumentSaved: (next?: {
       baselineLevel?: EditorDocumentSnapshot;

@@ -42,12 +42,14 @@ export function useEditorView({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EditorEngine | null>(null);
   const resizeFrameRef = useRef<number | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const lastSizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
   });
   const store = useEditorStore();
   const lgrAssets = useLgrAssets();
+  const editorLgrAssets = lgrAssets.lgr;
 
   useEffect(
     function initializeEditorEngine() {
@@ -129,7 +131,7 @@ export function useEditorView({
         store,
         tools,
         widgets,
-        lgrAssets: lgrAssets.lgr ?? undefined,
+        lgrAssets: editorLgrAssets ?? undefined,
         initialDocument: initialDocument?.document,
       });
 
@@ -138,21 +140,31 @@ export function useEditorView({
         scheduleResize();
       });
       resizeObserver.observe(parent);
-
-      return () => {
-        if (resizeFrameRef.current !== null) {
-          cancelAnimationFrame(resizeFrameRef.current);
-          resizeFrameRef.current = null;
-        }
-        resizeObserver.disconnect();
-        if (engineRef.current) {
-          engineRef.current.destroy();
-          engineRef.current = null;
-        }
-      };
+      resizeObserverRef.current = resizeObserver;
     },
-    [store, initialDocument, isOpenAIEnabled, lgrAssets],
+    [
+      store,
+      initialDocument?.document,
+      initialDocument?.status,
+      isOpenAIEnabled,
+      editorLgrAssets,
+    ],
   );
+
+  useEffect(function cleanupEditorEngineOnUnmount() {
+    return () => {
+      if (resizeFrameRef.current !== null) {
+        cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = null;
+      }
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+      if (engineRef.current) {
+        engineRef.current.destroy();
+        engineRef.current = null;
+      }
+    };
+  }, []);
 
   return { canvasRef, engineRef };
 }

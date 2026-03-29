@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { EditorEngine } from "~/editor/editor-engine";
 import {
   useEditorLevelFolderName,
+  usePlaySettings,
   useEditorStore,
 } from "~/editor/use-editor-store";
 import {
@@ -25,6 +26,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { cn } from "~/utils/misc";
 import { useForceUpdate } from "@mantine/hooks";
+import {
+  defaultPlaySettings,
+  type PlayKeyBindings,
+} from "~/editor/play-settings";
+import { IconButton } from "./ui/button";
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
 
 const LEVEL_PRESETS: Array<{
   id: DefaultLevelPreset;
@@ -51,6 +58,30 @@ export function SettingsDialog(props: DialogProps) {
   );
 }
 
+export function PlaySettingsDialog(props: DialogProps) {
+  return (
+    <Dialog {...props}>
+      <DialogContent
+        className="sm:max-w-3xl"
+        onKeyDown={(event) => {
+          // Prevent global editor shortcuts specially arrow navigation
+          event.stopPropagation();
+        }}
+      >
+        <DialogHeader showCloseButton>
+          <DialogTitle>Play settings</DialogTitle>
+        </DialogHeader>
+        <DialogDescription className="sr-only">
+          Play mode settings
+        </DialogDescription>
+        <DialogBody className="pb-6">
+          <PlaySettingsPanel />
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function SettingsPanel() {
   const store = useEditorStore();
   const levelFolderName = useEditorLevelFolderName();
@@ -66,6 +97,7 @@ export function SettingsPanel() {
           <DialogTitle className="sr-only">Settings</DialogTitle>
           <TabsList>
             <TabsTrigger value="general">Settings</TabsTrigger>
+            <TabsTrigger value="play">Play</TabsTrigger>
             <TabsTrigger value="default-level">Default level</TabsTrigger>
           </TabsList>
         </DialogHeader>
@@ -139,8 +171,12 @@ export function SettingsPanel() {
             </div>
           </TabsContent>
 
-          <TabsContent value="default-level" className="space-y-4">
-            <div className="space-y-1">
+          <TabsContent value="play" className="flex flex-col gap-4">
+            <PlaySettingsPanel />
+          </TabsContent>
+
+          <TabsContent value="default-level" className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
               <p className="font-medium">Choose starter template</p>
               <p className="text-sm text-primary/70">
                 New untitled levels will start with the chosen template.
@@ -182,9 +218,128 @@ export function SettingsPanel() {
   );
 }
 
+export function PlaySettingsPanel() {
+  const store = useEditorStore();
+  const playSettings = usePlaySettings();
+  const { setPlaySettings } = store.getState().actions;
+  const setPlayKeyBinding = (
+    binding: keyof PlayKeyBindings,
+    nextValue: string,
+  ) => {
+    const nextKeyBindings: Partial<PlayKeyBindings> = {
+      [binding]: nextValue,
+    };
+
+    for (const [key, value] of Object.entries(playSettings.keyBindings)) {
+      if (key !== binding && value === nextValue) {
+        nextKeyBindings[key as keyof PlayKeyBindings] = "";
+      }
+    }
+
+    setPlaySettings({ keyBindings: nextKeyBindings });
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-medium">Controls</p>
+        <IconButton
+          type="button"
+          size="sm"
+          aria-label="Reset play defaults"
+          title="Reset play defaults"
+          onClick={() => setPlaySettings(defaultPlaySettings)}
+        >
+          <ArrowCounterClockwiseIcon />
+        </IconButton>
+      </div>
+      <div className="grid gap-y-2 sm:grid-cols-2 sm:gap-x-32">
+        <PlayKeyField
+          label="Throttle"
+          value={playSettings.keyBindings.throttle}
+          onChange={(value) => setPlayKeyBinding("throttle", value)}
+        />
+        <PlayKeyField
+          label="Brake"
+          value={playSettings.keyBindings.brake}
+          onChange={(value) => setPlayKeyBinding("brake", value)}
+        />
+        <PlayKeyField
+          label="Rotate left"
+          value={playSettings.keyBindings.voltLeft}
+          onChange={(value) => setPlayKeyBinding("voltLeft", value)}
+        />
+        <PlayKeyField
+          label="Rotate right"
+          value={playSettings.keyBindings.voltRight}
+          onChange={(value) => setPlayKeyBinding("voltRight", value)}
+        />
+        <PlayKeyField
+          label="Turn"
+          value={playSettings.keyBindings.turn}
+          onChange={(value) => setPlayKeyBinding("turn", value)}
+        />
+        <PlayKeyField
+          label="Alo volt"
+          value={playSettings.keyBindings.aloVolt}
+          onChange={(value) => setPlayKeyBinding("aloVolt", value)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PlayKeyField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  return (
+    <label className="flex justify-between items-center">
+      <span className="min-w-24 text-sm">{label}</span>
+      <input
+        type="text"
+        readOnly
+        value={isCapturing ? "Press a key..." : formatPlayKeyCode(value)}
+        onFocus={() => setIsCapturing(true)}
+        onBlur={() => setIsCapturing(false)}
+        onClick={() => setIsCapturing(true)}
+        onKeyDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (event.code === "Escape") {
+            setIsCapturing(false);
+            return;
+          }
+
+          onChange(event.code);
+          setIsCapturing(false);
+          event.currentTarget.blur();
+        }}
+        className={cn(
+          "w-32 rounded-md border border-separator bg-transparent px-3 py-2 text-sm",
+          isCapturing && "border-blue-400 bg-blue-500/10",
+        )}
+      />
+    </label>
+  );
+}
+
+function formatPlayKeyCode(code: string) {
+  if (code.startsWith("Key")) return code.slice(3);
+  return code;
+}
+
 function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<EditorEngine | null>(null);
   const resizeFrameRef = useRef<number | null>(null);
   const lastSizeRef = useRef<{ width: number; height: number }>({
@@ -192,66 +347,69 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
     height: 0,
   });
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const wrapper = wrapperRef.current;
-    if (!canvas || !wrapper) return;
+  useEffect(
+    function initializeLevelPresetPreview() {
+      const canvas = canvasRef.current;
+      const wrapper = wrapperRef.current;
+      if (!canvas || !wrapper) return;
 
-    const applyResize = () => {
-      const rect = wrapper.getBoundingClientRect();
-      const width = Math.floor(rect.width);
-      const height = Math.floor(rect.height);
-      if (
-        width <= 0 ||
-        height <= 0 ||
-        (lastSizeRef.current.width === width &&
-          lastSizeRef.current.height === height)
-      ) {
-        return;
-      }
+      const applyResize = () => {
+        const rect = wrapper.getBoundingClientRect();
+        const width = Math.floor(rect.width);
+        const height = Math.floor(rect.height);
+        if (
+          width <= 0 ||
+          height <= 0 ||
+          (lastSizeRef.current.width === width &&
+            lastSizeRef.current.height === height)
+        ) {
+          return;
+        }
 
-      canvas.width = width;
-      canvas.height = height;
-      lastSizeRef.current = { width, height };
-      engineRef.current?.fitToView();
-    };
+        canvas.width = width;
+        canvas.height = height;
+        lastSizeRef.current = { width, height };
+        engineRef.current?.fitToView();
+      };
 
-    const scheduleResize = () => {
-      if (resizeFrameRef.current !== null) return;
-      resizeFrameRef.current = requestAnimationFrame(() => {
-        resizeFrameRef.current = null;
-        applyResize();
+      const scheduleResize = () => {
+        if (resizeFrameRef.current !== null) return;
+        resizeFrameRef.current = requestAnimationFrame(() => {
+          resizeFrameRef.current = null;
+          applyResize();
+        });
+      };
+
+      applyResize();
+
+      engineRef.current = new EditorEngine(canvas, {
+        readOnly: true,
+        initialDocument: {
+          level: getDefaultLevel(preset),
+          origin: { kind: "default", label: "Preview", canOverwrite: false },
+          displayName: "Preview",
+          hasExternalHandle: false,
+        },
       });
-    };
 
-    applyResize();
+      const resizeObserver = new ResizeObserver(() => {
+        scheduleResize();
+      });
+      resizeObserver.observe(wrapper);
 
-    engineRef.current = new EditorEngine(canvas, {
-      readOnly: true,
-      initialDocument: {
-        level: getDefaultLevel(preset),
-        origin: { kind: "default", label: "Preview", canOverwrite: false },
-        displayName: "Preview",
-        hasExternalHandle: false,
-      },
-    });
-
-    const resizeObserver = new ResizeObserver(() => {
-      scheduleResize();
-    });
-    resizeObserver.observe(wrapper);
-
-    return () => {
-      if (resizeFrameRef.current !== null) {
-        cancelAnimationFrame(resizeFrameRef.current);
-        resizeFrameRef.current = null;
-      }
-      resizeObserver.disconnect();
-      engineRef.current?.destroy();
-      engineRef.current = null;
-      lastSizeRef.current = { width: 0, height: 0 };
-    };
-  }, [preset]);
+      return () => {
+        if (resizeFrameRef.current !== null) {
+          cancelAnimationFrame(resizeFrameRef.current);
+          resizeFrameRef.current = null;
+        }
+        resizeObserver.disconnect();
+        engineRef.current?.destroy();
+        engineRef.current = null;
+        lastSizeRef.current = { width: 0, height: 0 };
+      };
+    },
+    [preset],
+  );
 
   return (
     <div

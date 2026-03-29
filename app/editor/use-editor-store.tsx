@@ -62,6 +62,10 @@ export function useZoom() {
   return useEditor((state) => state.zoom);
 }
 
+export function usePlayModeZoom() {
+  return useEditor((state) => state.playModeZoom);
+}
+
 export function useEditorDocumentSession(): EditorDocumentSession {
   return useEditor((state) => state.documentSession);
 }
@@ -70,12 +74,24 @@ export function useEditorIsDirty() {
   return useEditor((state) => state.documentSession.dirty);
 }
 
+export function useEditorIsPlayMode() {
+  return useEditor((state) => state.isPlayMode);
+}
+
+export function useEditorIsUIVisible() {
+  return useEditor((state) => state.isUIVisible);
+}
+
+export function usePlaySettings() {
+  return useEditor((state) => state.playSettings);
+}
+
 export function useEditorActions() {
   return useEditor((state) => state.actions);
 }
 
 export function useEditorActiveTool<T extends Tool>(
-  toolId?: string
+  toolId?: string,
 ): T | undefined {
   return useEditor((state) => state.actions.getActiveTool<T>(toolId));
 }
@@ -85,7 +101,7 @@ export function useEditorTool<T extends Tool>(toolId: string): T | undefined {
 }
 
 export function useEditorToolState<T extends ToolState>(
-  toolId: string
+  toolId: string,
 ): T | undefined {
   return useEditor((state) => state.actions.getToolState<T>(toolId));
 }
@@ -96,6 +112,6 @@ export function useEditorWidget<T>(widgetId: string): T | undefined {
 
 export function useEditorLevelFolderName() {
   return useEditor((state) =>
-    state.levelFolder?.hasFolder() ? state.levelFolder.name : null
+    state.levelFolder?.hasFolder() ? state.levelFolder.name : null,
   );
 }

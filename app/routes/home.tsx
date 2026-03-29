@@ -14,9 +14,18 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { LgrAssetsProvider } from "~/components/use-lgr-assets";
 import { EditorContextMenu } from "~/editor/editor-context-menu";
 import { useHotkeys } from "@mantine/hooks";
-import { cn } from "~/utils/misc";
-import { useState } from "react";
 import type { EditorEngine } from "~/editor/editor-engine";
+import { lazy, Suspense } from "react";
+import {
+  useEditorActions,
+  useEditorIsUIVisible,
+  useEditorIsPlayMode,
+} from "~/editor/use-editor-store";
+
+const LazyPlayModeOverlay = lazy(async () => {
+  const module = await import("~/editor/play-mode");
+  return { default: module.PlayMode };
+});
 
 export function meta() {
   return [
@@ -58,18 +67,35 @@ function Editor({ initialLevelName, isOpenAIEnabled }: EditorProps) {
     initialDocument,
     isOpenAIEnabled,
   });
+  const isPlayMode = useEditorIsPlayMode();
 
   return (
     <>
+      <div className="relative flex-1">
+        <EditorView ref={canvasRef} />
+        {isPlayMode ? (
+          <Suspense fallback={<PlayModeOverlayFallback />}>
+            <LazyPlayModeOverlay />
+          </Suspense>
+        ) : null}
+      </div>
       <EditorToolbars
         engineRef={engineRef}
         isLoading={initialDocument.status === "loading"}
       />
       <EditorContextMenu />
-      <div className="flex-1">
-        <EditorView ref={canvasRef} />
-      </div>
     </>
+  );
+}
+
+function PlayModeOverlayFallback() {
+  return (
+    <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/8">
+      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs font-medium text-white/80 shadow-sm backdrop-blur-sm">
+        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white/75" />
+        <span>Starting play mode</span>
+      </div>
+    </div>
   );
 }
 
@@ -80,14 +106,17 @@ function EditorToolbars({
   engineRef: React.RefObject<EditorEngine | null>;
   isLoading?: boolean;
 }) {
-  const [showUI, setShowUI] = useState(true);
-  useHotkeys([["mod + .", () => setShowUI((state) => !state)]]);
-  const showUIClassName = cn({ hidden: !showUI });
+  const { toggleUIVisibility } = useEditorActions();
+  const isUIVisible = useEditorIsUIVisible();
+  const isPlayMode = useEditorIsPlayMode();
+  useHotkeys([["mod + .", () => toggleUIVisibility()]]);
+
+  if (!isUIVisible || isPlayMode) return null;
   return (
     <>
-      <HeaderToolbar className={showUIClassName} isLoading={isLoading} />
-      <ControlToolbar className={showUIClassName} />
-      <CanvasToolbar className={showUIClassName} engineRef={engineRef} />
+      <HeaderToolbar isLoading={isLoading} />
+      <ControlToolbar />
+      <CanvasToolbar engineRef={engineRef} />
     </>
   );
 }

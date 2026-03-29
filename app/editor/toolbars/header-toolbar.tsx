@@ -1,4 +1,5 @@
 import {
+  useEditorIsPlayMode,
   useEditorActions,
   useEditorActiveTool,
   useEditorDocumentSession,
@@ -7,7 +8,6 @@ import {
 } from "~/editor/use-editor-store";
 import { useEditorDocumentGuard } from "~/editor/document-guard";
 import { getLevelSnapshot } from "~/editor/editor-store";
-import logo from "../../assets/bear-helmet.png";
 import {
   Toolbar,
   ToolbarButton,
@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
+  CaretRightIcon,
   CaretDownIcon,
   CheckIcon,
   ChecksIcon,
@@ -56,6 +57,8 @@ import {
 } from "~/editor/helpers/level-topology";
 import type { SelectToolState } from "~/editor/tools/select-tool";
 import { focusPositionsInView } from "~/editor/helpers/camera-helpers";
+import { Logo } from "~/components/logo";
+import { ToolButton } from "./tool";
 
 const ISSUE_FOCUS_MIN_ZOOM = 0.2;
 const ISSUE_FOCUS_MAX_ZOOM = 10000;
@@ -122,6 +125,7 @@ export function HeaderToolbar({
           <MainDropdownMenu onOpenSettings={() => setSettingsOpen(true)} />
           <LevelVisibilityControl />
           <LevelPropertiesControl />
+          <PlayModeControl />
           <LevelTitleInput isLoading={isLoading} />
           <LevelSaveStateIndicator />
           <LevelFileName />
@@ -147,6 +151,10 @@ export function HeaderToolbar({
               isLoading={isLoading}
             />
           </Toolbar>
+
+          <Toolbar className="pointer-events-auto gap-2 w-fit justify-self-end">
+            <PlayModeControl />
+          </Toolbar>
         </div>
 
         <div className="pointer-events-none mt-2 flex justify-center">
@@ -159,6 +167,21 @@ export function HeaderToolbar({
       </div>
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
+  );
+}
+
+function PlayModeControl() {
+  const { startPlayMode, stopPlayMode } = useEditorActions();
+  const isPlayMode = useEditorIsPlayMode();
+
+  return (
+    <ToolButton
+      name={isPlayMode ? "Stop play mode" : "Play mode"}
+      shortcut={isPlayMode ? "Escape" : "Enter"}
+      onClick={isPlayMode ? stopPlayMode : () => startPlayMode()}
+    >
+      {isPlayMode ? <XIcon /> : <CaretRightIcon weight="fill" />}
+    </ToolButton>
   );
 }
 
@@ -365,7 +388,7 @@ function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
             <span className="absolute -top-0 right-0.5 px-1 text-[8px] font-semibold bg-blue-500 rounded-full">
               BETA
             </span>
-            <img src={logo} className="w-8 h-8 isolate" />
+            <Logo className="w-8 h-8 isolate" />
             <Icon size="xs">
               <CaretDownIcon />
             </Icon>

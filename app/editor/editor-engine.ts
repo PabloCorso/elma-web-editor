@@ -119,6 +119,10 @@ export class EditorEngine {
   private pinchCenter: { x: number; y: number } | null = null;
   private activeTouchToolPointerId: number | null = null;
   private touchPointers = new Map<number, { x: number; y: number }>();
+  private pressedKeys = new Set<string>();
+  private handleWindowBlur = () => {
+    this.pressedKeys.clear();
+  };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -211,6 +215,8 @@ export class EditorEngine {
     this.canvas.addEventListener("contextmenu", this.handleRightClick);
     this.canvas.addEventListener("wheel", this.handleWheel, { passive: false });
     document.addEventListener("keydown", this.handleKeyDown);
+    document.addEventListener("keyup", this.handleKeyUp);
+    window.addEventListener("blur", this.handleWindowBlur);
     window.addEventListener("resize", this.handleResize);
   }
 
@@ -676,9 +682,19 @@ export class EditorEngine {
   };
 
   private handleKeyDown = (event: KeyboardEvent) => {
+    this.pressedKeys.add(event.code);
     if (isUserTyping()) return;
 
     const state = this.store.getState();
+
+    if (state.isPlayMode) {
+      if (event.key === "Escape") {
+        state.actions.stopPlayMode();
+        event.preventDefault();
+      }
+      return;
+    }
+
     const keyboardContext = this.getKeyboardEventContext(state);
 
     // Let active tool handle the key first
@@ -761,6 +777,10 @@ export class EditorEngine {
 
     // Handle other shortcuts
     const shortcuts: Record<string, () => void> = {
+      Enter: () =>
+        state.actions.startPlayMode(
+          Array.from(this.pressedKeys).filter((code) => code !== "Enter"),
+        ),
       Escape: () => state.actions.activateTool("select"),
       "+": () => this.zoomInOut(this.zoomStep),
       "=": () => this.zoomInOut(this.zoomStep),
@@ -769,6 +789,10 @@ export class EditorEngine {
       "1": () => this.fitToView(),
     };
     shortcuts[event.key]?.();
+  };
+
+  private handleKeyUp = (event: KeyboardEvent) => {
+    this.pressedKeys.delete(event.code);
   };
 
   private zoomInOut(step: number) {
@@ -838,7 +862,10 @@ export class EditorEngine {
     if (state.activeToolId !== "vertex") return;
 
     const toolState = state.actions.getToolState<VertexToolState>("vertex");
-    if (!toolState?.editingPolygon || toolState.drawingPolygon.vertices.length === 0) {
+    if (
+      !toolState?.editingPolygon ||
+      toolState.drawingPolygon.vertices.length === 0
+    ) {
       return;
     }
 
@@ -993,7 +1020,8 @@ export class EditorEngine {
   private getScenePolygons(state: EditorState): Polygon[] {
     const activeTool = state.actions.getActiveTool();
     const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
-    const vertexToolState = state.actions.getToolState<VertexToolState>("vertex");
+    const vertexToolState =
+      state.actions.getToolState<VertexToolState>("vertex");
     const scenePolygons = vertexToolState?.editingPolygon
       ? state.polygons.filter(
           (polygon) => polygon !== vertexToolState.editingPolygon,
@@ -1643,6 +1671,8 @@ export class EditorEngine {
     this.canvas.removeEventListener("contextmenu", this.handleRightClick);
     this.canvas.removeEventListener("wheel", this.handleWheel);
     document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("keyup", this.handleKeyUp);
+    window.removeEventListener("blur", this.handleWindowBlur);
     window.removeEventListener("resize", this.handleResize);
   }
 

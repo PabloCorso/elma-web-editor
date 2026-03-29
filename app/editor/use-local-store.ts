@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { EditorState } from "./editor-state";
+import { defaultPlaySettings } from "./play-settings";
 import { useEditorStore } from "./use-editor-store";
 
 type LocalStorageLevel = Pick<
@@ -18,6 +19,7 @@ type LocalStorageLevel = Pick<
   | "showSprites"
   | "viewPortOffset"
   | "zoom"
+  | "playSettings"
 >;
 
 export function useLocalStorageSync(key = "elma-web-store") {
@@ -64,6 +66,13 @@ export function useLocalStorageSync(key = "elma-web-store") {
           showSprites: savedData.showSprites ?? true,
           viewPortOffset: savedData.viewPortOffset || { x: 0, y: 0 },
           zoom: savedData.zoom || 1,
+          playSettings: {
+            ...defaultPlaySettings,
+            keyBindings: {
+              ...defaultPlaySettings.keyBindings,
+              ...(savedData.playSettings?.keyBindings ?? {}),
+            },
+          },
         });
       } catch (error) {
         console.error("Failed to load level from localStorage:", error);
@@ -93,6 +102,7 @@ export function useLocalStorageSync(key = "elma-web-store") {
         showSprites: state.showSprites,
         viewPortOffset: state.viewPortOffset,
         zoom: state.zoom,
+        playSettings: state.playSettings,
       };
 
       try {

@@ -16,11 +16,16 @@ export function LgrAssetsProvider({ children }: { children: React.ReactNode }) {
         setIsLoaded(true);
       });
     },
-    [lgrLoader]
+    [lgrLoader],
+  );
+
+  const value = useMemo(
+    () => ({ lgr: lgrLoader, isLoaded }),
+    [lgrLoader, isLoaded],
   );
 
   return (
-    <LgrContext.Provider value={{ lgr: lgrLoader, isLoaded }}>
+    <LgrContext.Provider value={value}>
       {children}
     </LgrContext.Provider>
   );
