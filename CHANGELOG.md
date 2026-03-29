@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-29-03
+
+- Add base play mode, thanks to `@amarshalov` for sharing elma core for web code from hide editor.
+- Add base topology checks.
+
 ## 2026-03-21
 
 - Use clipboard so that can copy/paste works cross tabs.
@@ -16,9 +21,9 @@ All notable changes to this project will be documented in this file.
 
 ## 2026-03-09
 
-- Add "always show all vertices" kind of option @roope
+- Add "always show all vertices" kind of option `@roope`
 - Improved vertex tool icons.
-  - "took 10 seconds to figure out grass vertex tool" @roope
+  - "took 10 seconds to figure out grass vertex tool" `@roope`
 
 - Add basic texture and visibility options.
 - Add visual cues for when the click for selecting things.
