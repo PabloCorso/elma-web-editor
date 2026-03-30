@@ -20,6 +20,7 @@ Ideas and plans for Elma Web Editor.
       - stone1 750 G
       - stone2 750 G
       - stone3 750 S
+      - qgrass ?
   - Polygon properties:
     - Show proper grass pictures
       - Grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
@@ -28,23 +29,30 @@ Ideas and plans for Elma Web Editor.
   - Zoom level info.
 
 - Better save safety.
-  - Save state to local storage and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
+  - **Save state to local storage** and show a recover message on init. One entry per tab and show a dialog with recover or clear up saved state.
 
 - Help section / keyboard shortcuts reference
 
 - AI Assistant
 
 - More vertex tool options or new polygon tools
+  - **Move vertex with shift along the edge**
+  - Resize polygons
   - Pipe tool
   - Roller coaster tool
   - Frame tool
-  - Auto-grass
+  - **Auto-grass**
   - Shapes
   - Cut/connect
   - Smoothen
   - Draw
   - Text
   - Merge/subtract polygons
+  - Image to polygon
+
+- Play mode
+  - WebGL for performance.
+  - **Bike assets**
 
 - Custom LGR support
   - Add support for 1-9 food animation numbers. Default LGR use 1-2, use modulo for higher numbers.
@@ -54,6 +62,8 @@ Ideas and plans for Elma Web Editor.
   - Help find objects inside polygons as warnings
   - Show level maximum boundaries
   - Automatic or action to fix issue when possible
+
+- **Faster loads**
 
 ## Other
 
