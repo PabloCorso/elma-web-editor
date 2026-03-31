@@ -3,9 +3,6 @@ import type { EventContext } from "../helpers/event-handler";
 import type { EditorStore } from "../editor-store";
 import { defaultTools } from "./default-tools";
 import { Gravity, type Apple, type AppleAnimation } from "../elma-types";
-import type { LgrAssets } from "~/components/lgr-assets";
-import { drawGravityArrow, drawObject } from "../draw-object";
-import { DRAFT_PREVIEW_OPACITY } from "../constants";
 
 export type AppleToolState = { animation: AppleAnimation; gravity: Gravity };
 
@@ -51,27 +48,6 @@ export class AppleTool extends Tool<AppleToolState> {
       default:
         return false;
     }
-  }
-
-  onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
-    const drafts = this.getDrafts();
-    drafts.apples?.forEach((apple) => {
-      const sprite = lgrAssets.getAppleSprite(apple.animation);
-      if (sprite) {
-        drawObject({
-          ctx,
-          sprite,
-          position: apple.position,
-          opacity: DRAFT_PREVIEW_OPACITY,
-        });
-        drawGravityArrow({
-          ctx,
-          position: apple.position,
-          gravity: apple.gravity,
-          opacity: DRAFT_PREVIEW_OPACITY,
-        });
-      }
-    });
   }
 
   getDrafts() {

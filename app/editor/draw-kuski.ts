@@ -173,7 +173,7 @@ function wheel(
   ctx.restore();
 }
 
-const defaultBikeCoords = {
+export const defaultBikeCoords = {
   bikeR: 10000,
   turn: 0, // 0 = left, 1 = right
   leftX: -849.4,
@@ -184,7 +184,11 @@ const defaultBikeCoords = {
   rightR: 0.42,
   headX: 0,
   headY: 439,
+  voltDirection: null as "right" | "left" | null,
+  voltProgress: 0,
 };
+
+export type BikeCoords = typeof defaultBikeCoords;
 
 type BikeRenderArgs = {
   ctx: CanvasRenderingContext2D;
@@ -193,7 +197,7 @@ type BikeRenderArgs = {
   shirt?: any;
   position?: { x: number; y: number };
   scale?: number;
-  coords?: typeof defaultBikeCoords;
+  coords?: BikeCoords;
 };
 
 export type KuskiSelectionCircle = {
@@ -239,7 +243,7 @@ export function drawKuskiBounds({
   ctx: CanvasRenderingContext2D;
   start: { x: number; y: number };
   lineWidth?: number;
-  coords?: typeof defaultBikeCoords;
+  coords?: BikeCoords;
 }) {
   const selectionCircles = getKuskiSelectionCircles({ start, coords });
   ctx.save();
@@ -258,7 +262,7 @@ export function getKuskiSelectionCircles({
   coords = defaultBikeCoords,
 }: {
   start: { x: number; y: number };
-  coords?: typeof defaultBikeCoords;
+  coords?: BikeCoords;
 }): KuskiSelectionCircle[] {
   const bikeR = (coords.bikeR * Math.PI * 2) / 10000;
   const turn = coords.turn;
@@ -319,7 +323,7 @@ export function getKuskiSelectionTriangle({
   coords = defaultBikeCoords,
 }: {
   start: { x: number; y: number };
-  coords?: typeof defaultBikeCoords;
+  coords?: BikeCoords;
 }): KuskiSelectionTriangle {
   const circles = getKuskiSelectionCircles({
     start,
@@ -374,7 +378,7 @@ export function isPointInKuskiSelectionBounds({
 }: {
   point: { x: number; y: number };
   start: { x: number; y: number };
-  coords?: typeof defaultBikeCoords;
+  coords?: BikeCoords;
 }) {
   const selectionCircles = getKuskiSelectionCircles({ start, coords });
   if (
@@ -543,8 +547,39 @@ export function drawKuski({
     shouldery = worldUnitsFromElmaPixels(-17.5);
   const handlex = -wx - worldUnitsFromThirdElmaPixels(64.5),
     handley = -wy - worldUnitsFromThirdElmaPixels(59.6);
-  const handx = handlex,
+  let handx = handlex,
     handy = handley;
+
+  const voltProgress = coords.voltProgress ?? 0;
+  const voltDirection = coords.voltDirection;
+  if (voltProgress > 0 && voltDirection) {
+    const sameDirection =
+      (voltDirection === "right" ? 1 : 0) === turn;
+    const animx = shoulderx;
+    const animy = shouldery;
+    let dangle: number;
+    let ascale: number;
+    let easedProgress = voltProgress;
+
+    if (sameDirection) {
+      if (easedProgress >= 0.25) {
+        easedProgress = 0.25 - (0.25 * (easedProgress - 0.25)) / 0.75;
+      }
+      dangle = 10.8 * easedProgress;
+      ascale = 1 - 1.2 * easedProgress;
+    } else {
+      if (easedProgress >= 0.2) {
+        easedProgress = 0.2 - (0.2 * (easedProgress - 0.2)) / 0.8;
+      }
+      dangle = -8 * easedProgress;
+      ascale = 1 + 0.75 * easedProgress;
+    }
+
+    const at = Math.atan2(handley - animy, handlex - animx) + dangle;
+    const dist = ascale * hypot(handley - animy, handlex - animx);
+    handx = animx + dist * Math.cos(at);
+    handy = animy + dist * Math.sin(at);
+  }
 
   armLimb(
     ctx,

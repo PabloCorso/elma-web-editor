@@ -28,7 +28,7 @@ import {
   DEFAULT_KEYS,
   InputManager,
 } from "./play-mode/engine/input/input-manager";
-import { CanvasRenderer } from "./play-mode/engine/render/canvas-renderer";
+import { createPlayModeRenderer } from "./play-mode/engine/render/renderer";
 import { ToolButton } from "~/editor/toolbars/tool";
 
 const PLAY_MODE_WHEEL_ZOOM_STEP = 420;
@@ -109,7 +109,7 @@ export function PlayMode() {
         store.getState().playModeSeedKeys,
       );
       inputRef.current = input;
-      const renderer = new CanvasRenderer(canvas, lgr);
+      const renderer = createPlayModeRenderer({ canvas, lgrAssets: lgr });
       const keyBindings = keyBindingsRef.current;
 
       let gameState: GameState = createGame(levelData, input, keyBindings);

@@ -1,10 +1,11 @@
 import {
-  OBJECT_FRAME_PX,
-  OBJECT_FPS,
-  OBJECT_DIAMETER,
   uiColors,
 } from "./constants";
 import { Gravity, type Position } from "./elma-types";
+import {
+  getObjectBoundsRadius,
+  getObjectFrame,
+} from "./render/object-assets";
 
 export function drawObject({
   ctx,
@@ -19,30 +20,20 @@ export function drawObject({
   animate?: boolean;
   opacity?: number;
 }) {
-  const frameWidth = OBJECT_FRAME_PX;
-  const frameHeight = Math.min(OBJECT_FRAME_PX, sprite.height);
-  const frames = Math.max(1, Math.floor(sprite.width / frameWidth));
-  const frameIndex = animate
-    ? Math.floor((performance.now() / 1000) * OBJECT_FPS) % frames
-    : 0;
-  const sx = frameIndex * frameWidth;
-  const sy = 0;
-
-  const targetHeight = OBJECT_DIAMETER;
-  const targetWidth = (frameWidth / frameHeight) * targetHeight;
+  const frame = getObjectFrame(sprite, { animate });
 
   ctx.save();
   ctx.globalAlpha = opacity;
   ctx.drawImage(
     sprite,
-    sx,
-    sy,
-    frameWidth,
-    frameHeight,
-    position.x - targetWidth / 2,
-    position.y - targetHeight / 2,
-    targetWidth,
-    targetHeight
+    frame.sourceX,
+    frame.sourceY,
+    frame.sourceWidth,
+    frame.sourceHeight,
+    position.x - frame.targetWidth / 2,
+    position.y - frame.targetHeight / 2,
+    frame.targetWidth,
+    frame.targetHeight,
   );
   ctx.restore();
 }
@@ -60,7 +51,7 @@ export function drawObjectBounds({
   ctx.strokeStyle = uiColors.objectBounds;
   ctx.lineWidth = lineWidth;
   ctx.beginPath();
-  ctx.arc(position.x, position.y, OBJECT_DIAMETER / 2, 0, Math.PI * 2);
+  ctx.arc(position.x, position.y, getObjectBoundsRadius(), 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 }
@@ -90,7 +81,7 @@ export function drawGravityArrow({
   position,
   gravity,
   opacity = 1,
-  size = OBJECT_DIAMETER / 6,
+  size = (getObjectBoundsRadius() * 2) / 6,
 }: {
   ctx: CanvasRenderingContext2D;
   position: Position;

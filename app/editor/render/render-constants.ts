@@ -1,0 +1,1 @@
+export const DEFAULT_OBJECT_RENDER_DISTANCE = 500;

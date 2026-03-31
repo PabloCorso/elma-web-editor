@@ -56,6 +56,7 @@ export interface GameState {
 
   // Animation state
   lastVoltTime: number;
+  lastVoltDirection: "right" | "left" | null;
   lastTurnTime: number;
   flipFactor: number;
   cameraFlipFactor: number;
@@ -142,6 +143,7 @@ export function createGame(
     appleCount: 0,
     requiredApples: appleCount,
     lastVoltTime: -100,
+    lastVoltDirection: null,
     lastTurnTime: -1000,
     flipFactor: 1.0,
     cameraFlipFactor: 1.0,
@@ -167,11 +169,13 @@ function physicsStep(state: GameState, dt: number): void {
     if (input.isDown(keys.rightVolt) || alovolt) {
       rightVolt = true;
       state.lastVoltTime = state.gameTime;
+      state.lastVoltDirection = "right";
       eventBuffer.add(WavEvent.RightVolt, 0.99, -1);
     }
     if (input.isDown(keys.leftVolt) || alovolt) {
       leftVolt = true;
       state.lastVoltTime = state.gameTime;
+      state.lastVoltDirection = "left";
       eventBuffer.add(WavEvent.LeftVolt, 0.99, -1);
     }
   }

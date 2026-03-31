@@ -6,10 +6,7 @@ import {
 } from "./helpers/event-handler";
 import { updateCamera, updateZoom, fitToView } from "./helpers/camera-helpers";
 import {
-  colors,
   debugColors,
-  ELMA_PIXEL_SCALE,
-  GRASS_FILL_DEPTH,
   OBJECT_DIAMETER,
   uiColors,
   uiSelectionHandle,
@@ -20,50 +17,25 @@ import type { Widget } from "./widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "./editor-store";
 import type { DefaultLevelPreset } from "./helpers/level-parser";
 import {
-  drawKuski,
-  drawKuskiBounds,
   isPointInKuskiSelectionBounds,
 } from "./draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
-import { drawGravityArrow, drawObject, drawObjectBounds } from "./draw-object";
-import {
-  drawMaskedTexturePicture,
-  drawPictureBounds,
-  drawPicture,
-  PICTURE_SCALE,
-} from "./draw-picture";
+import { drawPictureBounds } from "./draw-picture";
 import { screenToWorld, worldToScreen } from "./helpers/coordinate-helpers";
 import {
   Clip,
-  type Apple,
   type Picture,
-  type Polygon,
   type Position,
 } from "./elma-types";
 import { getDefaultLevel } from "./helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
-import { defaultAppleState } from "./tools/apple-tools";
 import { SelectTool, type SelectToolState } from "./tools/select-tool";
 import type { VertexToolState } from "./tools/vertex-tool";
 import type { EditorDocumentInput } from "./editor-state";
-
-enum RenderType {
-  Picture = "picture",
-  Killer = "killer",
-  Flower = "flower",
-  Start = "start",
-  Apple = "apple",
-}
-
-type RenderItem =
-  | (Picture & { type: RenderType.Picture })
-  | {
-      type: RenderType.Killer | RenderType.Flower | RenderType.Start;
-      position: Position;
-      distance: number;
-      clip: Clip;
-    }
-  | (Apple & { type: RenderType.Apple; distance: number; clip: Clip });
+import { buildEditorWorldScene, getEditorHoverableItems } from "./render/editor-scene-builder";
+import { renderEditorWorldScene } from "./render/editor-world-renderer";
+import type { EditorWorldDrawItem } from "./render/editor-scene";
+import { getPictureWorldDimensions, PICTURE_SCALE } from "./render/picture-metrics";
 
 type EditorEngineOptions = {
   initialDocument?: EditorDocumentInput;
@@ -83,14 +55,9 @@ type EditorEngineOptions = {
   lgrAssets?: LgrAssets;
 };
 
-const DEFAULT_OBJECT_RENDER_DISTANCE = 500;
 const KEYBOARD_PAN_STEP = 200;
 const KEYBOARD_ZOOM_STEP_DIVISOR = 100;
 const WHEEL_PAN_MULTIPLIER = 0.5;
-const GRASS_TINY_CANVAS_UNIT_PX = 1;
-const MIN_ZOOM_EPSILON = 0.0001;
-const GRASS_VERTICAL_EDGE_THRESHOLD = 0.05;
-const GRASS_COLLINEAR_DOT_THRESHOLD = 0.98;
 
 export class EditorEngine {
   private canvas: HTMLCanvasElement;
@@ -915,28 +882,14 @@ export class EditorEngine {
     this.ctx.save();
     this.applyCameraTransform(state);
 
-    const scenePolygons = this.getScenePolygons(state);
-    const skyPath = this.buildPolygonPath(scenePolygons);
-    const groundPath = state.levelVisibility.showPolygons
-      ? this.buildGroundPath(state, skyPath)
-      : this.buildViewportPath(state);
-    this.drawGroundFill(state, groundPath);
-    this.drawPolygons(state, scenePolygons, groundPath, skyPath);
-
-    const queue = this.getDrawItemQueue(state);
-    for (const item of queue) {
-      this.ctx.save();
-
-      if (item.clip === Clip.Sky) {
-        this.ctx.clip(skyPath, "evenodd");
-      } else if (item.clip === Clip.Ground) {
-        this.ctx.clip(groundPath, "evenodd");
-      }
-
-      this.drawItem(state, item);
-
-      this.ctx.restore();
-    }
+    const scene = buildEditorWorldScene(state);
+    scene.viewport.width = this.canvas.width;
+    scene.viewport.height = this.canvas.height;
+    renderEditorWorldScene({
+      ctx: this.ctx,
+      scene,
+      lgrAssets: this.lgrAssets,
+    });
 
     // Let active tool render on world-space canvas
     const activeTool = state.actions.getActiveTool();
@@ -956,203 +909,8 @@ export class EditorEngine {
     }
 
     if (this.debugMode) {
-      this.drawDebugDistance(state, queue);
+      this.drawDebugDistance(state, scene.drawItems);
       this.drawDebugInfoPanel(state);
-    }
-  }
-
-  private getDrawItemQueue(state: EditorState): RenderItem[] {
-    const objectProperties = {
-      distance: DEFAULT_OBJECT_RENDER_DISTANCE,
-      clip: Clip.Unclipped,
-    };
-    const {
-      showObjects,
-      showPictures,
-      showTextures,
-      showObjectBounds,
-      showPictureBounds,
-      showTextureBounds,
-    } = state.levelVisibility;
-    const showAnyObjects = showObjects || showObjectBounds;
-    const showAnyPictures =
-      showPictures || showTextures || showPictureBounds || showTextureBounds;
-    return [
-      ...(showAnyPictures
-        ? state.pictures.map((picture) => ({
-            type: RenderType.Picture as const,
-            ...picture,
-          }))
-        : []),
-      ...(showAnyObjects
-        ? state.killers.map((killer) => ({
-            type: RenderType.Killer as const,
-            ...objectProperties,
-            position: killer,
-          }))
-        : []),
-      ...(showAnyObjects
-        ? state.apples.map((apple) => ({
-            ...apple,
-            type: RenderType.Apple as const,
-            ...objectProperties,
-          }))
-        : []),
-      ...(showAnyObjects
-        ? state.flowers.map((flower) => ({
-            type: RenderType.Flower as const,
-            ...objectProperties,
-            position: flower,
-          }))
-        : []),
-      ...(showAnyObjects
-        ? [
-            {
-              type: RenderType.Start as const,
-              ...objectProperties,
-              position: state.start,
-            },
-          ]
-        : []),
-    ].sort((a, b) => b.distance - a.distance);
-  }
-
-  private getScenePolygons(state: EditorState): Polygon[] {
-    const activeTool = state.actions.getActiveTool();
-    const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
-    const vertexToolState =
-      state.actions.getToolState<VertexToolState>("vertex");
-    const scenePolygons = vertexToolState?.editingPolygon
-      ? state.polygons.filter(
-          (polygon) => polygon !== vertexToolState.editingPolygon,
-        )
-      : state.polygons;
-    return [...scenePolygons, ...draftPolygons];
-  }
-
-  private drawItem(state: EditorState, item: RenderItem) {
-    const ctx = this.ctx;
-    const position = item.position;
-    const selectState = state.actions.getToolState<SelectToolState>("select");
-    const isSelectedObject = (selectState?.selectedObjects ?? []).some(
-      (selected) => selected.x === position.x && selected.y === position.y,
-    );
-    const objectBoundsLineWidth = isSelectedObject
-      ? uiStrokeWidths.boundsSelectedScreen / state.zoom
-      : uiStrokeWidths.boundsIdleScreen / state.zoom;
-
-    if (item.type === "picture") {
-      const { showPictures, showTextures } = state.levelVisibility;
-
-      if (item.texture && item.mask) {
-        if (!showTextures) return;
-        const textureSprite = this.lgrAssets.getSprite(item.texture);
-        const maskSprite = this.lgrAssets.getSprite(item.mask);
-        if (!maskSprite || !textureSprite) return;
-
-        drawMaskedTexturePicture({
-          ctx,
-          textureSprite,
-          maskSprite,
-          position,
-        });
-      } else {
-        if (!showPictures) return;
-        const sprite = item.name ? this.lgrAssets.getSprite(item.name) : null;
-        if (!sprite) return;
-
-        drawPicture({
-          ctx,
-          sprite,
-          position,
-        });
-      }
-    } else if (item.type === "apple") {
-      const { showObjects, showObjectBounds, showObjectAnimations } =
-        state.levelVisibility;
-      const shouldShowBounds = showObjectBounds || isSelectedObject;
-      if (!showObjects && !shouldShowBounds) return;
-      const sprite = this.lgrAssets.getAppleSprite(
-        item.animation ?? defaultAppleState.animation,
-      );
-      if (showObjects) {
-        if (!sprite) return;
-        drawObject({
-          ctx,
-          sprite,
-          position,
-          animate: state.animateSprites && showObjectAnimations,
-        });
-      }
-      if (shouldShowBounds) {
-        drawObjectBounds({
-          ctx,
-          position,
-          lineWidth: objectBoundsLineWidth,
-        });
-      }
-      if (showObjects) {
-        drawGravityArrow({ ctx, position, gravity: item.gravity });
-      }
-    } else if (item.type === "killer") {
-      const { showObjects, showObjectBounds, showObjectAnimations } =
-        state.levelVisibility;
-      const shouldShowBounds = showObjectBounds || isSelectedObject;
-      if (!showObjects && !shouldShowBounds) return;
-      const sprite = this.lgrAssets.getKillerSprite();
-      if (showObjects) {
-        if (!sprite) return;
-        drawObject({
-          ctx,
-          sprite,
-          position,
-          animate: state.animateSprites && showObjectAnimations,
-        });
-      }
-      if (shouldShowBounds) {
-        drawObjectBounds({
-          ctx,
-          position,
-          lineWidth: objectBoundsLineWidth,
-        });
-      }
-    } else if (item.type === "flower") {
-      const { showObjects, showObjectBounds, showObjectAnimations } =
-        state.levelVisibility;
-      const shouldShowBounds = showObjectBounds || isSelectedObject;
-      if (!showObjects && !shouldShowBounds) return;
-      const sprite = this.lgrAssets.getFlowerSprite();
-      if (showObjects) {
-        if (!sprite) return;
-        drawObject({
-          ctx,
-          sprite,
-          position,
-          animate: state.animateSprites && showObjectAnimations,
-        });
-      }
-      if (shouldShowBounds) {
-        drawObjectBounds({
-          ctx,
-          position,
-          lineWidth: objectBoundsLineWidth,
-        });
-      }
-    } else if (item.type === "start") {
-      const { showObjects, showObjectBounds } = state.levelVisibility;
-      const shouldShowBounds = showObjectBounds || isSelectedObject;
-      if (!showObjects && !shouldShowBounds) return;
-      if (showObjects) {
-        const lgrSprites = this.lgrAssets.getKuskiSprites();
-        drawKuski({ ctx, lgrSprites, start: state.start });
-      }
-      if (shouldShowBounds) {
-        drawKuskiBounds({
-          ctx,
-          start: state.start,
-          lineWidth: objectBoundsLineWidth,
-        });
-      }
     }
   }
 
@@ -1194,22 +952,17 @@ export class EditorEngine {
     state: EditorState,
     worldPos: Position,
   ): Pick<SelectToolState, "hoveredObject" | "hoveredPictureBounds"> {
-    const queue = this.getDrawItemQueue(state);
+    const items = getEditorHoverableItems(state);
 
     // Objects take precedence over pictures/textures when overlapping.
-    for (let index = queue.length - 1; index >= 0; index--) {
-      const item = queue[index];
+    for (let index = items.length - 1; index >= 0; index--) {
+      const item = items[index];
       if (!this.isObjectSelectable(state)) break;
-      if (
-        item.type !== RenderType.Killer &&
-        item.type !== RenderType.Flower &&
-        item.type !== RenderType.Start &&
-        item.type !== RenderType.Apple
-      ) {
+      if (item?.kind !== "object") {
         continue;
       }
       const isHovered =
-        item.type === RenderType.Start
+        item.type === "start"
           ? isPointInKuskiSelectionBounds({
               point: worldPos,
               start: item.position,
@@ -1226,24 +979,24 @@ export class EditorEngine {
       };
     }
 
-    for (let index = queue.length - 1; index >= 0; index--) {
-      const item = queue[index];
-      if (item.type !== RenderType.Picture) continue;
-      if (!this.isPictureSelectable(state, item)) continue;
-      const pictureDimensions = this.getPictureWorldDimensions(item);
+    for (let index = items.length - 1; index >= 0; index--) {
+      const item = items[index];
+      if (item?.kind !== "picture") continue;
+      if (!this.isPictureSelectable(state, item.picture)) continue;
+      const pictureDimensions = this.getPictureWorldDimensions(item.picture);
       if (!pictureDimensions) continue;
 
       const { width, height } = pictureDimensions;
       if (
-        worldPos.x >= item.position.x &&
-        worldPos.x <= item.position.x + width &&
-        worldPos.y >= item.position.y &&
-        worldPos.y <= item.position.y + height
+        worldPos.x >= item.picture.position.x &&
+        worldPos.x <= item.picture.position.x + width &&
+        worldPos.y >= item.picture.position.y &&
+        worldPos.y <= item.picture.position.y + height
       ) {
         return {
           hoveredObject: undefined,
           hoveredPictureBounds: {
-            position: item.position,
+            position: item.picture.position,
             width,
             height,
           },
@@ -1278,115 +1031,11 @@ export class EditorEngine {
   }
 
   private getPictureWorldDimensions(picture: Picture) {
-    if (picture.texture && picture.mask) {
-      const maskSprite = this.lgrAssets.getSprite(picture.mask);
-      if (!maskSprite) return null;
-      return {
-        width: maskSprite.width * PICTURE_SCALE,
-        height: maskSprite.height * PICTURE_SCALE,
-      };
-    }
-
-    const sprite = picture.name ? this.lgrAssets.getSprite(picture.name) : null;
-    if (!sprite) return null;
-    return {
-      width: sprite.width * PICTURE_SCALE,
-      height: sprite.height * PICTURE_SCALE,
-    };
-  }
-
-  private buildPolygonPath(polygons: Polygon[]): Path2D {
-    const path = new Path2D();
-    polygons.forEach((polygon) => {
-      if (polygon.vertices.length < 3 || polygon.grass) return;
-
-      path.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
-      for (let i = 1; i < polygon.vertices.length; i++) {
-        path.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
-      }
-      path.closePath();
-    });
-
-    return path;
-  }
-
-  private buildGroundPath(state: EditorState, skyPath: Path2D): Path2D {
-    // Viewport rectangle in world coords (inverse transform)
-    const topLeft = {
-      x: -state.viewPortOffset.x / state.zoom,
-      y: -state.viewPortOffset.y / state.zoom,
-    };
-    const bottomRight = {
-      x: topLeft.x + this.canvas.width / state.zoom,
-      y: topLeft.y + this.canvas.height / state.zoom,
-    };
-
-    const path = new Path2D();
-
-    // Outer viewport rectangle (will be subtracted via even-odd)
-    path.rect(
-      topLeft.x,
-      topLeft.y,
-      bottomRight.x - topLeft.x,
-      bottomRight.y - topLeft.y,
-    );
-
-    // Inner sky polygon (will be subtracted via even-odd)
-    path.addPath(skyPath);
-
-    return path;
-  }
-
-  private buildViewportPath(state: EditorState): Path2D {
-    const topLeft = {
-      x: -state.viewPortOffset.x / state.zoom,
-      y: -state.viewPortOffset.y / state.zoom,
-    };
-    const bottomRight = {
-      x: topLeft.x + this.canvas.width / state.zoom,
-      y: topLeft.y + this.canvas.height / state.zoom,
-    };
-
-    const path = new Path2D();
-    path.rect(
-      topLeft.x,
-      topLeft.y,
-      bottomRight.x - topLeft.x,
-      bottomRight.y - topLeft.y,
-    );
-    return path;
+    return getPictureWorldDimensions(picture, this.lgrAssets);
   }
 
   private clearCanvas() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  }
-
-  private getTexturePattern(textureName: string) {
-    const textureSprite = this.lgrAssets.getSprite(textureName);
-    if (!textureSprite) return null;
-
-    const pattern = this.ctx.createPattern(textureSprite, "repeat");
-    if (!pattern) return null;
-
-    pattern.setTransform(new DOMMatrix().scale(PICTURE_SCALE, PICTURE_SCALE));
-    return pattern;
-  }
-
-  private getFlatTextureColor(textureName: string, fallback: string) {
-    const textureColor = colors[textureName as keyof typeof colors];
-    return textureColor ?? fallback;
-  }
-
-  private drawGroundFill(state: EditorState, groundPath: Path2D) {
-    const groundPattern = state.levelVisibility.useGroundSkyTextures
-      ? this.getTexturePattern(state.ground)
-      : null;
-    const groundColor = this.getFlatTextureColor(state.ground, colors.ground);
-
-    this.ctx.save();
-    this.ctx.fillStyle = groundPattern ?? groundColor;
-    this.ctx.fill(groundPath, "evenodd");
-    this.ctx.restore();
   }
 
   private applyCameraTransform(state: EditorState) {
@@ -1394,209 +1043,6 @@ export class EditorEngine {
     this.ctx.scale(state.zoom, state.zoom);
   }
 
-  private getGrassEdgeIndices(vertices: Position[]): number[] {
-    const n = vertices.length;
-    if (n < 2) return [];
-
-    let longestEdgeIndex = -1;
-    let longestEdgeLength = -1;
-    for (let i = 0; i < n; i++) {
-      const from = vertices[i];
-      const to = vertices[(i + 1) % n];
-      const length = Math.hypot(to.x - from.x, to.y - from.y);
-      if (length > longestEdgeLength) {
-        longestEdgeLength = length;
-        longestEdgeIndex = i;
-      }
-    }
-    return [...Array(n).keys()].filter((i) => i !== longestEdgeIndex);
-  }
-
-  private drawGrassFill(
-    polygon: { vertices: Position[] },
-    groundPath: Path2D,
-    zoom: number,
-  ) {
-    const depth = GRASS_FILL_DEPTH;
-    const joinOverlap = ELMA_PIXEL_SCALE; // 1 Elma pixel in world units to hide AA seams
-    const tinyCanvasUnit =
-      GRASS_TINY_CANVAS_UNIT_PX / Math.max(zoom, MIN_ZOOM_EPSILON);
-    const minTwoSidedOvershoot = tinyCanvasUnit;
-    const verticalGapFix = tinyCanvasUnit;
-    const verticalThreshold = GRASS_VERTICAL_EDGE_THRESHOLD;
-    const collinearDotThreshold = GRASS_COLLINEAR_DOT_THRESHOLD;
-    const n = polygon.vertices.length;
-    const grassEdgeIndices = this.getGrassEdgeIndices(polygon.vertices);
-    const grassEdgesSet = new Set(grassEdgeIndices);
-
-    this.ctx.save();
-    this.ctx.clip(groundPath, "evenodd");
-    this.ctx.fillStyle = colors.grass;
-
-    for (const i of grassEdgeIndices) {
-      const from = polygon.vertices[i];
-      const to = polygon.vertices[(i + 1) % n];
-      const length = Math.hypot(to.x - from.x, to.y - from.y);
-      if (length === 0) continue;
-
-      const prevEdgeIndex = (i - 1 + n) % n;
-      const nextEdgeIndex = (i + 1) % n;
-      const hasPrevGrass = grassEdgesSet.has(prevEdgeIndex);
-      const hasNextGrass = grassEdgesSet.has(nextEdgeIndex);
-      const edgeDir = {
-        x: (to.x - from.x) / length,
-        y: (to.y - from.y) / length,
-      };
-      const edgeOverlap = Math.min(joinOverlap, length * 0.25);
-      const prevFrom = polygon.vertices[prevEdgeIndex];
-      const prevTo = polygon.vertices[i];
-      const prevLength = Math.hypot(
-        prevTo.x - prevFrom.x,
-        prevTo.y - prevFrom.y,
-      );
-      const nextFrom = polygon.vertices[(i + 1) % n];
-      const nextTo = polygon.vertices[(i + 2) % n];
-      const nextLength = Math.hypot(
-        nextTo.x - nextFrom.x,
-        nextTo.y - nextFrom.y,
-      );
-
-      let fromX = from.x;
-      let fromY = from.y;
-      let toX = to.x;
-      let toY = to.y;
-
-      let fromExtend = 0;
-      let toExtend = 0;
-
-      // Overlap only on painted joins that are close to collinear to avoid corner spikes.
-      if (hasPrevGrass && prevLength > 0) {
-        const prevDir = {
-          x: (prevTo.x - prevFrom.x) / prevLength,
-          y: (prevTo.y - prevFrom.y) / prevLength,
-        };
-        const dot = prevDir.x * edgeDir.x + prevDir.y * edgeDir.y;
-        if (dot >= collinearDotThreshold) {
-          fromExtend = edgeOverlap;
-        }
-      }
-      if (hasNextGrass && nextLength > 0) {
-        const nextDir = {
-          x: (nextTo.x - nextFrom.x) / nextLength,
-          y: (nextTo.y - nextFrom.y) / nextLength,
-        };
-        const dot = edgeDir.x * nextDir.x + edgeDir.y * nextDir.y;
-        if (dot >= collinearDotThreshold) {
-          toExtend = edgeOverlap;
-        }
-      }
-
-      // If this edge is connected to grass on both ends, guarantee overlap on one side.
-      if (hasPrevGrass && hasNextGrass) {
-        toExtend = Math.max(
-          toExtend,
-          Math.min(minTwoSidedOvershoot, length * 0.25),
-        );
-      }
-
-      fromX -= edgeDir.x * fromExtend;
-      fromY -= edgeDir.y * fromExtend;
-      toX += edgeDir.x * toExtend;
-      toY += edgeDir.y * toExtend;
-
-      // Vertical edges can show a 1px AA seam; overdraw one side slightly.
-      if (Math.abs(edgeDir.x) <= verticalThreshold) {
-        const fix = edgeDir.y < 0 ? verticalGapFix : -verticalGapFix;
-        fromX += fix;
-        toX += fix;
-      }
-
-      const p3 = {
-        x: toX,
-        y: toY - depth,
-      };
-      const p4 = {
-        x: fromX,
-        y: fromY - depth,
-      };
-
-      this.ctx.beginPath();
-      this.ctx.moveTo(fromX, fromY);
-      this.ctx.lineTo(toX, toY);
-      this.ctx.lineTo(p3.x, p3.y);
-      this.ctx.lineTo(p4.x, p4.y);
-      this.ctx.closePath();
-      this.ctx.fill();
-    }
-
-    this.ctx.restore();
-  }
-
-  private drawPolygons(
-    state: EditorState,
-    polygons: Polygon[],
-    groundPath: Path2D,
-    skyPath: Path2D,
-  ) {
-    const { showPolygons, showPolygonBounds } = state.levelVisibility;
-    if (!showPolygons && !showPolygonBounds) return;
-
-    if (polygons.length === 0) return;
-
-    // Use even-odd filling in the editor so temporary overlaps stay visible
-    // and deterministic while editing invalid intermediate geometry.
-    if (showPolygons) {
-      const skyFill = state.levelVisibility.useGroundSkyTextures
-        ? this.getTexturePattern(state.sky)
-        : null;
-      const skyColor = this.getFlatTextureColor(state.sky, colors.sky);
-      this.ctx.save();
-      this.ctx.fillStyle = skyFill ?? skyColor;
-      this.ctx.fill(skyPath, "evenodd");
-      this.ctx.restore();
-    }
-
-    // Draw grass interior shading and thin idle polygon outlines.
-    polygons.forEach((polygon) => {
-      if (polygon.vertices.length < 3) return;
-
-      if (polygon.grass) {
-        if (showPolygons) {
-          this.drawGrassFill(polygon, groundPath, state.zoom);
-        }
-        if (!showPolygonBounds) return;
-        this.ctx.strokeStyle = colors.grass;
-        this.ctx.lineWidth = 1 / state.zoom;
-        this.ctx.lineCap = "butt";
-        this.ctx.lineJoin = "miter";
-
-        const grassEdgeIndices = this.getGrassEdgeIndices(polygon.vertices);
-        this.ctx.beginPath();
-        for (const i of grassEdgeIndices) {
-          const from = polygon.vertices[i];
-          const to = polygon.vertices[(i + 1) % polygon.vertices.length];
-          this.ctx.moveTo(from.x, from.y);
-          this.ctx.lineTo(to.x, to.y);
-        }
-        this.ctx.stroke();
-        return;
-      }
-
-      if (!showPolygonBounds) return;
-      this.ctx.strokeStyle = colors.edges;
-      this.ctx.lineWidth = 1 / state.zoom;
-      this.ctx.lineCap = "butt";
-      this.ctx.lineJoin = "miter";
-
-      this.ctx.beginPath();
-      this.ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y);
-      for (let i = 1; i < polygon.vertices.length; i++) {
-        this.ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y);
-      }
-      this.ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y);
-      this.ctx.stroke();
-    });
-  }
 
   private drawPictureBoundsOverlay(state: EditorState) {
     const selectState = state.actions.getToolState<SelectToolState>("select");
@@ -1681,7 +1127,7 @@ export class EditorEngine {
     console.debug("Debug mode:", this.debugMode ? "ON" : "OFF");
   }
 
-  private drawDebugDistance(state: EditorState, queue: RenderItem[]) {
+  private drawDebugDistance(state: EditorState, queue: EditorWorldDrawItem[]) {
     queue.forEach(({ clip, distance, position }) => {
       const screenPos = worldToScreen(
         position,

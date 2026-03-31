@@ -1,12 +1,10 @@
 import type { Position } from "./elma-types";
-import { ELMA_PIXEL_SCALE, uiColors, uiStrokeWidths } from "./constants";
-
-export const PICTURE_SCALE = ELMA_PIXEL_SCALE;
-const binaryMaskCache = new WeakMap<ImageBitmap, HTMLCanvasElement>();
-const scratchCanvasCache = new Map<
-  string,
-  { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }
->();
+import { uiColors, uiStrokeWidths } from "./constants";
+import {
+  getBitmapWorldDimensions,
+  PICTURE_SCALE,
+} from "./render/picture-metrics";
+import { getMaskedTextureCanvas } from "./render/canvas-picture-cache";
 
 export function drawPicture({
   ctx,
@@ -23,8 +21,8 @@ export function drawPicture({
   showBounds?: boolean;
   boundsLineWidth?: number;
 }) {
-  const worldWidth = sprite.width * PICTURE_SCALE;
-  const worldHeight = sprite.height * PICTURE_SCALE;
+  const { width: worldWidth, height: worldHeight } =
+    getBitmapWorldDimensions(sprite);
 
   ctx.save();
   ctx.globalAlpha = opacity;
@@ -91,32 +89,14 @@ export function drawMaskedTexturePicture({
   showBounds?: boolean;
   boundsLineWidth?: number;
 }) {
-  const worldWidth = maskSprite.width * PICTURE_SCALE;
-  const worldHeight = maskSprite.height * PICTURE_SCALE;
-
-  if (typeof document === "undefined") return;
-  const scratch = getScratchCanvas(maskSprite.width, maskSprite.height);
-  if (!scratch) return;
-  const { canvas: tempCanvas, ctx: tempCtx } = scratch;
-
-  const pattern = tempCtx.createPattern(textureSprite, "repeat");
-  if (!pattern) return;
-
-  // Align texture to world coordinates so adjacent instances blend seamlessly.
-  pattern.setTransform(
-    new DOMMatrix().translate(
-      -position.x / PICTURE_SCALE,
-      -position.y / PICTURE_SCALE,
-    ),
-  );
-
-  tempCtx.fillStyle = pattern;
-  tempCtx.globalCompositeOperation = "source-over";
-  tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-  tempCtx.globalCompositeOperation = "destination-in";
-  const binaryMask = createBinaryMaskCanvas(maskSprite);
-  tempCtx.drawImage(binaryMask, 0, 0, maskSprite.width, maskSprite.height);
+  const { width: worldWidth, height: worldHeight } =
+    getBitmapWorldDimensions(maskSprite);
+  const tempCanvas = getMaskedTextureCanvas({
+    textureSprite,
+    maskSprite,
+    position,
+  });
+  if (!tempCanvas) return;
 
   ctx.save();
   const prevImageSmoothing = ctx.imageSmoothingEnabled;
@@ -142,49 +122,4 @@ export function drawMaskedTexturePicture({
 
   ctx.imageSmoothingEnabled = prevImageSmoothing;
   ctx.restore();
-}
-
-function createBinaryMaskCanvas(maskSprite: ImageBitmap) {
-  const cached = binaryMaskCache.get(maskSprite);
-  if (cached) return cached;
-
-  const maskCanvas = document.createElement("canvas");
-  maskCanvas.width = maskSprite.width;
-  maskCanvas.height = maskSprite.height;
-  const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
-  if (!maskCtx) return maskCanvas;
-
-  maskCtx.imageSmoothingEnabled = false;
-  maskCtx.drawImage(maskSprite, 0, 0);
-
-  const imageData = maskCtx.getImageData(
-    0,
-    0,
-    maskCanvas.width,
-    maskCanvas.height,
-  );
-  const data = imageData.data;
-  for (let i = 0; i < data.length; i += 4) {
-    data[i + 3] = data[i + 3] > 0 ? 255 : 0;
-  }
-  maskCtx.putImageData(imageData, 0, 0);
-  binaryMaskCache.set(maskSprite, maskCanvas);
-  return maskCanvas;
-}
-
-function getScratchCanvas(width: number, height: number) {
-  const cacheKey = `${width}x${height}`;
-  const cached = scratchCanvasCache.get(cacheKey);
-  if (cached) return cached;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  ctx.imageSmoothingEnabled = false;
-  const scratch = { canvas, ctx };
-  scratchCanvasCache.set(cacheKey, scratch);
-  return scratch;
 }

@@ -1,12 +1,9 @@
-import type { LgrAssets } from "~/components/lgr-assets";
 import type { EditorStore } from "../editor-store";
 import type { EventContext } from "../helpers/event-handler";
 import { defaultTools } from "./default-tools";
 import { Tool } from "./tool-interface";
 import { type Picture } from "../elma-types";
-import { drawPicture } from "../draw-picture";
 import { standardSprites } from "~/components/standard-sprites";
-import { DRAFT_PREVIEW_OPACITY, uiStrokeWidths } from "../constants";
 
 export type PictureToolState = Pick<Picture, "name" | "distance" | "clip">;
 
@@ -45,20 +42,23 @@ export class PictureTool extends Tool<PictureToolState> {
     return true;
   }
 
-  onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
+  getDrafts() {
     const { state, toolState } = this.getState();
     if (!toolState?.name || !state.mouseOnCanvas) return {};
 
-    const sprite = lgrAssets.getSprite(toolState.name);
-    if (sprite) {
-      drawPicture({
-        ctx,
-        sprite,
-        position: state.mousePosition,
-        opacity: DRAFT_PREVIEW_OPACITY,
-        showBounds: true,
-        boundsLineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
-      });
-    }
+    const defaults =
+      standardSprites.pictures.find((pic) => pic.name === toolState.name) ||
+      defaultPictureState;
+    const picture: Picture = {
+      ...defaults,
+      name: toolState.name,
+      texture: "",
+      mask: "",
+      position: state.mousePosition,
+    };
+
+    return {
+      pictures: [picture],
+    };
   }
 }

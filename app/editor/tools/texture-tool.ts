@@ -1,10 +1,7 @@
-import type { LgrAssets } from "~/components/lgr-assets";
 import { standardSprites } from "~/components/standard-sprites";
 import type { EditorStore } from "../editor-store";
 import type { Picture } from "../elma-types";
-import { drawMaskedTexturePicture } from "../draw-picture";
 import type { EventContext } from "../helpers/event-handler";
-import { DRAFT_PREVIEW_OPACITY, uiStrokeWidths } from "../constants";
 import { defaultTools } from "./default-tools";
 import { Tool } from "./tool-interface";
 
@@ -55,24 +52,25 @@ export class TextureTool extends Tool<TextureToolState> {
     return true;
   }
 
-  onRender(ctx: CanvasRenderingContext2D, lgrAssets: LgrAssets) {
+  getDrafts() {
     const { state, toolState } = this.getState();
     if (!toolState?.texture || !state.mouseOnCanvas) return {};
 
-    const textureSprite = lgrAssets.getSprite(toolState.texture);
     const maskName = toolState.mask || standardSprites.textureMasks[0];
-    const maskSprite = maskName ? lgrAssets.getSprite(maskName) : null;
+    const defaults =
+      standardSprites.textures.find(
+        (texture) => texture.texture === toolState.texture,
+      ) || defaultTextureState;
+    const picture: Picture = {
+      ...defaults,
+      name: "",
+      texture: toolState.texture,
+      mask: maskName,
+      position: state.mousePosition,
+    };
 
-    if (textureSprite && maskSprite) {
-      drawMaskedTexturePicture({
-        ctx,
-        textureSprite,
-        maskSprite,
-        position: state.mousePosition,
-        opacity: DRAFT_PREVIEW_OPACITY,
-        showBounds: true,
-        boundsLineWidth: uiStrokeWidths.boundsIdleScreen / state.zoom,
-      });
-    }
+    return {
+      pictures: [picture],
+    };
   }
 }
