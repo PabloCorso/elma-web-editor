@@ -161,7 +161,9 @@ export class VertexTool extends Tool<VertexToolState> {
     }
 
     // If not near a vertex, check if we clicked near a polygon line
-    if (checkModifierKey(event)) {
+    const shouldStartEditingFromEdge =
+      state.vertexEdgeClickBehavior === "smibu" || checkModifierKey(event);
+    if (shouldStartEditingFromEdge) {
       const lineResult = findPolygonLineForEditing(
         worldPos,
         state.polygons,

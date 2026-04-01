@@ -17,6 +17,7 @@ import { defaultLevelVisibility } from "./level-visibility";
 import { defaultPlaySettings, DEFAULT_PLAY_MODE_ZOOM } from "./play-settings";
 import type { Position } from "./elma-types";
 import type { SelectToolState } from "./tools/select-tool";
+import type { VertexEdgeClickBehavior } from "./default-level-preset";
 
 type CreateEditorStoreOptions = {
   initialToolId?: DefaultToolId | string;
@@ -375,6 +376,7 @@ export function createEditorStore({
         showSprites: true,
         levelVisibility: defaultLevelVisibility,
         playSettings: defaultPlaySettings,
+        vertexEdgeClickBehavior: "internal" as VertexEdgeClickBehavior,
         isUIVisible: true,
         isPlayMode: false,
         playModeSeedKeys: [],
@@ -561,6 +563,9 @@ export function createEditorStore({
                 },
               },
             })),
+
+          setVertexEdgeClickBehavior: (vertexEdgeClickBehavior) =>
+            set({ vertexEdgeClickBehavior }),
 
           toggleLevelVisibility: (key) =>
             set((state) => ({

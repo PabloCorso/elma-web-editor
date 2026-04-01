@@ -11,6 +11,7 @@ import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 import type { LevelVisibilitySettings } from "./level-visibility";
 import type { PlayKeyBindings, PlaySettings } from "./play-settings";
+import type { VertexEdgeClickBehavior } from "./default-level-preset";
 
 type EditorDocumentSnapshot = Pick<
   EditorLevel,
@@ -81,6 +82,7 @@ export type EditorState = EditorLevel & {
   showSprites: boolean;
   levelVisibility: LevelVisibilitySettings;
   playSettings: PlaySettings;
+  vertexEdgeClickBehavior: VertexEdgeClickBehavior;
   isUIVisible: boolean;
   isPlayMode: boolean;
   playModeSeedKeys: string[];
@@ -154,6 +156,7 @@ export type EditorState = EditorLevel & {
     setPlaySettings: (settings: {
       keyBindings?: Partial<PlayKeyBindings>;
     }) => void;
+    setVertexEdgeClickBehavior: (behavior: VertexEdgeClickBehavior) => void;
     toggleLevelVisibility: (key: keyof LevelVisibilitySettings) => void;
     resetLevelVisibility: () => void;
     setUIVisible: (visible: boolean) => void;

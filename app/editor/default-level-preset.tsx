@@ -3,10 +3,16 @@ import { createContext, useContext } from "react";
 import type { DefaultLevelPreset } from "./helpers/level-parser";
 
 export const DEFAULT_LEVEL_PRESET_STORAGE_KEY = "elma-web-default-level-preset";
+export const VERTEX_EDGE_CLICK_BEHAVIOR_STORAGE_KEY =
+  "elma-web-vertex-edge-click-behavior";
+
+export type VertexEdgeClickBehavior = "internal" | "smibu";
 
 type DefaultLevelPresetContextValue = {
   defaultLevelPreset: DefaultLevelPreset;
   setDefaultLevelPreset: (preset: DefaultLevelPreset) => void;
+  vertexEdgeClickBehavior: VertexEdgeClickBehavior;
+  setVertexEdgeClickBehavior: (behavior: VertexEdgeClickBehavior) => void;
 };
 
 const DefaultLevelPresetContext =
@@ -23,10 +29,21 @@ export function DefaultLevelPresetProvider({
       defaultValue: "default",
       getInitialValueInEffect: false,
     });
+  const [vertexEdgeClickBehavior, setVertexEdgeClickBehavior] =
+    useLocalStorage<VertexEdgeClickBehavior>({
+      key: VERTEX_EDGE_CLICK_BEHAVIOR_STORAGE_KEY,
+      defaultValue: "internal",
+      getInitialValueInEffect: false,
+    });
 
   return (
     <DefaultLevelPresetContext.Provider
-      value={{ defaultLevelPreset, setDefaultLevelPreset }}
+      value={{
+        defaultLevelPreset,
+        setDefaultLevelPreset,
+        vertexEdgeClickBehavior,
+        setVertexEdgeClickBehavior,
+      }}
     >
       {children}
     </DefaultLevelPresetContext.Provider>
@@ -49,4 +66,12 @@ export function useDefaultLevelPreset() {
 
 export function useSetDefaultLevelPreset() {
   return useDefaultLevelPresetContext().setDefaultLevelPreset;
+}
+
+export function useVertexEdgeClickBehavior() {
+  return useDefaultLevelPresetContext().vertexEdgeClickBehavior;
+}
+
+export function useSetVertexEdgeClickBehavior() {
+  return useDefaultLevelPresetContext().setVertexEdgeClickBehavior;
 }

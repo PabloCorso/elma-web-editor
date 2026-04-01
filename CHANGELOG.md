@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-01-04
+
+- Add mobile play mode.
+- Add setting to change from Internal or SLE vertex creation style, thanks to `@Andry` for the feedback.
+
 ## 2026-29-03
 
 - Add base play mode, thanks to `@amarshalov` for sharing elma core for web code from hide editor.

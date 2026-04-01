@@ -22,7 +22,7 @@ export function DropdownMenuTrigger({
 export const DropdownMenuTriggerIcon = CaretDownIcon;
 
 const itemClassName = cn(
-  "relative flex items-center gap-1.5 rounded-xs px-2 py-1.5 text-sm outline-hidden transition-colors select-none bg-primary hover:bg-primary-hover active:bg-primary-active data-disabled:pointer-events-none data-disabled:opacity-50",
+  "relative flex items-center gap-1.5 rounded-xs px-2 py-1.5 text-sm outline-hidden transition-colors select-none hover:bg-primary-hover active:bg-primary-active data-disabled:pointer-events-none data-disabled:opacity-50",
 );
 
 export function DropdownMenuItem({

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EditorEngine } from "~/editor/editor-engine";
 import {
   useEditorLevelFolderName,
@@ -8,6 +8,9 @@ import {
 import {
   useDefaultLevelPreset,
   useSetDefaultLevelPreset,
+  useSetVertexEdgeClickBehavior,
+  useVertexEdgeClickBehavior,
+  type VertexEdgeClickBehavior,
 } from "~/editor/default-level-preset";
 import {
   getDefaultLevel,
@@ -24,7 +27,7 @@ import {
   type DialogProps,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { cn } from "~/utils/misc";
+import { cn, useModifier } from "~/utils/misc";
 import { useForceUpdate } from "@mantine/hooks";
 import {
   defaultPlaySettings,
@@ -32,6 +35,7 @@ import {
 } from "~/editor/play-settings";
 import { IconButton } from "./ui/button";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
+import datGif from "~/assets/dat.gif";
 
 const LEVEL_PRESETS: Array<{
   id: DefaultLevelPreset;
@@ -83,12 +87,37 @@ export function PlaySettingsDialog(props: DialogProps) {
 }
 
 export function SettingsPanel() {
-  const store = useEditorStore();
-  const levelFolderName = useEditorLevelFolderName();
-  const defaultLevelPreset = useDefaultLevelPreset();
-  const setDefaultLevelPreset = useSetDefaultLevelPreset();
+  const modifier = useModifier();
   const [activeTab, setActiveTab] = useState("general");
-  const forceUpdate = useForceUpdate();
+  const vertexEdgeClickBehaviors: Array<{
+    id: VertexEdgeClickBehavior;
+    label: string;
+    description: ReactNode;
+  }> = [
+    {
+      id: "internal",
+      label: "Internal Editor",
+      description: (
+        <>
+          Edit polygons by clicking on vertices.
+          <br />(
+          <code className="font-mono bg-primary px-1 text-xs rounded-lg">
+            {modifier}
+          </code>{" "}
+          +{" "}
+          <code className="font-mono bg-primary px-1 text-xs rounded-lg">
+            Click
+          </code>{" "}
+          to edit from edges)
+        </>
+      ),
+    },
+    {
+      id: "smibu",
+      label: "Smibu Level Editor",
+      description: "Edit polygons by clicking on vertices or edges.",
+    },
+  ];
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -98,123 +127,215 @@ export function SettingsPanel() {
           <TabsList>
             <TabsTrigger value="general">Settings</TabsTrigger>
             <TabsTrigger value="play">Play</TabsTrigger>
-            <TabsTrigger value="default-level">Default level</TabsTrigger>
+            <TabsTrigger value="default-level">Preferences</TabsTrigger>
           </TabsList>
         </DialogHeader>
         <DialogDescription className="sr-only">
           Application settings
         </DialogDescription>
         <DialogBody className="pb-6">
-          <TabsContent value="general" className="flex flex-col gap-4">
-            <p>Elma Web Editor (beta) by Pab [dat]</p>
-            <p className="text-sm">
-              Desktop only. See the{" "}
-              <a
-                href="https://github.com/PabloCorso/elma-web-editor/blob/main/CHANGELOG.md"
-                target="_blank"
-                rel="noreferrer"
-                className="underline focus-visible:focus-ring"
-              >
-                CHANGELOG
-              </a>{" "}
-              for updates.
-            </p>
-
-            <div className="rounded-lg border border-separator p-3">
-              {supportsFilePickers() ? (
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <span>
-                      Level folder{" "}
-                      {levelFolderName ? (
-                        <>
-                          set:{" "}
-                          <span className="font-semibold">
-                            {levelFolderName}
-                          </span>
-                        </>
-                      ) : (
-                        "not set"
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    {levelFolderName && (
-                      <button
-                        className="text-sm text-red-300 underline"
-                        onClick={async () => {
-                          await store.getState().levelFolder?.forget();
-                          forceUpdate();
-                        }}
-                      >
-                        Forget
-                      </button>
-                    )}
-                    <button
-                      className="text-sm text-blue-300 underline"
-                      onClick={async () => {
-                        await store.getState().levelFolder?.pickFolder();
-                        forceUpdate();
-                      }}
-                    >
-                      {levelFolderName ? "Change" : "Set"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm">
-                  {`Your browser doesn't support direct folder save. Files will be
-                    downloaded instead of saved in place. Currently supported in
-                    Chrome and Edge.`}
-                </p>
-              )}
-            </div>
-          </TabsContent>
+          <GeneralSettingsPanel />
 
           <TabsContent value="play" className="flex flex-col gap-4">
             <PlaySettingsPanel />
           </TabsContent>
 
-          <TabsContent value="default-level" className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <p className="font-medium">Choose starter template</p>
-              <p className="text-sm text-primary/70">
-                New untitled levels will start with the chosen template.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              {LEVEL_PRESETS.map((preset) => {
-                const isSelected = defaultLevelPreset === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setDefaultLevelPreset(preset.id)}
-                    className={cn(
-                      "group relative cursor-pointer overflow-hidden rounded-xl border text-left transition-colors focus-visible:focus-ring",
-                      isSelected
-                        ? "border-blue-400 bg-blue-500/10"
-                        : "border-separator",
-                    )}
-                    aria-pressed={isSelected}
-                  >
-                    <LevelPresetPreview preset={preset.id} />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/75 via-black/10 to-transparent px-3 py-2">
-                      <div>
-                        <p className="text-xs font-medium text-white/85">
-                          {preset.label}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </TabsContent>
+          <PreferencesSettingsPanel
+            vertexEdgeClickBehaviors={vertexEdgeClickBehaviors}
+          />
         </DialogBody>
       </>
     </Tabs>
+  );
+}
+
+function GeneralSettingsPanel() {
+  const store = useEditorStore();
+  const levelFolderName = useEditorLevelFolderName();
+  const forceUpdate = useForceUpdate();
+
+  return (
+    <TabsContent value="general" className="flex flex-col gap-4">
+      <p className="flex items-center gap-2">
+        <span>Bear Level Editor</span>
+        <span className="flex items-center gap-1 text-sm">
+          <span>by Pab</span>
+          <img src={datGif} alt="dat" className="h-4 w-auto rounded-sm" />
+        </span>
+      </p>
+      <p>
+        Feedback is very welcome{" "}
+        <a
+          href="https://discord.com/channels/207629806513160192/531257164451414018"
+          target="_blank"
+          rel="noreferrer"
+          className="underline focus-visible:focus-ring"
+        >
+          @levelmaking
+        </a>{" "}
+        Discord channel! See latest updates{" "}
+        <a
+          href="https://github.com/PabloCorso/elma-web-editor/blob/main/CHANGELOG.md"
+          target="_blank"
+          rel="noreferrer"
+          className="underline focus-visible:focus-ring"
+        >
+          here
+        </a>
+        .
+      </p>
+
+      <div className="flex flex-col gap-3 border-t border-separator pt-4">
+        <div className="flex flex-col gap-1">
+          <p className="font-medium">Level folder</p>
+          {supportsFilePickers() ? (
+            <p className="text-sm text-primary/70">
+              Pick your level folder to save files back in place instead of
+              downloading a new copy each time. This works in supported Chrome
+              and Edge versions.
+            </p>
+          ) : (
+            <p className="text-sm text-primary/70">
+              Direct folder save is not available in this browser, so files will
+              be downloaded instead of saved in place. This is currently
+              supported in Chrome and Edge.
+            </p>
+          )}
+        </div>
+
+        {supportsFilePickers() ? (
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-separator px-4 py-3">
+            <div>
+              <p className="text-sm text-primary/70">
+                {levelFolderName ? (
+                  <>
+                    Current folder:{" "}
+                    <span className="font-semibold">{levelFolderName}</span>
+                  </>
+                ) : (
+                  "No folder selected"
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {levelFolderName && (
+                <button
+                  className="text-sm text-red-300 underline"
+                  onClick={async () => {
+                    await store.getState().levelFolder?.forget();
+                    forceUpdate();
+                  }}
+                >
+                  Forget
+                </button>
+              )}
+              <button
+                className="text-sm text-blue-300 underline"
+                onClick={async () => {
+                  await store.getState().levelFolder?.pickFolder();
+                  forceUpdate();
+                }}
+              >
+                {levelFolderName ? "Change" : "Set"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-separator px-4 py-3">
+            <p className="text-sm text-primary/70">
+              Browser support not detected.
+            </p>
+          </div>
+        )}
+      </div>
+    </TabsContent>
+  );
+}
+
+function PreferencesSettingsPanel({
+  vertexEdgeClickBehaviors,
+}: {
+  vertexEdgeClickBehaviors: Array<{
+    id: VertexEdgeClickBehavior;
+    label: string;
+    description: ReactNode;
+  }>;
+}) {
+  const store = useEditorStore();
+  const defaultLevelPreset = useDefaultLevelPreset();
+  const setDefaultLevelPreset = useSetDefaultLevelPreset();
+  const vertexEdgeClickBehavior = useVertexEdgeClickBehavior();
+  const setVertexEdgeClickBehavior = useSetVertexEdgeClickBehavior();
+  const { setVertexEdgeClickBehavior: setEditorVertexEdgeClickBehavior } =
+    store.getState().actions;
+
+  return (
+    <TabsContent value="default-level" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <p className="font-medium">Starter template</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {LEVEL_PRESETS.map((preset) => {
+          const isSelected = defaultLevelPreset === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => setDefaultLevelPreset(preset.id)}
+              className={cn(
+                "group relative cursor-pointer overflow-hidden rounded-xl border text-left transition-colors focus-visible:focus-ring",
+                isSelected
+                  ? "border-blue-400 bg-blue-500/10"
+                  : "border-separator",
+              )}
+              aria-pressed={isSelected}
+            >
+              <LevelPresetPreview preset={preset.id} />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/75 via-black/10 to-transparent px-3 py-2">
+                <div>
+                  <p className="text-xs font-medium text-white/85">
+                    {preset.label}
+                  </p>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-1 pt-2">
+        <p className="font-medium">Vertex tool behavior</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {vertexEdgeClickBehaviors.map((behavior) => {
+          const isSelected = vertexEdgeClickBehavior === behavior.id;
+          return (
+            <button
+              key={behavior.id}
+              type="button"
+              onClick={() => {
+                setVertexEdgeClickBehavior(behavior.id);
+                setEditorVertexEdgeClickBehavior(behavior.id);
+              }}
+              className={cn(
+                "flex h-full flex-col justify-start rounded-xl border p-4 text-left transition-colors focus-visible:focus-ring",
+                isSelected
+                  ? "border-blue-400 bg-blue-500/10"
+                  : "border-separator",
+              )}
+              aria-pressed={isSelected}
+            >
+              <p className="text-sm font-medium">{behavior.label}</p>
+              <p className="mt-1 text-sm text-primary/70">
+                {behavior.description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </TabsContent>
   );
 }
 
@@ -342,6 +463,7 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<EditorEngine | null>(null);
   const resizeFrameRef = useRef<number | null>(null);
+  const initializeFrameRef = useRef<number | null>(null);
   const lastSizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -382,22 +504,30 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
 
       applyResize();
 
-      engineRef.current = new EditorEngine(canvas, {
-        readOnly: true,
-        initialDocument: {
-          level: getDefaultLevel(preset),
-          origin: { kind: "default", label: "Preview", canOverwrite: false },
-          displayName: "Preview",
-          hasExternalHandle: false,
-        },
-      });
-
       const resizeObserver = new ResizeObserver(() => {
         scheduleResize();
       });
       resizeObserver.observe(wrapper);
 
+      // Defer heavy preview initialization until after the tab switch has painted.
+      initializeFrameRef.current = requestAnimationFrame(() => {
+        initializeFrameRef.current = null;
+        engineRef.current = new EditorEngine(canvas, {
+          readOnly: true,
+          initialDocument: {
+            level: getDefaultLevel(preset),
+            origin: { kind: "default", label: "Preview", canOverwrite: false },
+            displayName: "Preview",
+            hasExternalHandle: false,
+          },
+        });
+      });
+
       return () => {
+        if (initializeFrameRef.current !== null) {
+          cancelAnimationFrame(initializeFrameRef.current);
+          initializeFrameRef.current = null;
+        }
         if (resizeFrameRef.current !== null) {
           cancelAnimationFrame(resizeFrameRef.current);
           resizeFrameRef.current = null;

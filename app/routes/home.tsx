@@ -29,8 +29,8 @@ const LazyPlayModeOverlay = lazy(async () => {
 
 export function meta() {
   return [
-    { title: "ElastoMania Level Editor" },
-    { name: "description", content: "Web-based ElastoMania Level Editor" },
+    { title: "Bear Level Editor" },
+    { name: "description", content: "Web-based level editor for ElastoMania" },
   ];
 }
 

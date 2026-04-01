@@ -86,6 +86,10 @@ export function usePlaySettings() {
   return useEditor((state) => state.playSettings);
 }
 
+export function useVertexEdgeClickPreference() {
+  return useEditor((state) => state.vertexEdgeClickBehavior);
+}
+
 export function useEditorActions() {
   return useEditor((state) => state.actions);
 }

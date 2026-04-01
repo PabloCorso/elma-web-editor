@@ -117,6 +117,9 @@ function getActiveMobileControlState(
 export function PlayMode() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const activeMobilePointersRef = useRef<
+    Map<number, PlayModeMobileControlId>
+  >(new Map());
   const lastCanvasTapRef = useRef<{
     timestamp: number;
     x: number;
@@ -182,6 +185,7 @@ export function PlayMode() {
   }, [updateCameraZoom]);
 
   const releaseMobileControls = useCallback(() => {
+    activeMobilePointersRef.current.clear();
     inputRef.current?.releaseKeys(
       PLAY_MODE_MOBILE_CONTROL_IDS.map(
         (controlId) => keyBindingsRef.current[controlId],
@@ -210,6 +214,46 @@ export function PlayMode() {
     [],
   );
 
+  const handleMobileControlPointerChange = useCallback(
+    (
+      controlId: PlayModeMobileControlId,
+      pointerId: number,
+      isPressed: boolean,
+    ) => {
+      const activeMobilePointers = activeMobilePointersRef.current;
+
+      if (isPressed) {
+        for (const [activePointerId, activeControlId] of activeMobilePointers) {
+          if (
+            activeControlId === controlId &&
+            activePointerId !== pointerId
+          ) {
+            activeMobilePointers.delete(activePointerId);
+          }
+        }
+
+        activeMobilePointers.set(pointerId, controlId);
+        setMobileControlPressed(controlId, true);
+        return;
+      }
+
+      const activeControlId = activeMobilePointers.get(pointerId);
+      if (!activeControlId) return;
+
+      activeMobilePointers.delete(pointerId);
+      setMobileControlPressed(activeControlId, false);
+    },
+    [setMobileControlPressed],
+  );
+
+  const releaseMobileControlPointer = useCallback((pointerId: number) => {
+    const activeControlId = activeMobilePointersRef.current.get(pointerId);
+    if (!activeControlId) return;
+
+    activeMobilePointersRef.current.delete(pointerId);
+    setMobileControlPressed(activeControlId, false);
+  }, [setMobileControlPressed]);
+
   const toggleMobileControls = useCallback(() => {
     setMobileControlsOpen((isOpen) => {
       if (isOpen) {
@@ -222,6 +266,16 @@ export function PlayMode() {
   const restartPlayMode = useCallback(() => {
     restartRequestedRef.current = true;
   }, []);
+
+  const handlePlaySettingsOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (nextOpen) {
+        releaseMobileControls();
+      }
+      setPlaySettingsOpen(nextOpen);
+    },
+    [releaseMobileControls],
+  );
 
   const handleCanvasPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -249,6 +303,44 @@ export function PlayMode() {
       }
     },
     [restartPlayMode],
+  );
+
+  useEffect(
+    function syncMobileControlLifecycle() {
+      if (typeof window === "undefined") return;
+
+      const handleWindowPointerUp = (event: PointerEvent) => {
+        releaseMobileControlPointer(event.pointerId);
+      };
+
+      const handleWindowPointerCancel = (event: PointerEvent) => {
+        releaseMobileControlPointer(event.pointerId);
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") return;
+        releaseMobileControls();
+      };
+
+      const handleFocusLoss = () => {
+        releaseMobileControls();
+      };
+
+      window.addEventListener("pointerup", handleWindowPointerUp);
+      window.addEventListener("pointercancel", handleWindowPointerCancel);
+      window.addEventListener("blur", handleFocusLoss);
+      window.addEventListener("pagehide", handleFocusLoss);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      return () => {
+        window.removeEventListener("pointerup", handleWindowPointerUp);
+        window.removeEventListener("pointercancel", handleWindowPointerCancel);
+        window.removeEventListener("blur", handleFocusLoss);
+        window.removeEventListener("pagehide", handleFocusLoss);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+    },
+    [releaseMobileControlPointer, releaseMobileControls],
   );
 
   useEffect(
@@ -412,7 +504,7 @@ export function PlayMode() {
         <Toolbar className="pointer-events-auto gap-2">
           <ToolButton
             name="Play settings"
-            onClick={() => setPlaySettingsOpen(true)}
+            onClick={() => handlePlaySettingsOpenChange(true)}
           >
             <GearIcon weight="fill" />
           </ToolButton>
@@ -465,7 +557,7 @@ export function PlayMode() {
       {mobileControlsOpen ? (
         <PlayModeMobileControls
           activeControls={activeMobileControls}
-          onControlChange={setMobileControlPressed}
+          onControlPointerChange={handleMobileControlPointerChange}
         />
       ) : null}
       <canvas
@@ -475,7 +567,7 @@ export function PlayMode() {
       />
       <PlaySettingsDialog
         open={playSettingsOpen}
-        onOpenChange={setPlaySettingsOpen}
+        onOpenChange={handlePlaySettingsOpenChange}
       />
     </div>
   );
@@ -528,15 +620,16 @@ function PlayModeDoubleTapTip({ onDismiss }: { onDismiss: () => void }) {
 
 type PlayModeMobileControlsProps = {
   activeControls: PlayModeMobileControlState;
-  onControlChange: (
+  onControlPointerChange: (
     controlId: PlayModeMobileControlId,
+    pointerId: number,
     isPressed: boolean,
   ) => void;
 };
 
 function PlayModeMobileControls({
   activeControls,
-  onControlChange,
+  onControlPointerChange,
 }: PlayModeMobileControlsProps) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-14 z-10 flex items-end justify-between px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -545,33 +638,37 @@ function PlayModeMobileControls({
           label="Turn"
           icon={<ArrowsLeftRightIcon weight="bold" />}
           isActive={activeControls.turn}
-          onPressedChange={(isPressed) => onControlChange("turn", isPressed)}
+          onPressedChange={(pointerId, isPressed) =>
+            onControlPointerChange("turn", pointerId, isPressed)
+          }
         />
         <div className="flex items-end gap-2 sm:gap-3">
           <MobileDriveButton
             label="Rotate left"
             icon={<ArrowBendUpLeftIcon weight="bold" />}
             isActive={activeControls.leftVolt}
-            onPressedChange={(isPressed) =>
-              onControlChange("leftVolt", isPressed)
+            onPressedChange={(pointerId, isPressed) =>
+              onControlPointerChange("leftVolt", pointerId, isPressed)
             }
           />
           <MobileDriveButton
             label="Rotate right"
             icon={<ArrowBendUpRightIcon weight="bold" />}
             isActive={activeControls.rightVolt}
-            onPressedChange={(isPressed) =>
-              onControlChange("rightVolt", isPressed)
+            onPressedChange={(pointerId, isPressed) =>
+              onControlPointerChange("rightVolt", pointerId, isPressed)
             }
           />
-          <MobileDriveButton
-            label="Alo volt"
-            icon={<ArrowBendDoubleUpRightIcon weight="bold" />}
-            isActive={activeControls.alovolt}
-            onPressedChange={(isPressed) =>
-              onControlChange("alovolt", isPressed)
-            }
-          />
+          <div className="-translate-y-9 self-start sm:-translate-y-11">
+            <MobileDriveButton
+              label="Alo volt"
+              icon={<ArrowBendDoubleUpRightIcon weight="bold" />}
+              isActive={activeControls.alovolt}
+              onPressedChange={(pointerId, isPressed) =>
+                onControlPointerChange("alovolt", pointerId, isPressed)
+              }
+            />
+          </div>
         </div>
       </div>
       <div className="pointer-events-auto flex items-end gap-2 sm:gap-3">
@@ -580,13 +677,17 @@ function PlayModeMobileControls({
             label="Throttle"
             icon={<ArrowUpIcon weight="bold" />}
             isActive={activeControls.gas}
-            onPressedChange={(isPressed) => onControlChange("gas", isPressed)}
+            onPressedChange={(pointerId, isPressed) =>
+              onControlPointerChange("gas", pointerId, isPressed)
+            }
           />
           <MobileDriveButton
             label="Brake"
             icon={<ArrowDownIcon weight="bold" />}
             isActive={activeControls.brake}
-            onPressedChange={(isPressed) => onControlChange("brake", isPressed)}
+            onPressedChange={(pointerId, isPressed) =>
+              onControlPointerChange("brake", pointerId, isPressed)
+            }
           />
         </div>
       </div>
@@ -599,7 +700,7 @@ type MobileDriveButtonProps = {
   icon: React.ReactNode;
   isActive: boolean;
   label: string;
-  onPressedChange: (isPressed: boolean) => void;
+  onPressedChange: (pointerId: number, isPressed: boolean) => void;
 };
 
 function MobileDriveButton({
@@ -620,23 +721,28 @@ function MobileDriveButton({
       className={cn(
         "h-16 w-16",
         "touch-none rounded-full bg-screen/80",
+        "select-none [-webkit-touch-callout:none] [-webkit-tap-highlight-color:transparent] [-webkit-user-select:none]",
         { "bg-primary-active": isActive },
         className,
       )}
       onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
         event.preventDefault();
-        event.currentTarget.setPointerCapture(event.pointerId);
-        onPressedChange(true);
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // iOS Safari can reject pointer capture for some touch sequences.
+        }
+        onPressedChange(event.pointerId, true);
       }}
       onPointerUp={(event) => {
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId);
         }
-        onPressedChange(false);
+        onPressedChange(event.pointerId, false);
       }}
-      onPointerCancel={() => onPressedChange(false)}
-      onLostPointerCapture={() => onPressedChange(false)}
+      onPointerCancel={(event) => onPressedChange(event.pointerId, false)}
+      onLostPointerCapture={(event) => onPressedChange(event.pointerId, false)}
     />
   );
 }

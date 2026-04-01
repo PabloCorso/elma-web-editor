@@ -383,7 +383,7 @@ function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
         <DropdownMenuTrigger>
           <ToolbarButton
             className="w-14 relative gap-0"
-            aria-label="Elma Web Editor"
+            aria-label="Bear Level Editor"
           >
             <span className="absolute -top-0 right-0.5 px-1 text-[8px] font-semibold bg-blue-500 rounded-full">
               BETA
