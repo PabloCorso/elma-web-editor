@@ -215,7 +215,7 @@ export function findPolygonLineForEditing(
         return {
           polygon,
           pivotVertexIndex: isStartCloser ? startVertexIndex : endVertexIndex,
-          side: isStartCloser ? "next" : "previous",
+          side: isStartCloser ? "previous" : "next",
         };
       }
     }
