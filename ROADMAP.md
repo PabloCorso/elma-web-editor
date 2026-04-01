@@ -2,6 +2,11 @@
 
 Ideas and plans for Elma Web Editor.
 
+##
+
+- Hard to understand how to create new vertices from existing polygons @Andry.
+  - Add a setting so vertex tool works either like Internal editor or SLE, some ppl are used to SLE edge clicks and other not at all.
+
 ## Planned features
 
 - Match features set of in-game editor:
