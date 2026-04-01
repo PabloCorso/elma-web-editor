@@ -4,7 +4,8 @@
  */
 
 export class InputManager {
-  private currentKeys = new Set<string>();
+  private keyboardKeys = new Set<string>();
+  private virtualKeys = new Set<string>();
   private previousKeys = new Set<string>();
   private justPressedKeys = new Set<string>();
   private extraGameKeys: Set<string>;
@@ -14,20 +15,21 @@ export class InputManager {
 
   constructor(extraGameKeys: string[] = [], initialKeys: string[] = []) {
     this.extraGameKeys = new Set(extraGameKeys);
-    this.currentKeys = new Set(initialKeys);
+    this.keyboardKeys = new Set(initialKeys);
     this.justPressedKeys = new Set(initialKeys);
     this.handleKeyDown = (e: KeyboardEvent) => {
-      if (!this.currentKeys.has(e.code)) {
+      if (!this.isDown(e.code)) {
         this.justPressedKeys.add(e.code);
       }
-      this.currentKeys.add(e.code);
+      this.keyboardKeys.add(e.code);
       if (this.isGameKey(e.code)) e.preventDefault();
     };
     this.handleKeyUp = (e: KeyboardEvent) => {
-      this.currentKeys.delete(e.code);
+      this.keyboardKeys.delete(e.code);
     };
     this.handleBlur = () => {
-      this.currentKeys.clear();
+      this.keyboardKeys.clear();
+      this.virtualKeys.clear();
     };
 
     if (typeof window !== 'undefined') {
@@ -44,14 +46,15 @@ export class InputManager {
       window.removeEventListener('keyup', this.handleKeyUp);
       window.removeEventListener('blur', this.handleBlur);
     }
-    this.currentKeys.clear();
+    this.keyboardKeys.clear();
+    this.virtualKeys.clear();
     this.previousKeys.clear();
     this.justPressedKeys.clear();
   }
 
   /** Call once per frame after processing inputs */
   update(): void {
-    this.previousKeys = new Set(this.currentKeys);
+    this.previousKeys = this.getActiveKeys();
     this.justPressedKeys.clear();
   }
 
@@ -59,8 +62,25 @@ export class InputManager {
     this.extraGameKeys = new Set(keys);
   }
 
+  pressKey(code: string): void {
+    if (!this.isDown(code)) {
+      this.justPressedKeys.add(code);
+    }
+    this.virtualKeys.add(code);
+  }
+
+  releaseKey(code: string): void {
+    this.virtualKeys.delete(code);
+  }
+
+  releaseKeys(codes: string[]): void {
+    for (const code of codes) {
+      this.virtualKeys.delete(code);
+    }
+  }
+
   isDown(key: string): boolean {
-    return this.currentKeys.has(key);
+    return this.keyboardKeys.has(key) || this.virtualKeys.has(key);
   }
 
   wasJustPressed(key: string): boolean {
@@ -68,7 +88,11 @@ export class InputManager {
   }
 
   wasJustReleased(key: string): boolean {
-    return !this.currentKeys.has(key) && this.previousKeys.has(key);
+    return !this.isDown(key) && this.previousKeys.has(key);
+  }
+
+  private getActiveKeys(): Set<string> {
+    return new Set([...this.keyboardKeys, ...this.virtualKeys]);
   }
 
   private isGameKey(code: string): boolean {
