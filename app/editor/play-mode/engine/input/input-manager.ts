@@ -69,6 +69,12 @@ export class InputManager {
     this.virtualKeys.add(code);
   }
 
+  seedJustPressedKey(code: string): void {
+    if (this.isDown(code)) {
+      this.justPressedKeys.add(code);
+    }
+  }
+
   releaseKey(code: string): void {
     this.virtualKeys.delete(code);
   }

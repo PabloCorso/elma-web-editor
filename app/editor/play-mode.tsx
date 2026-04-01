@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocalStorage } from "@mantine/hooks";
 import {
   ArrowsClockwiseIcon,
   ArrowDownIcon,
@@ -12,8 +13,13 @@ import {
   PlusIcon,
   StopIcon,
   ArrowBendDoubleUpRightIcon,
+  XIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { Toolbar, type ToolbarProps } from "~/components/ui/toolbar";
+import {
+  Toolbar,
+  ToolbarSeparator,
+  type ToolbarProps,
+} from "~/components/ui/toolbar";
 import { useLgrAssets } from "~/components/use-lgr-assets";
 import { checkModifierKey, cn } from "~/utils/misc";
 import { PlaySettingsDialog } from "~/components/settings";
@@ -48,6 +54,10 @@ import { ToolButton } from "~/editor/toolbars/tool";
 const PLAY_MODE_WHEEL_ZOOM_STEP = 420;
 const PLAY_MODE_TOUCHPAD_ZOOM_STEP = 100;
 const PLAY_MODE_BUTTON_ZOOM_FACTOR = 1.2;
+const PLAY_MODE_DOUBLE_TAP_MAX_DELAY_MS = 300;
+const PLAY_MODE_DOUBLE_TAP_MAX_DISTANCE_PX = 32;
+const PLAY_MODE_DOUBLE_TAP_TIP_DISMISSED_STORAGE_KEY =
+  "elma-web-play-mode-double-tap-tip-dismissed";
 const PLAY_MODE_MOBILE_CONTROL_IDS = [
   "gas",
   "brake",
@@ -107,6 +117,11 @@ function getActiveMobileControlState(
 export function PlayMode() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastCanvasTapRef = useRef<{
+    timestamp: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const store = useEditorStore();
   const { lgr } = useLgrAssets();
   const playSettings = usePlaySettings();
@@ -121,6 +136,12 @@ export function PlayMode() {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(pointer: coarse)").matches;
   });
+  const [isDoubleTapTipDismissed, setIsDoubleTapTipDismissed] =
+    useLocalStorage<boolean>({
+      key: PLAY_MODE_DOUBLE_TAP_TIP_DISMISSED_STORAGE_KEY,
+      defaultValue: false,
+      getInitialValueInEffect: false,
+    });
   const [activeMobileControls, setActiveMobileControls] =
     useState<PlayModeMobileControlState>(
       INITIAL_PLAY_MODE_MOBILE_CONTROL_STATE,
@@ -202,6 +223,34 @@ export function PlayMode() {
     restartRequestedRef.current = true;
   }, []);
 
+  const handleCanvasPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (event.pointerType === "mouse" && (!event.isPrimary || event.button !== 0)) {
+        return;
+      }
+
+      const now = performance.now();
+      const lastTap = lastCanvasTapRef.current;
+      const isDoubleTap =
+        lastTap !== null &&
+        now - lastTap.timestamp <= PLAY_MODE_DOUBLE_TAP_MAX_DELAY_MS &&
+        Math.hypot(lastTap.x - event.clientX, lastTap.y - event.clientY) <=
+          PLAY_MODE_DOUBLE_TAP_MAX_DISTANCE_PX;
+
+      lastCanvasTapRef.current = {
+        timestamp: now,
+        x: event.clientX,
+        y: event.clientY,
+      };
+
+      if (isDoubleTap) {
+        restartPlayMode();
+        lastCanvasTapRef.current = null;
+      }
+    },
+    [restartPlayMode],
+  );
+
   useEffect(
     function syncPlaySettings() {
       const nextKeyBindings = getPlayKeyBindings(playSettings);
@@ -279,9 +328,9 @@ export function PlayMode() {
       canvas.addEventListener("wheel", handleWheel, { passive: false });
 
       const resetGame = () => {
-        releaseMobileControls();
         gameState = createGame(levelData, input, keyBindingsRef.current);
         gameStateRef.current = gameState;
+        input.seedJustPressedKey(keyBindingsRef.current.turn);
         gameState.lastTimestamp = performance.now();
         gameState.camera.zoom = clamp(
           store.getState().playModeZoom || DEFAULT_PLAY_MODE_ZOOM,
@@ -334,6 +383,7 @@ export function PlayMode() {
         canvas.removeEventListener("wheel", handleWheel);
         observer.disconnect();
         releaseMobileControls();
+        lastCanvasTapRef.current = null;
         restartRequestedRef.current = false;
         gameStateRef.current = null;
         inputRef.current = null;
@@ -353,7 +403,7 @@ export function PlayMode() {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[1px]"
+      className="absolute inset-0 z-20 select-none bg-black/60 backdrop-blur-[1px]"
     >
       <div className="pointer-events-none absolute right-4 flex items-center gap-4 top-4 z-10">
         <div className="text-right text-2xl font-mono font-bold tabular-nums text-primary">
@@ -366,6 +416,7 @@ export function PlayMode() {
           >
             <GearIcon weight="fill" />
           </ToolButton>
+          <ToolbarSeparator />
           <ToolButton name="Restart run" onClick={restartPlayMode}>
             <ArrowsClockwiseIcon weight="fill" />
           </ToolButton>
@@ -404,13 +455,24 @@ export function PlayMode() {
           </PlayModeToolbarButton>
         </PlayModeToolbarGroup>
       </div>
+      {mobileControlsOpen && !isDoubleTapTipDismissed ? (
+        <div className="pointer-events-none absolute bottom-4 left-4 z-10">
+          <PlayModeDoubleTapTip
+            onDismiss={() => setIsDoubleTapTipDismissed(true)}
+          />
+        </div>
+      ) : null}
       {mobileControlsOpen ? (
         <PlayModeMobileControls
           activeControls={activeMobileControls}
           onControlChange={setMobileControlPressed}
         />
       ) : null}
-      <canvas ref={canvasRef} className="block h-full w-full outline-none" />
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full outline-none"
+        onPointerDown={handleCanvasPointerDown}
+      />
       <PlaySettingsDialog
         open={playSettingsOpen}
         onOpenChange={setPlaySettingsOpen}
@@ -444,6 +506,26 @@ function PlayModeToolbarButton({
   );
 }
 
+function PlayModeDoubleTapTip({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="pointer-events-auto flex h-8 items-center gap-1.5 rounded-full border border-default bg-screen/80 pr-1.5 pl-2.5 text-[11px] font-medium text-muted shadow-sm backdrop-blur-[1px] sm:text-xs">
+      <span className="text-primary">Tip:</span>
+      <span>Double tap to restart</span>
+      <Button
+        type="button"
+        size="sm"
+        iconOnly
+        aria-label="Dismiss restart tip"
+        title="Dismiss tip"
+        className="h-6 w-6 rounded-full bg-transparent text-muted hover:bg-primary-hover/40 active:bg-primary-active/40"
+        onClick={onDismiss}
+      >
+        <XIcon />
+      </Button>
+    </div>
+  );
+}
+
 type PlayModeMobileControlsProps = {
   activeControls: PlayModeMobileControlState;
   onControlChange: (
@@ -457,7 +539,7 @@ function PlayModeMobileControls({
   onControlChange,
 }: PlayModeMobileControlsProps) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex items-end justify-between px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="pointer-events-none absolute inset-x-0 bottom-14 z-10 flex items-end justify-between px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="pointer-events-auto flex flex-col items-start gap-2 sm:gap-3">
         <MobileDriveButton
           label="Turn"
