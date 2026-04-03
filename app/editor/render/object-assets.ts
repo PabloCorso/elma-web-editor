@@ -5,12 +5,7 @@ import {
   OBJECT_FRAME_PX,
 } from "~/editor/constants";
 
-export type ObjectSpriteKind =
-  | "apple"
-  | "flower"
-  | "killer"
-  | "food"
-  | "exit";
+export type ObjectSpriteKind = "apple" | "flower" | "killer" | "food" | "exit";
 
 export function getObjectSprite(
   lgrAssets: LgrAssets,

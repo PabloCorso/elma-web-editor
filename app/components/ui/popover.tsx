@@ -33,7 +33,7 @@ export function PopoverContent({
       <PopoverPrimitive.Content
         align={align}
         sideOffset={sideOffset}
-        className={cn("z-40 ", className)}
+        className={cn("z-40", className)}
         {...props}
       />
     </PopoverPrimitive.Portal>
@@ -50,7 +50,7 @@ export function PopoverArrow({ className, ...props }: PopoverArrowProps) {
     <PopoverPrimitive.Arrow
       className={cn(
         "fill-[var(--background-screen)]/80 stroke-[var(--border-default)]",
-        className
+        className,
       )}
       {...props}
     />

@@ -68,13 +68,13 @@ export function LevelPropertiesControl() {
         <Tooltip>
           <TooltipTrigger>
             <FloatingToolbarTrigger>
-            <ToolbarButton
-              aria-label="Level properties"
-              aria-expanded={open}
-              className={cn({ "animate-pulse": isLoading })}
-            >
-              <LevelTextureIcon skySrc={skySrc} groundSrc={groundSrc} />
-            </ToolbarButton>
+              <ToolbarButton
+                aria-label="Level properties"
+                aria-expanded={open}
+                className={cn({ "animate-pulse": isLoading })}
+              >
+                <LevelTextureIcon skySrc={skySrc} groundSrc={groundSrc} />
+              </ToolbarButton>
             </FloatingToolbarTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs">
@@ -85,7 +85,7 @@ export function LevelPropertiesControl() {
       <FloatingToolbarContent side="bottom" align="center">
         <FloatingToolbarPanel
           orientation="vertical"
-          className="min-w-max pl-4 gap-2 flex-col items-stretch"
+          className="min-w-max flex-col items-stretch gap-2 pl-4"
         >
           <TexturePickerRow
             label="Sky"
@@ -118,12 +118,12 @@ function LevelTextureIcon({
   return (
     <span className="relative h-6 w-6 overflow-hidden rounded-sm bg-screen">
       <PictureIcon
-        className="absolute inset-0 h-full w-full bg-no-repeat bg-center bg-cover"
+        className="absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat"
         src={skySrc}
         style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}
       />
       <PictureIcon
-        className="absolute inset-0 h-full w-full bg-no-repeat bg-center bg-cover"
+        className="absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat"
         src={groundSrc}
         style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
       />
@@ -149,8 +149,8 @@ function TexturePickerRow({
   tooltipSide = "bottom",
 }: TexturePickerRowProps) {
   return (
-    <div className="flex items-start gap-3 min-w-max">
-      <div className="w-12 text-xs self-center font-semibold">{label}</div>
+    <div className="flex min-w-max items-start gap-3">
+      <div className="w-12 self-center text-xs font-semibold">{label}</div>
       <div className="flex flex-nowrap gap-2">
         {textures.map((textureName) => {
           const textureSprite = textureSprites.find(

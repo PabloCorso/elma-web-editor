@@ -32,19 +32,19 @@ export class InputManager {
       this.virtualKeys.clear();
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', this.handleKeyDown);
-      window.addEventListener('keyup', this.handleKeyUp);
-      window.addEventListener('blur', this.handleBlur);
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", this.handleKeyDown);
+      window.addEventListener("keyup", this.handleKeyUp);
+      window.addEventListener("blur", this.handleBlur);
     }
   }
 
   /** Remove all event listeners. Call when the game is stopped. */
   destroy(): void {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('keydown', this.handleKeyDown);
-      window.removeEventListener('keyup', this.handleKeyUp);
-      window.removeEventListener('blur', this.handleBlur);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("keydown", this.handleKeyDown);
+      window.removeEventListener("keyup", this.handleKeyUp);
+      window.removeEventListener("blur", this.handleBlur);
     }
     this.keyboardKeys.clear();
     this.virtualKeys.clear();
@@ -102,11 +102,15 @@ export class InputManager {
   }
 
   private isGameKey(code: string): boolean {
-    return code.startsWith('Arrow') ||
-           code === 'Space' ||
-           code === 'Escape' ||
-           code === 'F1' || code === 'F2' || code === 'F3' ||
-           this.extraGameKeys.has(code);
+    return (
+      code.startsWith("Arrow") ||
+      code === "Space" ||
+      code === "Escape" ||
+      code === "F1" ||
+      code === "F2" ||
+      code === "F3" ||
+      this.extraGameKeys.has(code)
+    );
   }
 }
 
@@ -135,22 +139,22 @@ export interface KeyBindings {
 }
 
 export const DEFAULT_KEYS: KeyBindings = {
-  gas: 'ArrowUp',
-  brake: 'ArrowDown',
-  alovolt: 'KeyD',
-  rightVolt: 'ArrowRight',
-  leftVolt: 'ArrowLeft',
-  turn: 'Space',
-  toggleMinimap: 'KeyV',
-  toggleTimer: 'KeyT',
-  escape: 'Escape',
-  replayFast2x: 'KeyW',
-  replayFast4x: 'KeyE',
-  replayFast8x: 'KeyR',
-  replaySlow2x: 'KeyQ',
-  replaySlow4x: 'KeyA',
-  replayPause: 'KeyP',
-  replayRewind: 'Backspace',
-  zoomIn: 'Equal',
-  zoomOut: 'Minus',
+  gas: "ArrowUp",
+  brake: "ArrowDown",
+  alovolt: "KeyD",
+  rightVolt: "ArrowRight",
+  leftVolt: "ArrowLeft",
+  turn: "Space",
+  toggleMinimap: "KeyV",
+  toggleTimer: "KeyT",
+  escape: "Escape",
+  replayFast2x: "KeyW",
+  replayFast4x: "KeyE",
+  replayFast8x: "KeyR",
+  replaySlow2x: "KeyQ",
+  replaySlow4x: "KeyA",
+  replayPause: "KeyP",
+  replayRewind: "Backspace",
+  zoomIn: "Equal",
+  zoomOut: "Minus",
 };

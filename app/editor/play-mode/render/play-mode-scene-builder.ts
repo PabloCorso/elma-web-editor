@@ -189,8 +189,7 @@ function buildBikeSceneItem(state: GameState): PlayModeSceneDrawItem {
       // near the torso/neck, not the physics head collision center.
       headX: (motor.bodyR.x - motor.bike.r.x) * 1000,
       headY: (motor.bodyR.y - motor.bike.r.y) * 1000,
-      voltDirection:
-        voltProgress > 0 ? state.lastVoltDirection : null,
+      voltDirection: voltProgress > 0 ? state.lastVoltDirection : null,
       voltProgress,
     },
   };

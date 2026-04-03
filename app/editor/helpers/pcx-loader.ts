@@ -66,7 +66,7 @@ function decodePcx(pcx: Uint8Array): DecodedPcx {
   // Build RGBA buffer from palette + indices
   const palette = pcx.subarray(
     paletteMarkerIndex + 1,
-    paletteMarkerIndex + VGA_PALETTE_SIZE
+    paletteMarkerIndex + VGA_PALETTE_SIZE,
   );
   const pixels = new Uint8ClampedArray(width * height * 4);
 
@@ -118,7 +118,8 @@ function applyTransparency(
   } else if (mode === 14) {
     transparentIndex = paletteIndices[(height - 1) * bytesPerLine];
   } else if (mode === 15) {
-    transparentIndex = paletteIndices[(height - 1) * bytesPerLine + (width - 1)];
+    transparentIndex =
+      paletteIndices[(height - 1) * bytesPerLine + (width - 1)];
   }
 
   for (let y = 0; y < height; y++) {
@@ -190,7 +191,7 @@ export async function decodeLgrSprite(picture: PictureData) {
   const bytes = new Uint8Array(
     picture.data.buffer,
     picture.data.byteOffset,
-    picture.data.byteLength
+    picture.data.byteLength,
   );
   const decodedPcx = decodePcx(bytes);
   return pcxToImageBitmap(decodedPcx);

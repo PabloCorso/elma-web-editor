@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Gravity, Texture } from "../elma-types";
 import type { EditorState } from "../editor-state";
-import {
-  editorLevelFromFile,
-  elmaLevelFromEditorState,
-} from "./level-parser";
+import { editorLevelFromFile, elmaLevelFromEditorState } from "./level-parser";
 
 describe("level parser apple gravity", () => {
   it("preserves apple gravity and animation when saving and reloading a level", async () => {

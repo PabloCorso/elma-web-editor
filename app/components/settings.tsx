@@ -101,11 +101,11 @@ export function SettingsPanel() {
         <>
           Edit polygons by clicking on vertices.
           <br />(
-          <code className="font-mono bg-primary px-1 text-xs rounded-lg">
+          <code className="rounded-lg bg-primary px-1 font-mono text-xs">
             {modifier}
           </code>{" "}
           +{" "}
-          <code className="font-mono bg-primary px-1 text-xs rounded-lg">
+          <code className="rounded-lg bg-primary px-1 font-mono text-xs">
             Click
           </code>{" "}
           to edit from edges)
@@ -422,7 +422,7 @@ function PlayKeyField({
   const [isCapturing, setIsCapturing] = useState(false);
 
   return (
-    <label className="flex justify-between items-center">
+    <label className="flex items-center justify-between">
       <span className="min-w-24 text-sm">{label}</span>
       <input
         type="text"
@@ -544,11 +544,11 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
   return (
     <div
       ref={wrapperRef}
-      className="relative aspect-[16/10] w-full min-h-[120px] bg-[#0f1720]"
+      className="relative aspect-[16/10] min-h-[120px] w-full bg-[#0f1720]"
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 block h-full w-full pointer-events-none"
+        className="pointer-events-none absolute inset-0 block h-full w-full"
         aria-hidden="true"
       />
     </div>

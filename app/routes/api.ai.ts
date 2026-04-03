@@ -25,14 +25,14 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!Array.isArray(messages)) {
     return new Response(
       JSON.stringify({ error: "Messages must be an array" }),
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!process.env.OPENAI_API_KEY) {
     return new Response(
       JSON.stringify({ error: "OpenAI API key not configured" }),
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -41,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .map((m) => ({
       ...m,
       parts: (m.parts ?? []).filter(
-        (p: any) => p.type === "text" || p.type === "image"
+        (p: any) => p.type === "text" || p.type === "image",
       ),
     }))
     .filter((m) => m.parts.length > 0);
@@ -89,9 +89,9 @@ export async function action({ request }: ActionFunctionArgs) {
                 z.object({
                   x: z.number().describe("X coordinate"),
                   y: z.number().describe("Y coordinate"),
-                })
+                }),
               ),
-            })
+            }),
           ),
         }),
       }),

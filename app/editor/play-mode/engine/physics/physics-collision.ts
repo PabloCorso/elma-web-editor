@@ -1,20 +1,19 @@
 /**
  * Anchor point detection - ported from physics_collision.cpp
  */
-import { Vec2, rotate90deg } from '../core/vec2';
-import { TWO_POINT_DISCRIMINATION_DISTANCE, OBJECT_RADIUS } from '../core/constants';
-import type { Segment, Segments } from './segments';
+import { Vec2, rotate90deg } from "../core/vec2";
+import {
+  TWO_POINT_DISCRIMINATION_DISTANCE,
+  OBJECT_RADIUS,
+} from "../core/constants";
+import type { Segment, Segments } from "./segments";
 import type { GameObject } from "../level";
 
 /**
  * Check for collision between a circle (wheel/head) and a segment.
  * Returns the anchor point if collision occurs.
  */
-function getAnchorPoint(
-  r: Vec2,
-  radius: number,
-  seg: Segment
-): Vec2 | null {
+function getAnchorPoint(r: Vec2, radius: number, seg: Segment): Vec2 | null {
   const rel = r.sub(seg.r);
   const positionAlongLine = rel.dot(seg.unitVector);
 
@@ -57,7 +56,7 @@ interface AnchorPointResult {
 export function getTwoAnchorPoints(
   segments: Segments,
   r: Vec2,
-  radius: number
+  radius: number,
 ): AnchorPointResult {
   segments.iterateCollisionGridCellSegments(r);
   let count = 0;
@@ -98,14 +97,14 @@ export function getTouchingObject(
   objects: GameObject[],
   r: Vec2,
   radius: number,
-  isFlagTag: boolean
+  isFlagTag: boolean,
 ): number {
   for (let i = 0; i < objects.length; i++) {
     const obj = objects[i]!;
     if (!obj.active) continue;
 
     // Skip Exit in flagtag mode
-    if (obj.type === 'exit' && isFlagTag) continue;
+    if (obj.type === "exit" && isFlagTag) continue;
 
     const diff = r.sub(obj.r);
     const maxDistance = radius + OBJECT_RADIUS;

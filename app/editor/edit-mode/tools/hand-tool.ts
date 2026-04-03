@@ -44,7 +44,7 @@ export class HandTool extends Tool<HandToolState> {
 
     state.actions.setCamera(
       state.viewPortOffset.x + deltaX,
-      state.viewPortOffset.y + deltaY
+      state.viewPortOffset.y + deltaY,
     );
 
     this.lastX = event.clientX;

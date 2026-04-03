@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function checkModifierKey(
-  event: KeyboardEvent | MouseEvent | WheelEvent
+  event: KeyboardEvent | MouseEvent | WheelEvent,
 ) {
   const isMac = window.navigator.platform.toUpperCase().includes("MAC");
   return isMac ? event.metaKey : event.ctrlKey;

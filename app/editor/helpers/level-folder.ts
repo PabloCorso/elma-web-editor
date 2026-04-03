@@ -105,7 +105,7 @@ async function openDb(): Promise<IDBDatabase> {
 
 async function persistHandle(
   key: string,
-  handle: FileSystemDirectoryHandle
+  handle: FileSystemDirectoryHandle,
 ): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -117,7 +117,7 @@ async function persistHandle(
 }
 
 async function loadHandle(
-  key: string
+  key: string,
 ): Promise<FileSystemDirectoryHandle | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {

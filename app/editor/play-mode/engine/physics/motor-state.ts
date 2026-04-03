@@ -1,13 +1,24 @@
 /**
  * Bike motor state - ported from physics_init.h (motorst)
  */
-import { Vec2 } from '../core/vec2';
-import type { Rigidbody } from './rigidbody';
+import { Vec2 } from "../core/vec2";
+import type { Rigidbody } from "./rigidbody";
 import {
-  BIKE_INIT_X, BIKE_INIT_Y, BIKE_MASS, BIKE_RADIUS, BIKE_INERTIA,
-  LEFT_WHEEL_INIT_X, LEFT_WHEEL_INIT_Y, WHEEL_MASS, WHEEL_RADIUS, WHEEL_INERTIA,
-  RIGHT_WHEEL_INIT_X, RIGHT_WHEEL_INIT_Y, BODY_INIT_X, BODY_INIT_Y,
-} from '../core/constants';
+  BIKE_INIT_X,
+  BIKE_INIT_Y,
+  BIKE_MASS,
+  BIKE_RADIUS,
+  BIKE_INERTIA,
+  LEFT_WHEEL_INIT_X,
+  LEFT_WHEEL_INIT_Y,
+  WHEEL_MASS,
+  WHEEL_RADIUS,
+  WHEEL_INERTIA,
+  RIGHT_WHEEL_INIT_X,
+  RIGHT_WHEEL_INIT_Y,
+  BODY_INIT_X,
+  BODY_INIT_Y,
+} from "../core/constants";
 
 export enum MotorGravity {
   Up = 0,

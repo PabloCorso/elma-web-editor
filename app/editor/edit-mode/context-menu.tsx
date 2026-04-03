@@ -3,7 +3,10 @@ import {
   useEditorActions,
   useEditorActiveTool,
 } from "~/editor/use-editor-store";
-import { SelectTool, type SelectToolState } from "~/editor/edit-mode/tools/select-tool";
+import {
+  SelectTool,
+  type SelectToolState,
+} from "~/editor/edit-mode/tools/select-tool";
 import { defaultTools } from "~/editor/edit-mode/tools/default-tools";
 import { AppleToolbar } from "~/editor/edit-mode/toolbars/apple-tool-control";
 import { VertexContextMenuToolbar } from "~/editor/edit-mode/toolbars/vertex-tool-control";

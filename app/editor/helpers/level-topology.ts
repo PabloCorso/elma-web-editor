@@ -230,14 +230,15 @@ function addIntersection(
     ? `self:${first.polygonIndex}`
     : `cross:${Math.min(first.polygonIndex, second.polygonIndex)}:${Math.max(first.polygonIndex, second.polygonIndex)}`;
   const existing = intersections.get(key);
-  const vertices = mergeVertices(
-    existing?.vertices ?? [],
-    [first.start, first.end, second.start, second.end],
-  );
-  const contacts = mergeContacts(
-    existing?.contacts ?? [],
-    [getIntersectionKey(first, second)],
-  );
+  const vertices = mergeVertices(existing?.vertices ?? [], [
+    first.start,
+    first.end,
+    second.start,
+    second.end,
+  ]);
+  const contacts = mergeContacts(existing?.contacts ?? [], [
+    getIntersectionKey(first, second),
+  ]);
 
   intersections.set(key, {
     type: isSelfIntersection ? "self-intersection" : "crossing-polygons",
@@ -349,17 +350,12 @@ function getSegmentIntersectionPoint(
     };
   }
 
-  const sharedEndpoints = [
-    p1,
-    q1,
-    p2,
-    q2,
-  ].filter((point, index, points) =>
-    points.findIndex((candidate) => isSamePoint(candidate, point)) === index,
+  const sharedEndpoints = [p1, q1, p2, q2].filter(
+    (point, index, points) =>
+      points.findIndex((candidate) => isSamePoint(candidate, point)) === index,
   );
   const touchingPoint = sharedEndpoints.find(
-    (point) =>
-      onSegment(p1, point, q1) && onSegment(p2, point, q2),
+    (point) => onSegment(p1, point, q1) && onSegment(p2, point, q2),
   );
   if (touchingPoint) {
     return touchingPoint;

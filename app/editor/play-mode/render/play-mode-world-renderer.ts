@@ -20,10 +20,7 @@ import {
   buildViewportPathFromCenter,
   fillGrassEdges,
 } from "~/editor/render/world-geometry";
-import type {
-  ObjectProperty,
-  Polygon,
-} from "~/editor/play-mode/engine/level";
+import type { ObjectProperty, Polygon } from "~/editor/play-mode/engine/level";
 
 export function renderPlayModeScene(
   ctx: CanvasRenderingContext2D,

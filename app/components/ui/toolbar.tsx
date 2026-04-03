@@ -27,7 +27,7 @@ export function Toolbar({
         role="toolbar"
         aria-orientation={orientation}
         className={cn(
-          "inline-flex items-center rounded-xl border border-default bg-screen/80 p-1.5 gap-1 shadow-sm",
+          "inline-flex items-center gap-1 rounded-xl border border-default bg-screen/80 p-1.5 shadow-sm",
           "aria-[orientation=vertical]:flex-col",
           className,
         )}
@@ -63,8 +63,8 @@ export function ToolbarSeparator({
       aria-orientation={orientationProp ?? orientation}
       className={cn(
         "bg-separator",
-        "aria-[orientation=horizontal]:w-px aria-[orientation=horizontal]:h-6 aria-[orientation=horizontal]:mx-1",
-        "aria-[orientation=vertical]:h-px aria-[orientation=vertical]:w-6 aria-[orientation=vertical]:my-1",
+        "aria-[orientation=horizontal]:mx-1 aria-[orientation=horizontal]:h-6 aria-[orientation=horizontal]:w-px",
+        "aria-[orientation=vertical]:my-1 aria-[orientation=vertical]:h-px aria-[orientation=vertical]:w-6",
         className,
       )}
       {...props}

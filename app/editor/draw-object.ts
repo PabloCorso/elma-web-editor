@@ -1,11 +1,6 @@
-import {
-  uiColors,
-} from "./constants";
+import { uiColors } from "./constants";
 import { Gravity, type Position } from "./elma-types";
-import {
-  getObjectBoundsRadius,
-  getObjectFrame,
-} from "./render/object-assets";
+import { getObjectBoundsRadius, getObjectFrame } from "./render/object-assets";
 
 export function drawObject({
   ctx,

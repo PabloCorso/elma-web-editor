@@ -501,10 +501,10 @@ export function PlayModeOverlay() {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 z-20 select-none bg-black/60 backdrop-blur-[1px]"
+      className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[1px] select-none"
     >
-      <div className="pointer-events-none absolute right-4 flex items-center gap-4 top-4 z-10">
-        <div className="text-right text-2xl font-mono font-bold tabular-nums text-primary">
+      <div className="pointer-events-none absolute top-4 right-4 z-10 flex items-center gap-4">
+        <div className="text-right font-mono text-2xl font-bold text-primary tabular-nums">
           {playTime}
         </div>
         <Toolbar className="pointer-events-auto gap-2">
@@ -592,7 +592,7 @@ function PlayModeToolbarButton({
   return (
     <ToolButton
       className={cn(
-        "rounded-none peer peer-[button]:border-l peer-[button]:border-separator/40",
+        "peer rounded-none peer-[button]:border-l peer-[button]:border-separator/40",
         "first-of-type:rounded-l-full last-of-type:rounded-r-full only-of-type:rounded-full",
         "first-of-type:*:translate-x-px last-of-type:*:-translate-x-px only-of-type:*:translate-x-0",
         className,
@@ -606,7 +606,7 @@ function PlayModeToolbarButton({
 
 function PlayModeDoubleTapTip({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="pointer-events-auto flex h-8 items-center gap-1.5 rounded-full border border-default bg-screen/80 pr-1.5 pl-2.5 text-[11px] font-medium text-muted shadow-sm backdrop-blur-[1px] sm:text-xs">
+    <div className="text-muted pointer-events-auto flex h-8 items-center gap-1.5 rounded-full border border-default bg-screen/80 pr-1.5 pl-2.5 text-[11px] font-medium shadow-sm backdrop-blur-[1px] sm:text-xs">
       <span className="text-primary">Tip:</span>
       <span>Double tap to restart</span>
       <Button
@@ -615,7 +615,7 @@ function PlayModeDoubleTapTip({ onDismiss }: { onDismiss: () => void }) {
         iconOnly
         aria-label="Dismiss restart tip"
         title="Dismiss tip"
-        className="h-6 w-6 rounded-full bg-transparent text-muted hover:bg-primary-hover/40 active:bg-primary-active/40"
+        className="text-muted h-6 w-6 rounded-full bg-transparent hover:bg-primary-hover/40 active:bg-primary-active/40"
         onClick={onDismiss}
       >
         <XIcon />
@@ -727,7 +727,7 @@ function MobileDriveButton({
       className={cn(
         "h-16 w-16",
         "touch-none rounded-full bg-screen/80",
-        "select-none [-webkit-touch-callout:none] [-webkit-tap-highlight-color:transparent] [-webkit-user-select:none]",
+        "select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [-webkit-user-select:none]",
         { "bg-primary-active": isActive },
         className,
       )}

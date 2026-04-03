@@ -127,7 +127,9 @@ export function getGrassEdgeIndices(vertices: Array<{ x: number; y: number }>) {
     }
   }
 
-  return [...Array(vertexCount).keys()].filter((index) => index !== longestEdgeIndex);
+  return [...Array(vertexCount).keys()].filter(
+    (index) => index !== longestEdgeIndex,
+  );
 }
 
 export function fillGrassEdges({

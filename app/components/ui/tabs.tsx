@@ -26,9 +26,9 @@ export function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "focus-visible:focus-ring select-none inline-flex min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md px-2 py-1 text-sm font-bold transition-colors sm:px-3 sm:text-lg",
+        "inline-flex min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md px-2 py-1 text-sm font-bold transition-colors select-none focus-visible:focus-ring sm:px-3 sm:text-lg",
         "hover:bg-screen/80",
-        "data-[state=active]:bg-screen data-[state=active]:text-on-color data-[state=active]:shadow-sm",
+        "data-[state=active]:text-on-color data-[state=active]:bg-screen data-[state=active]:shadow-sm",
         "disabled:pointer-events-none disabled:opacity-40",
         className,
       )}

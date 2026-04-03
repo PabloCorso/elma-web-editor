@@ -59,7 +59,7 @@ export function TextureToolControl(props: ToolControlButtonProps) {
                     .map(({ texture, mask: textureMask, ...sprite }) => (
                       <li key={`${textureMask}-${texture.texture}`}>
                         <button
-                          className="inline-flex shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded text-sm font-bold transition-colors h-12 w-12"
+                          className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded text-sm font-bold transition-colors hover:bg-primary-hover/80 active:bg-primary-active/80"
                           onClick={() => {
                             setToolState<TextureToolState>(
                               defaultTools.texture.id,

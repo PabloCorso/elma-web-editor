@@ -202,7 +202,7 @@ function ShortcutIndicator({
   return (
     <span
       className={cn(
-        "absolute bottom-1 max-w-2 max-h-2 select-none right-1 text-[8px] text-white/75 font-medium px-0.5 bg-background/80 rounded-sm leading-none",
+        "bg-background/80 absolute right-1 bottom-1 max-h-2 max-w-2 rounded-sm px-0.5 text-[8px] leading-none font-medium text-white/75 select-none",
         className,
       )}
       {...props}

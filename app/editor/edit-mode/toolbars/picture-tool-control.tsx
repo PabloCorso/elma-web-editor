@@ -43,7 +43,7 @@ export function PictureToolControl(props: ToolControlButtonProps) {
             {pictureSprites.map(({ picture, ...sprite }) => (
               <li key={picture.name}>
                 <button
-                  className="inline-flex shrink-0 cursor-pointer items-center hover:bg-primary-hover/80 active:bg-primary-active/80 justify-center gap-2 rounded text-sm font-bold transition-colors h-12 w-12"
+                  className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded text-sm font-bold transition-colors hover:bg-primary-hover/80 active:bg-primary-active/80"
                   onClick={() => {
                     setToolState<PictureToolState>(
                       defaultTools.picture.id,
@@ -51,7 +51,7 @@ export function PictureToolControl(props: ToolControlButtonProps) {
                     );
                   }}
                 >
-                  <PictureIcon className="w-full h-full" src={sprite.src} />
+                  <PictureIcon className="h-full w-full" src={sprite.src} />
                 </button>
               </li>
             ))}

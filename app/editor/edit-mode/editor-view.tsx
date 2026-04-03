@@ -27,7 +27,7 @@ type EditorViewProps = React.ComponentPropsWithRef<"canvas">;
 export function EditorView({ className, ...props }: EditorViewProps) {
   return (
     <canvas
-      className={cn("w-full h-full select-none touch-none", className)}
+      className={cn("h-full w-full touch-none select-none", className)}
       {...props}
     />
   );

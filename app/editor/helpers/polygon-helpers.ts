@@ -13,7 +13,7 @@ export function isPolygonClockwise(vertices: Position[]): boolean {
 // Helper function to determine if a polygon should be ground based on winding rule
 export function shouldPolygonBeGround(
   polygon: Polygon,
-  allPolygons: Polygon[]
+  allPolygons: Polygon[],
 ): boolean {
   const samplePoints: Position[] = computePolygonSamples(polygon);
 
@@ -46,7 +46,7 @@ export function shouldPolygonBeGround(
 
 export function correctPolygonWinding(
   polygon: Polygon,
-  allPolygons: Polygon[]
+  allPolygons: Polygon[],
 ) {
   // Calculate winding and ground/sky determination
   const isClockwise = isPolygonClockwise(polygon.vertices);
@@ -152,7 +152,7 @@ function isPointInPolygon(point: Position, vertices: Position[]): boolean {
 // Debug function to help identify polygon orientation issues
 export function debugPolygonOrientation(
   polygon: Polygon,
-  allPolygons: Polygon[]
+  allPolygons: Polygon[],
 ): {
   isClockwise: boolean;
   shouldBeGround: boolean;

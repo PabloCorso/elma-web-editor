@@ -553,8 +553,7 @@ export function drawKuski({
   const voltProgress = coords.voltProgress ?? 0;
   const voltDirection = coords.voltDirection;
   if (voltProgress > 0 && voltDirection) {
-    const sameDirection =
-      (voltDirection === "right" ? 1 : 0) === turn;
+    const sameDirection = (voltDirection === "right" ? 1 : 0) === turn;
     const animx = shoulderx;
     const animy = shouldery;
     let dangle: number;

@@ -22,11 +22,7 @@ import {
   checkCollisions,
 } from "../physics/stepper";
 import { EventBuffer, WavEvent } from "./event-buffer";
-import {
-  InputManager,
-  type KeyBindings,
-  DEFAULT_KEYS,
-} from "../input-manager";
+import { InputManager, type KeyBindings, DEFAULT_KEYS } from "../input-manager";
 import { createCamera, updateCamera, type Camera } from "./camera";
 import type { LevelData, ObjectProperty } from "../level";
 import { sortObjects, initializeObjects } from "../level";
@@ -285,11 +281,17 @@ export function gameFrame(state: GameState, timestamp: number): void {
 
   if (input.isDown(keys.zoomIn)) {
     const stepFactor = 1 + CAMERA_ZOOM_STEP / KEYBOARD_ZOOM_STEP_DIVISOR;
-    state.camera.zoom = Math.min(MAX_CAMERA_ZOOM, state.camera.zoom * stepFactor);
+    state.camera.zoom = Math.min(
+      MAX_CAMERA_ZOOM,
+      state.camera.zoom * stepFactor,
+    );
   }
   if (input.isDown(keys.zoomOut)) {
     const stepFactor = 1 + CAMERA_ZOOM_STEP / KEYBOARD_ZOOM_STEP_DIVISOR;
-    state.camera.zoom = Math.max(MIN_CAMERA_ZOOM, state.camera.zoom / stepFactor);
+    state.camera.zoom = Math.max(
+      MIN_CAMERA_ZOOM,
+      state.camera.zoom / stepFactor,
+    );
   }
 
   // Cap max delta to prevent spiral of death (100ms max)

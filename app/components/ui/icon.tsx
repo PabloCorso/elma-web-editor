@@ -44,7 +44,7 @@ export function Icon({ size: sizeProp = "md", children, ...props }: IconProps) {
   const className = cn(
     iconVariants({ size }),
     props.className,
-    children.props.className
+    children.props.className,
   );
   return cloneElement(children, { ...props, ...children.props, className });
 }

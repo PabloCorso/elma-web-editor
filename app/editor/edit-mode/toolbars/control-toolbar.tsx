@@ -34,7 +34,7 @@ export function ControlToolbar({
     >
       <Toolbar
         orientation="vertical"
-        className="row-start-2 flex flex-col h-fit max-h-full self-center gap-2 overflow-auto"
+        className="row-start-2 flex h-fit max-h-full flex-col gap-2 self-center overflow-auto"
         {...props}
       >
         <SelectToolControl tooltipSide="right" />

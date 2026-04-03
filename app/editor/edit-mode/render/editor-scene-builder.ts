@@ -165,8 +165,7 @@ function getDrawItemQueue(state: EditorState): EditorWorldDrawItem[] {
 function getScenePolygons(state: EditorState) {
   const activeTool = state.actions.getActiveTool();
   const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
-  const vertexToolState =
-    state.actions.getToolState<VertexToolState>("vertex");
+  const vertexToolState = state.actions.getToolState<VertexToolState>("vertex");
   const scenePolygons = vertexToolState?.editingPolygon
     ? state.polygons.filter(
         (polygon) => polygon !== vertexToolState.editingPolygon,

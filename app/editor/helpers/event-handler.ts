@@ -9,7 +9,7 @@ export type EventContext = {
 
 export function getCanvasCoordinates(
   event: MouseEvent,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
 ): { x: number; y: number } {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -22,7 +22,7 @@ export function getEventContext(
   event: MouseEvent,
   canvas: HTMLCanvasElement,
   viewPortOffset: Position,
-  zoom: number
+  zoom: number,
 ): EventContext {
   const coords = getCanvasCoordinates(event, canvas);
   const worldPos = screenToWorld(coords, viewPortOffset, zoom);

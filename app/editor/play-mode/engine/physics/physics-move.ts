@@ -2,7 +2,7 @@
  * Physics movement / collision response - ported from physics_move.cpp
  * Euler integration with 3 collision response modes.
  */
-import { Vec2, rotate90deg } from '../core/vec2';
+import { Vec2, rotate90deg } from "../core/vec2";
 import {
   GROUND_ESCAPE_VELOCITY,
   WHEEL_DEFORMATION_LENGTH,
@@ -10,12 +10,12 @@ import {
   SPRING_TENSION_COEFFICIENT,
   SPRING_RESISTANCE_COEFFICIENT,
   BODY_DY,
-} from '../core/constants';
-import type { Rigidbody } from './rigidbody';
-import type { MotorState } from './motor-state';
-import { getTwoAnchorPoints } from './physics-collision';
-import type { Segments } from './segments';
-import { WavEvent, type EventBuffer } from '../game/event-buffer';
+} from "../core/constants";
+import type { Rigidbody } from "./rigidbody";
+import type { MotorState } from "./motor-state";
+import { getTwoAnchorPoints } from "./physics-collision";
+import type { Segments } from "./segments";
+import { WavEvent, type EventBuffer } from "../game/event-buffer";
 
 /** Push wheel out of ground so it stands on the anchor point */
 function moveWheelOutOfGround(rb: Rigidbody, point: Vec2): void {
@@ -32,7 +32,7 @@ function simulateAnchorPointCollision(
   rb: Rigidbody,
   point: Vec2,
   force: Vec2,
-  eventBuffer: EventBuffer
+  eventBuffer: EventBuffer,
 ): boolean {
   const diff = rb.r.sub(point);
   const len = diff.length();
@@ -49,7 +49,7 @@ function simulateAnchorPointCollision(
   // Bump sound
   let bumpMagnitude = deletedVelocity.length();
   if (bumpMagnitude > BUMP_THRESHOLD) {
-    bumpMagnitude = bumpMagnitude / 0.8 * 0.1;
+    bumpMagnitude = (bumpMagnitude / 0.8) * 0.1;
     if (bumpMagnitude >= 0.99) bumpMagnitude = 0.99;
     eventBuffer.add(WavEvent.Bump, bumpMagnitude, -1);
   }
@@ -63,28 +63,28 @@ function validAnchorPointsOld(
   point2: Vec2,
   rb: Rigidbody,
   force: Vec2,
-  torque: number
+  torque: number,
 ): boolean {
   const len = rb.r.sub(point2).length();
   const n = rb.r.sub(point2).scale(1.0 / len);
   const n90 = rotate90deg(n);
 
   const totalTorque = torque + len * n90.dot(force);
-  return !((point1.sub(point2)).dot(n90) * totalTorque < 0);
+  return !(point1.sub(point2).dot(n90) * totalTorque < 0);
 }
 
 /** Check stuck condition: velocity-based (Elma method, for high speed) */
 function validAnchorPointsNew(
   point1: Vec2,
   point2: Vec2,
-  rb: Rigidbody
+  rb: Rigidbody,
 ): boolean {
   const len = rb.r.sub(point2).length();
   const n = rb.r.sub(point2).scale(1.0 / len);
   const n90 = rotate90deg(n);
 
   const speedDirection = rb.angularVelocity + len * n90.dot(rb.v);
-  return !((point1.sub(point2)).dot(n90) * speedDirection < 0);
+  return !(point1.sub(point2).dot(n90) * speedDirection < 0);
 }
 
 /**
@@ -98,7 +98,7 @@ export function rigidbodyMovement(
   dt: number,
   doCollision: boolean,
   segments: Segments,
-  eventBuffer: EventBuffer
+  eventBuffer: EventBuffer,
 ): void {
   let anchorPointCount = 0;
   let point1 = new Vec2();
@@ -203,7 +203,7 @@ function bodyBoundaries(mot: MotorState, i: Vec2, j: Vec2): void {
 
   // Restrict bottom with a diagonal line
   const linePoint = new Vec2(-0.35, 0.13);
-  const lineSlope = new Vec2(0.14 - (-0.35), 0.36 - 0.13);
+  const lineSlope = new Vec2(0.14 - -0.35, 0.36 - 0.13);
   const lineSlopeOrtho = new Vec2(-lineSlope.y, lineSlope.x);
   const lineSlopeOrthoLen = lineSlopeOrtho.length();
   const lineSlopeOrthoUnit = lineSlopeOrtho.scale(1.0 / lineSlopeOrthoLen);
@@ -230,7 +230,8 @@ function bodyBoundaries(mot: MotorState, i: Vec2, j: Vec2): void {
   const ELLIPSE_R2 = ELLIPSE_HEIGHT * ELLIPSE_HEIGHT;
   const ELLIPSE_R = Math.sqrt(ELLIPSE_R2);
   if (bodyX > 0 && bodyY > 0) {
-    const ELLIPSE_A2 = (ELLIPSE_HEIGHT / ELLIPSE_WIDTH) * (ELLIPSE_HEIGHT / ELLIPSE_WIDTH);
+    const ELLIPSE_A2 =
+      (ELLIPSE_HEIGHT / ELLIPSE_WIDTH) * (ELLIPSE_HEIGHT / ELLIPSE_WIDTH);
     const distance2 = bodyX * bodyX * ELLIPSE_A2 + bodyY * bodyY;
     if (distance2 > ELLIPSE_R2) {
       const distance = Math.sqrt(distance2);
@@ -254,7 +255,7 @@ export function bodyMovement(
   gravity: Vec2,
   i: Vec2,
   j: Vec2,
-  dt: number
+  dt: number,
 ): void {
   bodyBoundaries(mot, i, j);
 
@@ -270,13 +271,15 @@ export function bodyMovement(
 
   // Damping force
   const bodyLengthOrtho = rotate90deg(mot.bodyR.sub(mot.bike.r));
-  const neutralV = bodyLengthOrtho.scale(mot.bike.angularVelocity).add(mot.bike.v);
+  const neutralV = bodyLengthOrtho
+    .scale(mot.bike.angularVelocity)
+    .add(mot.bike.v);
   const relativeV = mot.bodyV.sub(neutralV);
   const forceDamping = relativeV.scale(SPRING_RESISTANCE_COEFFICIENT * 3.0);
 
   // Total force including gravity
   const forceTotal = forceSpring.sub(forceDamping).add(
-    gravity.scale(mot.bike.mass * 10.0) // Gravity = 10.0
+    gravity.scale(mot.bike.mass * 10.0), // Gravity = 10.0
   );
 
   const a = forceTotal.scale(1.0 / mot.bike.mass);

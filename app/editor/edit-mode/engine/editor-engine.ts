@@ -20,20 +20,14 @@ import type { Tool } from "~/editor/edit-mode/tools/tool-interface";
 import type { Widget } from "~/editor/edit-mode/widgets/widget-interface";
 import { createEditorStore, type EditorStore } from "~/editor/editor-store";
 import type { DefaultLevelPreset } from "~/editor/helpers/level-parser";
-import {
-  isPointInKuskiSelectionBounds,
-} from "~/editor/draw-kuski";
+import { isPointInKuskiSelectionBounds } from "~/editor/draw-kuski";
 import { LgrAssets } from "~/components/lgr-assets";
 import { drawPictureBounds } from "~/editor/draw-picture";
 import {
   screenToWorld,
   worldToScreen,
 } from "~/editor/helpers/coordinate-helpers";
-import {
-  Clip,
-  type Picture,
-  type Position,
-} from "~/editor/elma-types";
+import { Clip, type Picture, type Position } from "~/editor/elma-types";
 import { getDefaultLevel } from "~/editor/helpers/level-parser";
 import { checkModifierKey } from "~/utils/misc";
 import {
@@ -1058,7 +1052,6 @@ export class EditorEngine {
     this.ctx.translate(state.viewPortOffset.x, state.viewPortOffset.y);
     this.ctx.scale(state.zoom, state.zoom);
   }
-
 
   private drawPictureBoundsOverlay(state: EditorState) {
     const selectState = state.actions.getToolState<SelectToolState>("select");

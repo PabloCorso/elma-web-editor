@@ -33,7 +33,7 @@ export async function readFile(file: File): Promise<ArrayBuffer> {
 
 export async function writeFile(
   fileHandle: FileSystemFileHandle,
-  contents: BlobPart
+  contents: BlobPart,
 ) {
   const writable = await fileHandle.createWritable();
   await writable.write(contents);
@@ -46,7 +46,7 @@ export async function writeFile(
  */
 export async function verifyPermission(
   fileHandle: FileSystemFileHandle,
-  { withWrite }: { withWrite: boolean } = { withWrite: false }
+  { withWrite }: { withWrite: boolean } = { withWrite: false },
 ) {
   const opts: any = {};
   if (withWrite) {

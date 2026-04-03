@@ -78,10 +78,10 @@ navigation):
 
 ```tsx
 const fetcher = useFetcher();
-const optimistic = fetcher.formData?.get('favorite') === 'true' ?? isFavorite;
+const optimistic = fetcher.formData?.get("favorite") === "true" ?? isFavorite;
 
 <fetcher.Form method="post" action={`/favorites/${id}`}>
-	<button>{optimistic ? '★' : '☆'}</button>
+  <button>{optimistic ? "★" : "☆"}</button>
 </fetcher.Form>;
 ```
 
@@ -95,13 +95,13 @@ nav/footer:
 ```tsx
 // app/root.tsx - add navigation, footer, providers here
 export default function App() {
-	return (
-		<div>
-			<nav>...</nav>
-			<Outlet />
-			<footer>...</footer>
-		</div>
-	);
+  return (
+    <div>
+      <nav>...</nav>
+      <Outlet />
+      <footer>...</footer>
+    </div>
+  );
 }
 ```
 

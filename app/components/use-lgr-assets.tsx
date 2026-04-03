@@ -24,11 +24,7 @@ export function LgrAssetsProvider({ children }: { children: React.ReactNode }) {
     [lgrLoader, isLoaded],
   );
 
-  return (
-    <LgrContext.Provider value={value}>
-      {children}
-    </LgrContext.Provider>
-  );
+  return <LgrContext.Provider value={value}>{children}</LgrContext.Provider>;
 }
 
 export function useLgrAssets() {
@@ -50,7 +46,7 @@ export function useLgrSprite(name: string) {
       height: sprite?.height,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sprite, lgrAssets.isLoaded]
+    [sprite, lgrAssets.isLoaded],
   );
 }
 
@@ -66,7 +62,7 @@ export function usePictureSprites() {
         height: sprite?.height,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lgrAssets.isLoaded]
+    [lgrAssets.isLoaded],
   );
 }
 
@@ -86,7 +82,7 @@ export function useTextureSprites() {
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lgrAssets.isLoaded]
+    [lgrAssets.isLoaded],
   );
 }
 
@@ -109,7 +105,7 @@ export function useTextureMaskSprites() {
         }),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lgrAssets.isLoaded]
+    [lgrAssets.isLoaded],
   );
 }
 
@@ -126,9 +122,10 @@ export function bitmapToDataUrl(bmp: ImageBitmap | null) {
 
 export function bitmapMaskToDataUrl(
   textureBmp: ImageBitmap | null,
-  maskBmp: ImageBitmap | null
+  maskBmp: ImageBitmap | null,
 ) {
-  if (typeof document === "undefined" || !textureBmp || !maskBmp) return undefined;
+  if (typeof document === "undefined" || !textureBmp || !maskBmp)
+    return undefined;
   const canvas = document.createElement("canvas");
   canvas.width = maskBmp.width;
   canvas.height = maskBmp.height;

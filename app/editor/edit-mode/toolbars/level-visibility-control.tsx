@@ -43,12 +43,12 @@ export function LevelVisibilityControl() {
         <Tooltip>
           <TooltipTrigger>
             <FloatingToolbarTrigger>
-            <ToolbarButton
-              aria-label="Visibility options"
-              aria-expanded={open}
-            >
-              <LayoutIcon />
-            </ToolbarButton>
+              <ToolbarButton
+                aria-label="Visibility options"
+                aria-expanded={open}
+              >
+                <LayoutIcon />
+              </ToolbarButton>
             </FloatingToolbarTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs">
@@ -59,7 +59,7 @@ export function LevelVisibilityControl() {
       <FloatingToolbarContent side="bottom" align="center">
         <FloatingToolbarPanel
           orientation="horizontal"
-          className="min-w-max p-2 gap-1"
+          className="min-w-max gap-1 p-2"
         >
           <LevelVisibilityControls
             levelVisibility={levelVisibility}
@@ -264,7 +264,7 @@ function ObjectsIcon({
     <span className={cn("relative", className)} {...props}>
       <SpriteIcon
         src={apple.src}
-        className="absolute left-1/2 top-0 h-1/2 w-1/2 -translate-x-1/2"
+        className="absolute top-0 left-1/2 h-1/2 w-1/2 -translate-x-1/2"
       />
       <SpriteIcon
         src={killer.src}
@@ -272,7 +272,7 @@ function ObjectsIcon({
       />
       <SpriteIcon
         src={flower.src}
-        className="absolute bottom-0 right-0 h-1/2 w-1/2"
+        className="absolute right-0 bottom-0 h-1/2 w-1/2"
       />
     </span>
   );
@@ -296,7 +296,7 @@ function PicturesIcon({
     >
       <SpriteIcon
         src={src}
-        className="block h-full w-full bg-contain bg-no-repeat bg-center"
+        className="block h-full w-full bg-contain bg-center bg-no-repeat"
       />
     </span>
   );
@@ -321,7 +321,7 @@ function BrickTextureIcon({
     >
       <SpriteIcon
         src={src}
-        className="block h-full w-full bg-contain bg-no-repeat bg-center"
+        className="block h-full w-full bg-contain bg-center bg-no-repeat"
       />
     </span>
   );

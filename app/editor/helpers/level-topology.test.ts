@@ -202,10 +202,7 @@ describe("level topology validation", () => {
       polygons: [polygonA, polygonB],
       flowers: defaultFlowers,
     });
-    const selection = getTopologySelection(
-      [polygonA, polygonB],
-      result.issues,
-    );
+    const selection = getTopologySelection([polygonA, polygonB], result.issues);
 
     expect(selection).toHaveLength(2);
     expect(selection[0]?.vertex).toBe(polygonA.vertices[0]);

@@ -25,7 +25,7 @@ export function SpriteIcon({
 export function PictureIcon({ className, ...props }: SpriteIconProps) {
   return (
     <SpriteIcon
-      className={cn("bg-contain bg-no-repeat bg-center", className)}
+      className={cn("bg-contain bg-center bg-no-repeat", className)}
       {...props}
     />
   );

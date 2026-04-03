@@ -26,7 +26,11 @@ export function getMaskedTextureCanvas({
     if (cached) return cached;
   }
 
-  const scratch = getScratchCanvas(maskSprite.width, maskSprite.height, !cacheKey);
+  const scratch = getScratchCanvas(
+    maskSprite.width,
+    maskSprite.height,
+    !cacheKey,
+  );
   if (!scratch) return null;
   const { canvas, ctx } = scratch;
 
@@ -45,7 +49,13 @@ export function getMaskedTextureCanvas({
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.globalCompositeOperation = "destination-in";
-  ctx.drawImage(getBinaryMaskCanvas(maskSprite), 0, 0, maskSprite.width, maskSprite.height);
+  ctx.drawImage(
+    getBinaryMaskCanvas(maskSprite),
+    0,
+    0,
+    maskSprite.width,
+    maskSprite.height,
+  );
   ctx.globalCompositeOperation = "source-over";
 
   if (cacheKey) {
@@ -83,11 +93,7 @@ function getBinaryMaskCanvas(maskSprite: ImageBitmap) {
   return maskCanvas;
 }
 
-function getScratchCanvas(
-  width: number,
-  height: number,
-  fresh: boolean,
-) {
+function getScratchCanvas(width: number, height: number, fresh: boolean) {
   if (fresh) {
     const canvas = document.createElement("canvas");
     canvas.width = width;

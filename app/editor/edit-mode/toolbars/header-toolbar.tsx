@@ -121,7 +121,7 @@ export function HeaderToolbar({
         )}
         {...props}
       >
-        <Toolbar className="pointer-events-auto gap-2 max-w-full overflow-auto sm:hidden relative">
+        <Toolbar className="pointer-events-auto relative max-w-full gap-2 overflow-auto sm:hidden">
           <MainDropdownMenu onOpenSettings={() => setSettingsOpen(true)} />
           <LevelVisibilityControl />
           <LevelPropertiesControl />
@@ -136,12 +136,12 @@ export function HeaderToolbar({
         </Toolbar>
 
         <div className="hidden grid-cols-[120px_minmax(0,1fr)_120px] gap-4 sm:grid">
-          <Toolbar className="pointer-events-auto gap-2 w-fit">
+          <Toolbar className="pointer-events-auto w-fit gap-2">
             <MainDropdownMenu onOpenSettings={() => setSettingsOpen(true)} />
             <LevelVisibilityControl />
           </Toolbar>
 
-          <Toolbar className="pointer-events-auto gap-2 w-fit justify-self-center relative">
+          <Toolbar className="pointer-events-auto relative w-fit gap-2 justify-self-center">
             <LevelPropertiesControl />
             <LevelTitleInput isLoading={isLoading} />
             <LevelSaveStateIndicator />
@@ -152,7 +152,7 @@ export function HeaderToolbar({
             />
           </Toolbar>
 
-          <Toolbar className="pointer-events-auto gap-2 w-fit justify-self-end">
+          <Toolbar className="pointer-events-auto w-fit gap-2 justify-self-end">
             <PlayModeControl />
           </Toolbar>
         </div>
@@ -382,13 +382,13 @@ function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
       <DropdownMenu>
         <DropdownMenuTrigger>
           <ToolbarButton
-            className="w-14 relative gap-0"
+            className="relative w-14 gap-0"
             aria-label="Bear Level Editor"
           >
-            <span className="absolute -top-0 right-0.5 px-1 text-[8px] font-semibold bg-blue-500 rounded-full">
+            <span className="absolute -top-0 right-0.5 rounded-full bg-blue-500 px-1 text-[8px] font-semibold">
               BETA
             </span>
-            <Logo className="w-8 h-8 isolate" />
+            <Logo className="isolate h-8 w-8" />
             <Icon size="xs">
               <CaretDownIcon />
             </Icon>
@@ -551,7 +551,7 @@ function TopologyResultPanel({
   return (
     <section
       className={cn(
-        "pointer-events-auto max-w-2xl rounded-xl p-2 bg-screen shadow-sm",
+        "pointer-events-auto max-w-2xl rounded-xl bg-screen p-2 shadow-sm",
         className,
       )}
       aria-live="polite"
@@ -651,7 +651,7 @@ function LevelTitleInput({
       value={isLoading ? "" : levelName}
       onChange={(e) => setLevelName(e.target.value)}
       className={cn(
-        "focus-visible:focus-ring min-w-[12rem] flex-1 px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 text-sm",
+        "min-w-[12rem] flex-1 rounded border border-gray-600 bg-gray-700 px-3 py-1 text-sm text-white focus-visible:focus-ring",
         { "animate-pulse": isLoading },
         className,
       )}
@@ -708,7 +708,7 @@ function LevelSaveStateIndicator({
       title={saveStateLabel}
       aria-label={saveStateLabel}
       className={cn(
-        "bg-white shrink-0 size-2 absolute -top-0.5 -right-0.5 rounded-full",
+        "absolute -top-0.5 -right-0.5 size-2 shrink-0 rounded-full bg-white",
         {
           "bg-red-400": documentSession.saveState === "error",
           "animate-pulse": documentSession.saveState === "saving",
