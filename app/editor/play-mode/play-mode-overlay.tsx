@@ -48,7 +48,7 @@ import {
   DEFAULT_KEYS,
   InputManager,
 } from "~/editor/play-mode/engine/input-manager";
-import { createPlayModeRenderer } from "~/editor/play-mode/render/renderer";
+import { createPlayModeRenderer } from "~/editor/play-mode/scene/renderer";
 import { ToolButton } from "~/components/tool-button";
 
 const PLAY_MODE_WHEEL_ZOOM_STEP = 420;

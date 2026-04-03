@@ -39,9 +39,9 @@ import type { EditorDocumentInput } from "~/editor/editor-state";
 import {
   buildEditorWorldScene,
   getEditorHoverableItems,
-} from "~/editor/edit-mode/render/editor-scene-builder";
-import { renderEditorWorldScene } from "~/editor/edit-mode/render/editor-world-renderer";
-import type { EditorWorldDrawItem } from "~/editor/edit-mode/render/editor-scene";
+} from "~/editor/edit-mode/scene/editor-scene-builder";
+import { renderEditorWorldScene } from "~/editor/edit-mode/scene/editor-world-renderer";
+import type { EditorWorldDrawItem } from "~/editor/edit-mode/scene/editor-scene";
 import {
   getPictureWorldDimensions,
   PICTURE_SCALE,

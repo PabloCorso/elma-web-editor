@@ -1,7 +1,7 @@
 import { LgrAssets } from "~/components/lgr-assets";
-import { buildPlayModeScene } from "~/editor/play-mode/render/play-mode-scene-builder";
-import type { PlayModeRenderVisibility } from "~/editor/play-mode/render/play-mode-scene";
-import { renderPlayModeScene } from "~/editor/play-mode/render/play-mode-world-renderer";
+import { buildPlayModeScene } from "~/editor/play-mode/scene/play-mode-scene-builder";
+import type { PlayModeRenderVisibility } from "~/editor/play-mode/scene/play-mode-scene";
+import { renderPlayModeScene } from "~/editor/play-mode/scene/play-mode-world-renderer";
 import { getPictureWorldDimensions } from "~/editor/render/picture-metrics";
 import type { GameState } from "~/editor/play-mode/engine/game/game-loop";
 

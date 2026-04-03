@@ -13,7 +13,7 @@ import type {
   PlayModeRenderVisibility,
   PlayModeScene,
   PlayModeSceneDrawItem,
-} from "~/editor/play-mode/render/play-mode-scene";
+} from "~/editor/play-mode/scene/play-mode-scene";
 import {
   buildGroundPath,
   buildPolygonPath,
