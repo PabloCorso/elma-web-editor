@@ -10,7 +10,7 @@ import type { Widget } from "./edit-mode/widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 import type { LevelVisibilitySettings } from "./level-visibility";
-import type { PlayKeyBindings, PlaySettings } from "./play-settings";
+import type { PlayKeyBindings, PlaySettings } from "./play-mode/play-settings";
 import type { VertexEdgeClickBehavior } from "./edit-mode/default-level-preset";
 
 type EditorDocumentSnapshot = Pick<

@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useEditorDocumentSession } from "./use-editor-store";
+import { useEditorDocumentSession } from "~/editor/use-editor-store";
 import {
   Dialog,
   DialogBody,

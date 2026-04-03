@@ -14,7 +14,10 @@ import type { DefaultToolId } from "./edit-mode/tools/default-tools";
 import fastDeepEqual from "fast-deep-equal";
 import throttle from "just-throttle";
 import { defaultLevelVisibility } from "./level-visibility";
-import { defaultPlaySettings, DEFAULT_PLAY_MODE_ZOOM } from "./play-settings";
+import {
+  defaultPlaySettings,
+  DEFAULT_PLAY_MODE_ZOOM,
+} from "./play-mode/play-settings";
 import type { Position } from "./elma-types";
 import type { SelectToolState } from "./edit-mode/tools/select-tool";
 import type { VertexEdgeClickBehavior } from "./edit-mode/default-level-preset";

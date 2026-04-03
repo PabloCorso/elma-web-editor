@@ -25,15 +25,20 @@ import {
   DialogHeader,
   DialogTitle,
   type DialogProps,
-} from "./ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+} from "../../components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
 import { cn, useModifier } from "~/utils/misc";
 import { useForceUpdate } from "@mantine/hooks";
 import {
   defaultPlaySettings,
   type PlayKeyBindings,
-} from "~/editor/play-settings";
-import { IconButton } from "./ui/button";
+} from "~/editor/play-mode/play-settings";
+import { IconButton } from "../../components/ui/button";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
 import datGif from "~/assets/dat.gif";
 

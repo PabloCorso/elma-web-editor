@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import type { EditorState } from "./editor-state";
-import { defaultPlaySettings } from "./play-settings";
-import { useEditorStore } from "./use-editor-store";
+import type { EditorState } from "~/editor/editor-state";
+import { defaultPlaySettings } from "~/editor/play-mode/play-settings";
+import { useEditorStore } from "~/editor/use-editor-store";
 
 type LocalStorageLevel = Pick<
   EditorState,

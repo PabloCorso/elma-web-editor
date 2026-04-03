@@ -6,7 +6,7 @@ import {
   useEditorStore,
   useLevelName,
 } from "~/editor/use-editor-store";
-import { useEditorDocumentGuard } from "~/editor/document-guard";
+import { useEditorDocumentGuard } from "~/editor/session/document-guard";
 import { getLevelSnapshot } from "~/editor/editor-store";
 import {
   Toolbar,
@@ -42,7 +42,7 @@ import {
 import { useDefaultLevelPreset } from "~/editor/edit-mode/default-level-preset";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
-import { SettingsDialog } from "~/components/settings";
+import { SettingsDialog } from "~/editor/edit-mode/edit-settings";
 import { IconButton } from "~/components/ui/button";
 import { Icon } from "~/components/ui/icon";
 import { checkModifierKey, cn, useModifier } from "~/utils/misc";

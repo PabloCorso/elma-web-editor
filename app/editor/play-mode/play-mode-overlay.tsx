@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/toolbar";
 import { useLgrAssets } from "~/components/use-lgr-assets";
 import { checkModifierKey, cn } from "~/utils/misc";
-import { PlaySettingsDialog } from "~/components/settings";
+import { PlaySettingsDialog } from "~/editor/edit-mode/edit-settings";
 import { Button } from "~/components/ui/button";
 import {
   useEditorActions,
@@ -33,7 +33,7 @@ import {
   DEFAULT_PLAY_MODE_ZOOM,
   PLAY_MODE_MAX_ZOOM,
   PLAY_MODE_MIN_ZOOM,
-} from "~/editor/play-settings";
+} from "~/editor/play-mode/play-settings";
 import { elmaLevelFromEditorState } from "~/editor/helpers/level-parser";
 import { convertLevelToGameData } from "~/editor/play-mode/level-converter";
 import {
