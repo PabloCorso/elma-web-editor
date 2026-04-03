@@ -1,60 +1,24 @@
 [You Might Not Need `useEffect`](mdc:https:/react.dev/learn/you-might-not-need-an-effect)
 
-Instead of using `useEffect`, use ref callbacks, event handlers with
-`flushSync`, css, `useSyncExternalStore`, etc.
+Prefer alternatives to `useEffect` when possible:
+
+- ref callbacks
+- event handlers, including `flushSync` when needed
+- CSS
+- `useSyncExternalStore`
+- derived state during render
+
+`useEffect` is not banned, but it should usually be the last option, not the
+first. Use it when you are synchronizing with something outside React, such as
+browser APIs, subscriptions, timers, or imperative event listeners.
+
+Avoid using `useEffect` for logic that should happen directly in response to a
+user action. Put that logic in the event handler instead.
+
+When `useEffect` is appropriate, always use a named function:
 
 ```tsx
-// This example was ripped from the docs:
-// ✅ Good
-function ProductPage({ product, addToCart }) {
-  function buyProduct() {
-    addToCart(product);
-    showNotification(`Added ${product.name} to the shopping cart!`);
-  }
-
-  function handleBuyClick() {
-    buyProduct();
-  }
-
-  function handleCheckoutClick() {
-    buyProduct();
-    navigateTo("/checkout");
-  }
-  // ...
-}
-
-useEffect(() => {
-  setCount(count + 1);
-}, [count]);
-
-// ❌ Avoid
-function ProductPage({ product, addToCart }) {
-  useEffect(() => {
-    if (product.isInCart) {
-      showNotification(`Added ${product.name} to the shopping cart!`);
-    }
-  }, [product]);
-
-  function handleBuyClick() {
-    addToCart(product);
-  }
-
-  function handleCheckoutClick() {
-    addToCart(product);
-    navigateTo("/checkout");
-  }
-  // ...
-}
-```
-
-There are a lot more examples in the docs. `useEffect` is not banned or
-anything. There are just better ways to handle most cases.
-
-Here's an example of a situation where `useEffect` is appropriate:
-
-```tsx
-// ✅ Good
-useEffect(() => {
+useEffect(function handleEscapeKeyListener() {
   const controller = new AbortController();
 
   window.addEventListener(
@@ -62,19 +26,13 @@ useEffect(() => {
     (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
 
-      // do something based on escape key being pressed
+      // handle escape
     },
     { signal: controller.signal },
   );
 
-  return () => {
+  return function cleanupEscapeKeyListener() {
     controller.abort();
   };
 }, []);
-```
-
-Always name the function passed to `useEffect` for better maintainability and readability.
-
-```
-
 ```
