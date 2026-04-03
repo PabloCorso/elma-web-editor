@@ -1,7 +1,7 @@
 import { createContext, useContext, useRef } from "react";
 import { useStore as useZustand } from "zustand";
 import { createEditorStore, type EditorStore } from "./editor-store";
-import type { Tool, ToolState } from "./tools/tool-interface";
+import type { Tool, ToolState } from "./edit-mode/tools/tool-interface";
 import type { EditorDocumentSession, EditorState } from "./editor-state";
 
 const EditorContext = createContext<EditorStore | null>(null);

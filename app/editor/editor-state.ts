@@ -1,4 +1,4 @@
-import type { Tool, ToolState } from "./tools/tool-interface";
+import type { Tool, ToolState } from "./edit-mode/tools/tool-interface";
 import type {
   Apple,
   EditorLevel,
@@ -6,12 +6,12 @@ import type {
   Polygon,
   Position,
 } from "./elma-types";
-import type { Widget } from "./widgets/widget-interface";
+import type { Widget } from "./edit-mode/widgets/widget-interface";
 import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 import type { LevelVisibilitySettings } from "./level-visibility";
 import type { PlayKeyBindings, PlaySettings } from "./play-settings";
-import type { VertexEdgeClickBehavior } from "./default-level-preset";
+import type { VertexEdgeClickBehavior } from "./edit-mode/default-level-preset";
 
 type EditorDocumentSnapshot = Pick<
   EditorLevel,

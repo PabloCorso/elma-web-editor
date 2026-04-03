@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { EditorEngine } from "~/editor/editor-engine";
+import { EditorEngine } from "~/editor/edit-mode/engine/editor-engine";
 import {
   useEditorLevelFolderName,
   usePlaySettings,
@@ -11,7 +11,7 @@ import {
   useSetVertexEdgeClickBehavior,
   useVertexEdgeClickBehavior,
   type VertexEdgeClickBehavior,
-} from "~/editor/default-level-preset";
+} from "~/editor/edit-mode/default-level-preset";
 import {
   getDefaultLevel,
   type DefaultLevelPreset,

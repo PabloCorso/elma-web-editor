@@ -27,7 +27,7 @@ import { rigidbodyMovement, bodyMovement } from "./physics-move";
 import { getTwoAnchorPoints, getTouchingObject } from "./physics-collision";
 import type { Segments } from "./segments";
 import { WavEvent, type EventBuffer } from "../game/event-buffer";
-import type { GameObject } from "../level/level";
+import type { GameObject } from "../level";
 
 let maxFriction = 0;
 

@@ -3,7 +3,7 @@
  */
 import { Vec2, unitVector } from "../core/vec2";
 import { SEGMENTS_BORDER, LEVEL_MAX_SIZE } from "../core/constants";
-import type { LevelData } from "../level/level";
+import type { LevelData } from "../level";
 
 export interface Segment {
   r: Vec2;

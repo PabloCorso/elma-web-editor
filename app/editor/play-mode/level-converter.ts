@@ -4,7 +4,11 @@
 import type { Level } from 'elmajs';
 import { ObjectType, Gravity } from 'elmajs';
 import { Vec2 } from './engine/core/vec2';
-import type { LevelData, ObjectType as GameObjectType, ObjectProperty } from './engine/level/level';
+import type {
+  LevelData,
+  ObjectType as GameObjectType,
+  ObjectProperty,
+} from "./engine/level";
 
 function convertObjectType(type: ObjectType): GameObjectType {
   switch (type) {

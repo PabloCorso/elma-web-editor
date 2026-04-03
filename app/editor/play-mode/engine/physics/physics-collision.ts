@@ -4,7 +4,7 @@
 import { Vec2, rotate90deg } from '../core/vec2';
 import { TWO_POINT_DISCRIMINATION_DISTANCE, OBJECT_RADIUS } from '../core/constants';
 import type { Segment, Segments } from './segments';
-import type { GameObject } from '../level/level';
+import type { GameObject } from "../level";
 
 /**
  * Check for collision between a circle (wheel/head) and a segment.

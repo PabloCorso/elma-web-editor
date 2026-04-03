@@ -26,10 +26,10 @@ import {
   InputManager,
   type KeyBindings,
   DEFAULT_KEYS,
-} from "../input/input-manager";
+} from "../input-manager";
 import { createCamera, updateCamera, type Camera } from "./camera";
-import type { LevelData, ObjectProperty } from "../level/level";
-import { sortObjects, initializeObjects } from "../level/level";
+import type { LevelData, ObjectProperty } from "../level";
+import { sortObjects, initializeObjects } from "../level";
 
 type GameResult = "playing" | "dead" | "won" | "escaped";
 const MIN_CAMERA_ZOOM = 0.2;
