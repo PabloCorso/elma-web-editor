@@ -206,13 +206,21 @@ export async function decodeLgrSpriteWithDeclaration(
   picture: PictureData,
   declaration?: PictureDeclarationLike,
 ) {
+  const normalizedName = picture.name.trim().toLowerCase();
   const bytes = new Uint8Array(
     picture.data.buffer,
     picture.data.byteOffset,
     picture.data.byteLength,
   );
-  const isTexture = declaration?.pictureType === 101;
-  const transparencyMode = isTexture ? undefined : (12 as TransparencyMode);
+  const isGrassTexture = normalizedName === "qgrass";
+  const isGrassSprite =
+    normalizedName.startsWith("qup_") || normalizedName.startsWith("qdown_");
+  const isTexture = isGrassTexture || declaration?.pictureType === 101;
+  const transparencyMode = isTexture
+    ? undefined
+    : ((isGrassSprite
+        ? 12
+        : (declaration?.transparency ?? 12)) as TransparencyMode);
   const decodedPcx = decodePcxWithOptions(bytes, {
     forceOpaque: isTexture,
     transparencyMode,

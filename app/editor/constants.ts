@@ -3,6 +3,8 @@ export const ELMA_PIXEL_SCALE = 1 / ELMA_PIXELS_PER_WORLD_UNIT;
 export const OBJECT_FRAME_PX = 40; // width of a single frame in object sprite sheet
 export const OBJECT_FPS = 30; // animation speed for object sprites
 export const OBJECT_DIAMETER = 0.8;
+export const GRASS_BASELINE_PX = 41;
+export const QGRASS_TOP_EXTRA_PX = 18;
 export const GRASS_FILL_DEPTH = 20 * ELMA_PIXEL_SCALE;
 export const DRAFT_PREVIEW_OPACITY = 0.5;
 

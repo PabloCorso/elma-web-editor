@@ -1,10 +1,5 @@
 import type { LgrAssets } from "~/components/lgr-assets";
-import {
-  colors,
-  GRASS_FILL_DEPTH,
-  uiColors,
-  uiStrokeWidths,
-} from "~/editor/constants";
+import { colors, uiColors, uiStrokeWidths } from "~/editor/constants";
 import { drawKuski, drawKuskiBounds } from "~/editor/draw-kuski";
 import {
   drawGravityArrow,
@@ -13,6 +8,7 @@ import {
 } from "~/editor/draw-object";
 import { drawPicture } from "~/editor/draw-picture";
 import { getMaskedTextureCanvas } from "~/editor/render/canvas-picture-cache";
+import { drawGrassPolygon } from "~/editor/render/grass-renderer";
 import { PICTURE_SCALE } from "~/editor/render/picture-metrics";
 import { getObjectSprite } from "~/editor/render/object-assets";
 import type { EditorWorldScene } from "./editor-scene";
@@ -20,7 +16,6 @@ import {
   buildGroundPath,
   buildPolygonPath,
   buildViewportPathFromOffset,
-  fillGrassEdges,
 } from "~/editor/render/world-geometry";
 
 export function renderEditorWorldScene({
@@ -41,9 +36,25 @@ export function renderEditorWorldScene({
     : viewportPath;
 
   drawGroundFill(ctx, lgrAssets, scene.ground, groundPath, scene.visibility);
+  renderQueuedItems(ctx, scene, lgrAssets, skyPath, groundPath, "ground");
   drawPolygons(ctx, scene, lgrAssets, skyPath, groundPath);
+  renderQueuedItems(ctx, scene, lgrAssets, skyPath, groundPath, "rest");
+}
 
+function renderQueuedItems(
+  ctx: CanvasRenderingContext2D,
+  scene: EditorWorldScene,
+  lgrAssets: LgrAssets,
+  skyPath: Path2D,
+  groundPath: Path2D,
+  phase: "ground" | "rest",
+) {
   for (const item of scene.drawItems) {
+    const isGroundClippedPicture = item.type === "picture" && item.clip === 1;
+    if (phase === "ground" ? !isGroundClippedPicture : isGroundClippedPicture) {
+      continue;
+    }
+
     if (item.type === "picture" && item.draft) {
       renderDraftPicturePreview({
         ctx,
@@ -177,13 +188,12 @@ function drawPolygons(
 
     if (polygon.grass) {
       if (showPolygons) {
-        fillGrassEdges({
+        drawGrassPolygon({
           ctx,
+          lgrAssets,
           vertices: polygon.vertices,
           groundPath,
-          zoom: scene.viewport.zoom,
-          depth: GRASS_FILL_DEPTH,
-          fillStyle: colors.grass,
+          useGrassAssets: scene.visibility.useGroundSkyTextures,
         });
       }
       if (!showPolygonBounds) continue;

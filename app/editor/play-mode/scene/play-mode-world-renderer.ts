@@ -1,11 +1,12 @@
 import { standardSprites } from "~/components/standard-sprites";
 import { LgrAssets } from "~/components/lgr-assets";
-import { colors, GRASS_FILL_DEPTH } from "~/editor/constants";
+import { colors } from "~/editor/constants";
 import { drawKuski } from "~/editor/draw-kuski";
 import { drawGravityArrow, drawObject } from "~/editor/draw-object";
 import { drawPicture } from "~/editor/draw-picture";
 import { Clip, Gravity } from "~/editor/elma-types";
 import { getMaskedTextureCanvas } from "~/editor/render/canvas-picture-cache";
+import { drawGrassPolygon } from "~/editor/render/grass-renderer";
 import { getObjectSprite } from "~/editor/render/object-assets";
 import { PICTURE_SCALE } from "~/editor/render/picture-metrics";
 import type {
@@ -18,9 +19,8 @@ import {
   buildGroundPath,
   buildPolygonPath,
   buildViewportPathFromCenter,
-  fillGrassEdges,
 } from "~/editor/render/world-geometry";
-import type { ObjectProperty, Polygon } from "~/editor/play-mode/engine/level";
+import type { ObjectProperty } from "~/editor/play-mode/engine/level";
 
 export function renderPlayModeScene(
   ctx: CanvasRenderingContext2D,
@@ -40,6 +40,7 @@ export function renderPlayModeScene(
     groundPath,
     scene.visibility,
   );
+  renderQueuedItems(ctx, scene, lgrAssets, skyPath, groundPath, "ground");
   drawPolygons(
     ctx,
     scene.polygons,
@@ -50,8 +51,24 @@ export function renderPlayModeScene(
     scene.viewport.zoom,
     scene.visibility,
   );
+  renderQueuedItems(ctx, scene, lgrAssets, skyPath, groundPath, "rest");
+}
 
+function renderQueuedItems(
+  ctx: CanvasRenderingContext2D,
+  scene: PlayModeScene,
+  lgrAssets: LgrAssets | null,
+  skyPath: Path2D,
+  groundPath: Path2D,
+  phase: "ground" | "rest",
+) {
   for (const item of scene.drawItems) {
+    const isGroundClippedPicture =
+      item.type === "picture" && item.clipping === Clip.Ground;
+    if (phase === "ground" ? !isGroundClippedPicture : isGroundClippedPicture) {
+      continue;
+    }
+
     ctx.save();
 
     if (item.type === "picture") {
@@ -354,7 +371,13 @@ function drawPolygons(
 
     if (polygon.isGrass) {
       if (visibility.showPolygons) {
-        drawGrassFill(ctx, polygon, groundPath, zoom);
+        drawGrassPolygon({
+          ctx,
+          lgrAssets,
+          vertices: polygon.vertices,
+          groundPath,
+          useGrassAssets: visibility.useGroundSkyTextures,
+        });
       }
       if (!visibility.showPolygonBounds) continue;
       ctx.strokeStyle = colors.grass;
@@ -385,22 +408,6 @@ function drawPolygons(
     ctx.lineTo(polygon.vertices[0]!.x, polygon.vertices[0]!.y);
     ctx.stroke();
   }
-}
-
-function drawGrassFill(
-  ctx: CanvasRenderingContext2D,
-  polygon: Polygon,
-  groundPath: Path2D,
-  zoom: number,
-) {
-  fillGrassEdges({
-    ctx,
-    vertices: polygon.vertices,
-    groundPath,
-    zoom,
-    depth: GRASS_FILL_DEPTH,
-    fillStyle: colors.grass,
-  });
 }
 
 function gravityFromProperty(property: ObjectProperty) {

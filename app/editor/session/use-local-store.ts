@@ -19,6 +19,7 @@ type LocalStorageLevel = Pick<
   | "showSprites"
   | "viewPortOffset"
   | "zoom"
+  | "levelVisibility"
   | "playSettings"
 >;
 
@@ -66,6 +67,7 @@ export function useLocalStorageSync(key = "elma-web-store") {
           showSprites: savedData.showSprites ?? true,
           viewPortOffset: savedData.viewPortOffset || { x: 0, y: 0 },
           zoom: savedData.zoom || 1,
+          levelVisibility: savedData.levelVisibility ?? state.levelVisibility,
           playSettings: {
             ...defaultPlaySettings,
             keyBindings: {
@@ -102,6 +104,7 @@ export function useLocalStorageSync(key = "elma-web-store") {
         showSprites: state.showSprites,
         viewPortOffset: state.viewPortOffset,
         zoom: state.zoom,
+        levelVisibility: state.levelVisibility,
         playSettings: state.playSettings,
       };
 

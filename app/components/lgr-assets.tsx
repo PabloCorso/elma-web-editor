@@ -46,6 +46,10 @@ export class LgrAssets {
     return this.lgrSprites;
   }
 
+  getSpriteEntries() {
+    return Object.entries(this.lgrSprites);
+  }
+
   getSprite(name: string) {
     const normName = this.normalizeName(name);
     return this.lgrSprites[normName] || null;
@@ -88,6 +92,30 @@ export class LgrAssets {
       texture,
       sprite: this.getSprite(texture.texture),
     }));
+  }
+
+  getGrassSprites() {
+    const qgrass = this.getSprite("qgrass");
+    const variants = this.getSpriteEntries()
+      .flatMap(([name, sprite]) => {
+        const match = /^(qup|qdown)_(\d+)$/i.exec(name);
+        if (!match) return [];
+
+        return [
+          {
+            name,
+            sprite,
+            isUp: match[1]?.toLowerCase() === "qup",
+            sortOrder: Number(match[2]),
+          },
+        ];
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+    return {
+      qgrass,
+      variants,
+    };
   }
 
   isReady() {
