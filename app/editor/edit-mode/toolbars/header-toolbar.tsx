@@ -125,14 +125,13 @@ export function HeaderToolbar({
           <MainDropdownMenu onOpenSettings={() => setSettingsOpen(true)} />
           <LevelVisibilityControl />
           <LevelPropertiesControl />
-          <PlayModeControl />
-          <LevelTitleInput isLoading={isLoading} />
-          <LevelSaveStateIndicator />
+          <LevelNameControl isLoading={isLoading} />
           <LevelFileName />
           <TopologyCheck
             setTopologyResult={setTopologyResult}
             isLoading={isLoading}
           />
+          <PlayModeControl />
         </Toolbar>
 
         <div className="hidden grid-cols-[120px_minmax(0,1fr)_120px] gap-4 sm:grid">
@@ -143,8 +142,7 @@ export function HeaderToolbar({
 
           <Toolbar className="pointer-events-auto relative w-fit gap-2 justify-self-center">
             <LevelPropertiesControl />
-            <LevelTitleInput isLoading={isLoading} />
-            <LevelSaveStateIndicator />
+            <LevelNameControl isLoading={isLoading} />
             <LevelFileName />
             <TopologyCheck
               setTopologyResult={setTopologyResult}
@@ -662,6 +660,15 @@ function LevelTitleInput({
   );
 }
 
+function LevelNameControl({ isLoading }: { isLoading?: boolean }) {
+  return (
+    <div className="relative flex min-w-[12rem] flex-1">
+      <LevelTitleInput isLoading={isLoading} className="pr-5" />
+      <LevelSaveStateIndicator className="top-0 right-0 translate-x-1/2 -translate-y-1/2" />
+    </div>
+  );
+}
+
 function LevelFileName({
   className,
   ...props
@@ -708,7 +715,7 @@ function LevelSaveStateIndicator({
       title={saveStateLabel}
       aria-label={saveStateLabel}
       className={cn(
-        "absolute -top-0.5 -right-0.5 size-2 shrink-0 rounded-full bg-white",
+        "absolute size-2 shrink-0 rounded-full bg-white",
         {
           "bg-red-400": documentSession.saveState === "error",
           "animate-pulse": documentSession.saveState === "saving",
