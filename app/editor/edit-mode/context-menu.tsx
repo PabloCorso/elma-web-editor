@@ -10,9 +10,18 @@ import {
 import { defaultTools } from "~/editor/edit-mode/tools/default-tools";
 import { AppleToolbar } from "~/editor/edit-mode/toolbars/apple-tool-control";
 import { VertexContextMenuToolbar } from "~/editor/edit-mode/toolbars/vertex-tool-control";
-import { OBJECT_DIAMETER, OBJECT_FRAME_PX } from "~/editor/constants";
+import { OBJECT_DIAMETER } from "~/editor/constants";
 import { worldToScreen } from "~/editor/helpers/coordinate-helpers";
 import { useEditor } from "~/editor/use-editor-store";
+import { Popover, PopoverContent } from "~/components/ui/popover";
+import type { Position } from "~/editor/elma-types";
+
+const TOOLBAR_OFFSET_PX = 12;
+const TOOLBAR_COLLISION_PADDING_PX = 8;
+
+type PointAnchor = {
+  getBoundingClientRect: () => DOMRect;
+};
 
 export function EditorContextMenu() {
   const { updateApple, setPolygons } = useEditorActions();
@@ -30,65 +39,124 @@ export function EditorContextMenu() {
   const selectedApple = selectToolState.selectedObjects[0];
   const selectedPolygon = selectToolState.selectedVertices[0]?.polygon;
 
-  let position = selectToolState.contextMenuPosition ?? { x: 0, y: 0 };
-  const isAppleContextMenuActive =
+  if (contextMenuType === "apple" && !selectedApple) return null;
+  if (contextMenuType === "vertex" && !selectedPolygon) return null;
+
+  const canvas = typeof document === "undefined" ? null : document.querySelector("canvas");
+  const collisionBoundary = canvas ?? undefined;
+
+  const anchorPosition =
     contextMenuType === "apple" &&
     selectedApple &&
     typeof viewPortOffset?.x === "number" &&
     typeof viewPortOffset?.y === "number" &&
-    typeof zoom === "number";
-  if (isAppleContextMenuActive) {
-    const applePosition = worldToScreen(
-      { ...selectedApple, y: selectedApple.y - OBJECT_DIAMETER / 2 },
-      viewPortOffset,
-      zoom,
-    );
-    // position above the apple
-    const appleSize = OBJECT_FRAME_PX;
-    position = { x: applePosition.x, y: applePosition.y - appleSize };
-  }
+    typeof zoom === "number"
+      ? worldToScreen(
+          { ...selectedApple, y: selectedApple.y - OBJECT_DIAMETER / 2 },
+          viewPortOffset,
+          zoom,
+        )
+      : (selectToolState.contextMenuPosition ?? { x: 0, y: 0 });
 
-  if (contextMenuType === "apple" && !selectedApple) return null;
-  if (contextMenuType === "vertex" && !selectedPolygon) return null;
+  const anchor =
+    contextMenuType === "apple" && typeof zoom === "number"
+      ? createRectAnchor(anchorPosition, canvas, {
+          width: 0,
+          height: OBJECT_DIAMETER * zoom,
+        })
+      : createRectAnchor(anchorPosition, canvas, { width: 0, height: 0 });
 
   return (
-    <>
-      {contextMenuType === "apple" && (
-        <AppleToolbar
-          tabIndex={-1}
-          withShortcuts={false}
-          orientation="horizontal"
-          className="absolute"
-          style={{ left: position.x, top: position.y }}
-          onAnimationChange={(animation) => {
-            updateApple({ position: selectedApple, animation });
-            selectTool?.clear();
+    <Popover open modal={false}>
+      {contextMenuType === "apple" ? (
+        <PopoverContent
+          anchor={anchor}
+          positionMethod="fixed"
+          initialFocus={(openType) => openType === "keyboard"}
+          finalFocus={false}
+          side="top"
+          align="center"
+          sideOffset={TOOLBAR_OFFSET_PX}
+          collisionBoundary={collisionBoundary}
+          collisionPadding={TOOLBAR_COLLISION_PADDING_PX}
+          collisionAvoidance={{
+            side: "flip",
+            align: "shift",
+            fallbackAxisSide: "none",
           }}
-          onGravityChange={(gravity) => {
-            updateApple({ position: selectedApple, gravity });
-            selectTool?.clear();
+          className="z-50 outline-hidden"
+        >
+          <AppleToolbar
+            tabIndex={-1}
+            withShortcuts={false}
+            orientation="horizontal"
+            onAnimationChange={(animation) => {
+              updateApple({ position: selectedApple, animation });
+              selectTool?.clear();
+            }}
+            onGravityChange={(gravity) => {
+              updateApple({ position: selectedApple, gravity });
+              selectTool?.clear();
+            }}
+          />
+        </PopoverContent>
+      ) : null}
+      {contextMenuType === "vertex" && selectedPolygon ? (
+        <PopoverContent
+          anchor={anchor}
+          positionMethod="fixed"
+          initialFocus={(openType) => openType === "keyboard"}
+          finalFocus={false}
+          side="top"
+          align="start"
+          sideOffset={TOOLBAR_OFFSET_PX}
+          collisionBoundary={collisionBoundary}
+          collisionPadding={TOOLBAR_COLLISION_PADDING_PX}
+          collisionAvoidance={{
+            side: "flip",
+            align: "shift",
+            fallbackAxisSide: "none",
           }}
-        />
-      )}
-      {contextMenuType === "vertex" && selectedPolygon && (
-        <VertexContextMenuToolbar
-          tabIndex={-1}
-          className="absolute"
-          style={{ left: position.x, top: position.y }}
-          onGrassToggle={() => {
-            const polygonIndex = polygons.indexOf(selectedPolygon);
-            if (polygonIndex === -1) return;
-            setPolygons(
-              polygons.map((polygon, index) =>
-                index === polygonIndex
-                  ? { ...polygon, grass: !polygon.grass }
-                  : polygon,
-              ),
-            );
-            selectTool?.clear();
-          }}
-        />
-      )}
-    </>
+          className="z-50 outline-hidden"
+        >
+          <VertexContextMenuToolbar
+            tabIndex={-1}
+            onGrassToggle={() => {
+              const polygonIndex = polygons.indexOf(selectedPolygon);
+              if (polygonIndex === -1) return;
+              setPolygons(
+                polygons.map((polygon, index) =>
+                  index === polygonIndex
+                    ? { ...polygon, grass: !polygon.grass }
+                    : polygon,
+                ),
+              );
+              selectTool?.clear();
+            }}
+          />
+        </PopoverContent>
+      ) : null}
+    </Popover>
   );
+}
+
+function createRectAnchor(
+  position: Position,
+  canvas: HTMLCanvasElement | null,
+  size: { width: number; height: number },
+): PointAnchor {
+  const canvasRect = canvas?.getBoundingClientRect();
+  const left = (canvasRect?.left ?? 0) + position.x;
+  const top = (canvasRect?.top ?? 0) + position.y;
+
+  return {
+    getBoundingClientRect() {
+      return DOMRect.fromRect({
+        x: left,
+        y: top,
+        width: size.width,
+        height: size.height,
+      });
+    },
+  };
 }
