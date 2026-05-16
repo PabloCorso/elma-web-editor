@@ -650,25 +650,29 @@ export class SelectTool extends Tool<SelectToolState> {
 
   private findObjectNearPosition(position: Position): Position | null {
     const { state } = this.getState();
+    const objectSelectionThreshold = Math.max(
+      selectionThresholds.object / state.zoom,
+      OBJECT_DIAMETER / 2,
+    );
 
     const apple = findObjectNearPosition(
       position,
       state.apples.map((a) => a.position),
-      selectionThresholds.object / state.zoom,
+      objectSelectionThreshold,
     );
     if (apple) return apple;
 
     const killer = findObjectNearPosition(
       position,
       state.killers,
-      selectionThresholds.object / state.zoom,
+      objectSelectionThreshold,
     );
     if (killer) return killer;
 
     const flower = findObjectNearPosition(
       position,
       state.flowers,
-      selectionThresholds.object / state.zoom,
+      objectSelectionThreshold,
     );
     if (flower) return flower;
 

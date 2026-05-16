@@ -42,7 +42,8 @@ export function EditorContextMenu() {
   if (contextMenuType === "apple" && !selectedApple) return null;
   if (contextMenuType === "vertex" && !selectedPolygon) return null;
 
-  const canvas = typeof document === "undefined" ? null : document.querySelector("canvas");
+  const canvas =
+    typeof document === "undefined" ? null : document.querySelector("canvas");
   const collisionBoundary = canvas ?? undefined;
 
   const anchorPosition =

@@ -509,10 +509,14 @@ export class WebGLWorldSceneRenderer implements WorldSceneRenderer {
       });
 
       if (item.gravity != null) {
+        const gravityArrowOpacity =
+          item.objectKind === "apple" && item.forceVisible
+            ? 1
+            : (item.opacity ?? 1);
         this.drawGravityArrow(
           item.position,
           item.gravity,
-          item.opacity ?? 1,
+          gravityArrowOpacity,
           scene,
         );
       }
@@ -1441,25 +1445,36 @@ export class WebGLWorldSceneRenderer implements WorldSceneRenderer {
     if (rotation == null) return;
 
     const size = OBJECT_DIAMETER / 6;
-    const lineWidth = 0.08;
+    const lineWidth = size * (72 / 96);
+    const capRadius = lineWidth / 2;
     const basePoints = [
       { x: -size, y: size / 2 },
-      { x: 0, y: -size / 2 },
+      { x: 0, y: -size / 3 },
       { x: size, y: size / 2 },
     ];
+    const minY = Math.min(...basePoints.map((point) => point.y));
+    const maxY = Math.max(...basePoints.map((point) => point.y));
+    const centerY = (minY + maxY) / 2;
     const points = basePoints.map((point) => ({
       x:
         position.x +
         point.x * Math.cos(rotation) -
-        point.y * Math.sin(rotation),
+        (point.y - centerY) * Math.sin(rotation),
       y:
         position.y +
         point.x * Math.sin(rotation) +
-        point.y * Math.cos(rotation),
+        (point.y - centerY) * Math.cos(rotation),
     }));
 
-    this.drawLine(points[0]!, points[1]!, lineWidth, "#fde047", scene, opacity);
-    this.drawLine(points[1]!, points[2]!, lineWidth, "#fde047", scene, opacity);
+    const leftBase = points[0]!;
+    const tip = points[1]!;
+    const rightBase = points[2]!;
+
+    this.drawLine(leftBase, tip, lineWidth, "#fde047", scene, opacity);
+    this.drawLine(tip, rightBase, lineWidth, "#fde047", scene, opacity);
+    this.drawCircle(leftBase, capRadius, "#fde047", scene, opacity);
+    this.drawCircle(tip, capRadius, "#fde047", scene, opacity);
+    this.drawCircle(rightBase, capRadius, "#fde047", scene, opacity);
   }
 
   private drawOverlays(scene: WorldRenderScene) {
