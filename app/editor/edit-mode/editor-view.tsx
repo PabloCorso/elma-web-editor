@@ -18,10 +18,7 @@ import type { EditorLevel } from "~/editor/elma-types";
 import type { EditorDocumentInput } from "~/editor/editor-state";
 import { getDefaultLevel } from "~/editor/helpers/level-parser";
 import type { WorldSceneRendererBackend } from "~/editor/render/world-scene-renderer";
-import {
-  useDefaultLevelPreset,
-  useVertexEdgeClickBehavior,
-} from "~/editor/edit-mode/default-level-preset";
+import { useDefaultLevelPreset } from "~/editor/edit-mode/default-level-preset";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas"> & {};
 
@@ -58,7 +55,6 @@ export function useEditorView({
   const store = useEditorStore();
   const lgrAssets = useLgrAssets();
   const editorLgrAssets = lgrAssets.lgr;
-  const vertexEdgeClickBehavior = useVertexEdgeClickBehavior();
 
   useEffect(
     function initializeEditorEngine() {
@@ -166,15 +162,6 @@ export function useEditorView({
       }
     };
   }, []);
-
-  useEffect(
-    function syncVertexEdgeClickBehavior() {
-      store
-        .getState()
-        .actions.setVertexEdgeClickBehavior(vertexEdgeClickBehavior);
-    },
-    [store, vertexEdgeClickBehavior],
-  );
 
   return { canvasRef, engineRef };
 }

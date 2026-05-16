@@ -4,6 +4,10 @@ import { createEditorStore, type EditorStore } from "./editor-store";
 import type { Tool, ToolState } from "./edit-mode/tools/tool-interface";
 import type { EditorDocumentSession, EditorState } from "./editor-state";
 import type { ToolMeta } from "./edit-mode/tools/default-tools";
+import {
+  loadEditorPreferences,
+  useEditorPreferencesSync,
+} from "./editor-preferences";
 
 const EditorContext = createContext<EditorStore | null>(null);
 
@@ -16,11 +20,16 @@ export const EditorProvider = ({
 }) => {
   const storeRef = useRef<EditorStore>();
   if (!storeRef.current) {
-    storeRef.current = createEditorStore({ initialToolId });
+    storeRef.current = createEditorStore({
+      initialToolId,
+      initialPreferences: loadEditorPreferences(),
+    });
   }
+  const store = storeRef.current;
+  useEditorPreferencesSync(store);
 
   return (
-    <EditorContext.Provider value={storeRef.current!}>
+    <EditorContext.Provider value={store}>
       {children}
     </EditorContext.Provider>
   );

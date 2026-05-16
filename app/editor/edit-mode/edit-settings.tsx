@@ -2,14 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EditorEngine } from "~/editor/edit-mode/engine/editor-engine";
 import {
   useEditorLevelFolderName,
+  useVertexEdgeClickPreference,
   usePlaySettings,
   useEditorStore,
 } from "~/editor/use-editor-store";
 import {
   useDefaultLevelPreset,
   useSetDefaultLevelPreset,
-  useSetVertexEdgeClickBehavior,
-  useVertexEdgeClickBehavior,
   type VertexEdgeClickBehavior,
 } from "~/editor/edit-mode/default-level-preset";
 import {
@@ -291,8 +290,7 @@ function PreferencesSettingsPanel({
   const store = useEditorStore();
   const defaultLevelPreset = useDefaultLevelPreset();
   const setDefaultLevelPreset = useSetDefaultLevelPreset();
-  const vertexEdgeClickBehavior = useVertexEdgeClickBehavior();
-  const setVertexEdgeClickBehavior = useSetVertexEdgeClickBehavior();
+  const vertexEdgeClickBehavior = useVertexEdgeClickPreference();
   const { setVertexEdgeClickBehavior: setEditorVertexEdgeClickBehavior } =
     store.getState().actions;
 
@@ -342,10 +340,7 @@ function PreferencesSettingsPanel({
             <button
               key={behavior.id}
               type="button"
-              onClick={() => {
-                setVertexEdgeClickBehavior(behavior.id);
-                setEditorVertexEdgeClickBehavior(behavior.id);
-              }}
+              onClick={() => setEditorVertexEdgeClickBehavior(behavior.id)}
               className={cn(
                 "flex h-full flex-col justify-start rounded-xl border p-4 text-left transition-colors focus-visible:focus-ring",
                 isSelected

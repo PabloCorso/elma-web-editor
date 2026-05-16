@@ -25,6 +25,17 @@ type CreateEditorStoreOptions = {
   initialToolId?: string;
   defaultLevelTitle?: string;
   historyUpdateThrottle?: number;
+  initialPreferences?: Partial<
+    Pick<
+      EditorState,
+      | "animateSprites"
+      | "isUIVisible"
+      | "levelVisibility"
+      | "playModeZoom"
+      | "playSettings"
+      | "vertexEdgeClickBehavior"
+    >
+  >;
 };
 
 export type PartialEditorState = Pick<
@@ -138,6 +149,7 @@ export function createEditorStore({
   initialToolId = "select",
   defaultLevelTitle = "Untitled",
   historyUpdateThrottle = 50,
+  initialPreferences,
 }: CreateEditorStoreOptions = {}) {
   const emptySelectionMemento = (): SelectionMemento => ({
     selectedVertices: [],
@@ -371,15 +383,19 @@ export function createEditorStore({
         // Camera state
         viewPortOffset: { x: 0, y: 0 },
         zoom: 1,
-        playModeZoom: DEFAULT_PLAY_MODE_ZOOM,
+        playModeZoom:
+          initialPreferences?.playModeZoom ?? DEFAULT_PLAY_MODE_ZOOM,
 
         // View settings
-        animateSprites: true,
+        animateSprites: initialPreferences?.animateSprites ?? true,
         showSprites: true,
-        levelVisibility: defaultLevelVisibility,
-        playSettings: defaultPlaySettings,
-        vertexEdgeClickBehavior: "internal" as VertexEdgeClickBehavior,
-        isUIVisible: true,
+        levelVisibility:
+          initialPreferences?.levelVisibility ?? defaultLevelVisibility,
+        playSettings: initialPreferences?.playSettings ?? defaultPlaySettings,
+        vertexEdgeClickBehavior:
+          initialPreferences?.vertexEdgeClickBehavior ??
+          ("internal" as VertexEdgeClickBehavior),
+        isUIVisible: initialPreferences?.isUIVisible ?? true,
         isPlayMode: false,
         playModeSeedKeys: [],
 
@@ -606,7 +622,6 @@ export function createEditorStore({
                 { ...document, level: normalizedLevel },
                 defaultLevelTitle,
               ),
-              levelVisibility: defaultLevelVisibility,
               isPlayMode: false,
               playModeSeedKeys: [],
               mouseOnCanvas: false,

@@ -11,8 +11,6 @@ export type VertexEdgeClickBehavior = "internal" | "smibu";
 type DefaultLevelPresetContextValue = {
   defaultLevelPreset: DefaultLevelPreset;
   setDefaultLevelPreset: (preset: DefaultLevelPreset) => void;
-  vertexEdgeClickBehavior: VertexEdgeClickBehavior;
-  setVertexEdgeClickBehavior: (behavior: VertexEdgeClickBehavior) => void;
 };
 
 const DefaultLevelPresetContext =
@@ -29,20 +27,12 @@ export function DefaultLevelPresetProvider({
       defaultValue: "default",
       getInitialValueInEffect: false,
     });
-  const [vertexEdgeClickBehavior, setVertexEdgeClickBehavior] =
-    useLocalStorage<VertexEdgeClickBehavior>({
-      key: VERTEX_EDGE_CLICK_BEHAVIOR_STORAGE_KEY,
-      defaultValue: "internal",
-      getInitialValueInEffect: false,
-    });
 
   return (
     <DefaultLevelPresetContext.Provider
       value={{
         defaultLevelPreset,
         setDefaultLevelPreset,
-        vertexEdgeClickBehavior,
-        setVertexEdgeClickBehavior,
       }}
     >
       {children}
@@ -66,12 +56,4 @@ export function useDefaultLevelPreset() {
 
 export function useSetDefaultLevelPreset() {
   return useDefaultLevelPresetContext().setDefaultLevelPreset;
-}
-
-export function useVertexEdgeClickBehavior() {
-  return useDefaultLevelPresetContext().vertexEdgeClickBehavior;
-}
-
-export function useSetVertexEdgeClickBehavior() {
-  return useDefaultLevelPresetContext().setVertexEdgeClickBehavior;
 }
