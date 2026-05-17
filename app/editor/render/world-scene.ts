@@ -9,6 +9,7 @@ export type WorldPoint = {
 
 export type WorldRenderVisibility = {
   useGroundSkyTextures: boolean;
+  useGrassTextures: boolean;
   zoomTextures: boolean;
   showObjectAnimations: boolean;
   showObjects: boolean;

@@ -11,6 +11,7 @@ import {
 import { SpriteIcon } from "~/components/sprite-icon";
 import {
   useLgrSprite,
+  useLgrAssets,
   usePictureSprites,
   useTextureSprites,
 } from "~/components/use-lgr-assets";
@@ -79,6 +80,12 @@ export function LevelVisibilityControls({
           icon={<GroundSkyTexturesIcon />}
           active={levelVisibility.useGroundSkyTextures}
           onClick={() => onToggle("useGroundSkyTextures")}
+        />
+        <VisibilityToggleButton
+          label="Grass textures"
+          icon={<GrassTexturesIcon />}
+          active={levelVisibility.useGrassTextures}
+          onClick={() => onToggle("useGrassTextures")}
         />
         <VisibilityToggleButton
           label="Zoom textures"
@@ -232,6 +239,30 @@ function GroundSkyTexturesIcon({
 
 function PolygonHandlesIcon(props: React.SVGProps<SVGSVGElement>) {
   return <VertexIcon handles {...props} />;
+}
+
+function GrassTexturesIcon({
+  className,
+  ...props
+}: React.ComponentPropsWithRef<"span">) {
+  const { lgr } = useLgrAssets();
+  const grass = lgr?.getSpritePreview("qgrass");
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "relative inline-block h-full w-full overflow-hidden rounded-[4px] bg-[#00ff00]",
+        className,
+      )}
+      style={{
+        backgroundImage: grass ? `url(${grass})` : undefined,
+        backgroundRepeat: "repeat",
+        backgroundSize: "8px 8px",
+      }}
+      {...props}
+    />
+  );
 }
 
 function ObjectAnimationsIcon({

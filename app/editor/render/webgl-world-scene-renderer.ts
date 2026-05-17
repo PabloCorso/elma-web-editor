@@ -20,7 +20,10 @@ export class WebGLWorldSceneRenderer implements WorldSceneRenderer {
     private lgrAssets: LgrAssets | null,
   ) {
     this.renderContext = new WebGLRenderContext(canvas);
-    this.polygonDrawer = new WebGLPolygonDrawer(this.renderContext);
+    this.polygonDrawer = new WebGLPolygonDrawer(
+      this.renderContext,
+      this.lgrAssets,
+    );
     this.overlayDrawer = new WebGLOverlayDrawer(this.renderContext);
     this.worldItemDrawer = new WebGLWorldItemDrawer(
       this.renderContext,

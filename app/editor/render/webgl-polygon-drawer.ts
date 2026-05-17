@@ -3,6 +3,10 @@ import {
   colors,
   ELMA_PIXEL_SCALE,
 } from "~/editor/constants";
+import {
+  composeGrassTexture,
+  pixelsToWorldUnits,
+} from "~/editor/render/grass-renderer";
 import { PICTURE_SCALE } from "~/editor/render/picture-metrics";
 import {
   type WebGLRenderContext,
@@ -16,7 +20,10 @@ const MIN_ZOOM_EPSILON = 0.0001;
 export class WebGLPolygonDrawer {
   private shapes: WebGLShapeDrawer;
 
-  constructor(private context: WebGLRenderContext) {
+  constructor(
+    private context: WebGLRenderContext,
+    private lgrAssets: LgrAssets | null,
+  ) {
     this.shapes = new WebGLShapeDrawer(context);
   }
 
@@ -162,12 +169,24 @@ export class WebGLPolygonDrawer {
     polygon: WorldRenderScene["polygons"][number],
     scene: WorldRenderScene,
   ) {
-    const lineWidth = 1 / Math.max(scene.viewport.zoom, 1);
     const gl = this.context.gl;
+    const grassTexture =
+      scene.visibility.useGrassTextures && this.lgrAssets
+        ? composeGrassTexture({
+            lgrAssets: this.lgrAssets,
+            vertices: polygon.vertices,
+          })
+        : null;
 
     gl.enable(gl.STENCIL_TEST);
     gl.stencilMask(0x00);
     gl.stencilFunc(gl.EQUAL, 0, 0xff);
+
+    if (grassTexture) {
+      this.drawGrassTexture(grassTexture, scene);
+      gl.disable(gl.STENCIL_TEST);
+      return;
+    }
 
     for (const [from, to, innerTo, innerFrom] of getSimpleGrassFillQuads({
       vertices: polygon.vertices,
@@ -175,7 +194,6 @@ export class WebGLPolygonDrawer {
       zoom: scene.viewport.zoom,
       depth: 20 * ELMA_PIXEL_SCALE,
     })) {
-      this.shapes.drawLine(from, to, lineWidth, colors.grass, scene);
       this.shapes.drawQuad(
         [
           from.x,
@@ -193,6 +211,53 @@ export class WebGLPolygonDrawer {
     }
 
     gl.disable(gl.STENCIL_TEST);
+  }
+
+  private drawGrassTexture(
+    composed: {
+      canvas: HTMLCanvasElement;
+      minXPx: number;
+      minYPx: number;
+    },
+    scene: WorldRenderScene,
+  ) {
+    const texture = this.context.getTexture(composed.canvas);
+    const minX = pixelsToWorldUnits(composed.minXPx);
+    const minY = pixelsToWorldUnits(composed.minYPx);
+    const width = pixelsToWorldUnits(composed.canvas.width);
+    const height = pixelsToWorldUnits(composed.canvas.height);
+
+    this.context.drawVertices({
+      vertices: [
+        minX,
+        minY,
+        0,
+        0,
+        minX + width,
+        minY,
+        1,
+        0,
+        minX,
+        minY + height,
+        0,
+        1,
+        minX,
+        minY + height,
+        0,
+        1,
+        minX + width,
+        minY,
+        1,
+        0,
+        minX + width,
+        minY + height,
+        1,
+        1,
+      ],
+      color: [1, 1, 1, 1],
+      texture,
+      scene,
+    });
   }
 }
 

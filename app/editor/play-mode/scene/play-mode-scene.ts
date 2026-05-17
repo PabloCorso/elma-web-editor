@@ -10,6 +10,7 @@ import type {
 export type PlayModeRenderVisibility = Pick<
   LevelVisibilitySettings,
   | "useGroundSkyTextures"
+  | "useGrassTextures"
   | "zoomTextures"
   | "showObjectAnimations"
   | "showObjects"

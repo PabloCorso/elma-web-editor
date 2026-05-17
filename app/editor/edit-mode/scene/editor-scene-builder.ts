@@ -46,6 +46,7 @@ export function buildEditorWorldScene({
     groundClipMode: "when-polygons-visible",
     visibility: {
       useGroundSkyTextures: state.levelVisibility.useGroundSkyTextures,
+      useGrassTextures: state.levelVisibility.useGrassTextures,
       zoomTextures: state.levelVisibility.zoomTextures,
       showObjectAnimations: state.levelVisibility.showObjectAnimations,
       showObjects: state.levelVisibility.showObjects,

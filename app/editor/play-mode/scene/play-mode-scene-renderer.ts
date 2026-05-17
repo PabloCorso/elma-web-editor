@@ -68,6 +68,7 @@ export class PlayModeSceneRenderer {
       },
       visibility: options?.visibility ?? {
         useGroundSkyTextures: false,
+        useGrassTextures: false,
         zoomTextures: true,
         showObjectAnimations: true,
         showObjects: true,

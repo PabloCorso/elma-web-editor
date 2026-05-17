@@ -7,6 +7,7 @@ import { PlayModeSceneRenderer } from "./play-mode-scene-renderer";
 export type PlayModeRenderVisibility = Pick<
   LevelVisibilitySettings,
   | "useGroundSkyTextures"
+  | "useGrassTextures"
   | "zoomTextures"
   | "showObjectAnimations"
   | "showObjects"
