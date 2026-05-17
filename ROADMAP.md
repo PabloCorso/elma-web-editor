@@ -27,8 +27,7 @@ Ideas and plans for Elma Web Editor.
       - stone3 750 S
       - qgrass ?
   - Polygon properties:
-    - Show proper grass pictures
-      - Grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
+    - Grass polygon always has an inactive line, the one which is longest in the x direction. The other lines determine the lower border of the grass (the upper border is determined by the normal polygons).
   - Level properties:
     - LGR file
   - Zoom level info.

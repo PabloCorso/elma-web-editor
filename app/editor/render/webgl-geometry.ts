@@ -1,7 +1,4 @@
-import {
-  ELMA_PIXEL_SCALE,
-  QGRASS_TOP_EXTRA_PX,
-} from "~/editor/constants";
+import { ELMA_PIXEL_SCALE, QGRASS_TOP_EXTRA_PX } from "~/editor/constants";
 import type { WorldPoint } from "~/editor/render/world-scene";
 
 const MIN_ZOOM_EPSILON = 0.0001;

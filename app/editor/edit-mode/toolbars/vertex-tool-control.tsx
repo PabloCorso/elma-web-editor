@@ -123,6 +123,7 @@ type VertexIconProps = React.ComponentPropsWithoutRef<"svg"> & {
   sky?: string;
   ground?: string;
   bounds?: boolean;
+  boundsColor?: string;
   handles?: boolean;
 };
 
@@ -131,6 +132,7 @@ export function VertexIcon({
   sky = colors.sky,
   ground = colors.ground,
   bounds,
+  boundsColor = uiColors.vertexDraftLine,
   handles,
   ...props
 }: VertexIconProps) {
@@ -156,7 +158,7 @@ export function VertexIcon({
       {bounds && (
         <path
           d="M2 22L22 2"
-          stroke={uiColors.vertexDraftLine}
+          stroke={boundsColor}
           strokeWidth="2"
           strokeLinecap="round"
         />

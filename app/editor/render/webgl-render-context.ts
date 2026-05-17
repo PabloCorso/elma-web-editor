@@ -251,9 +251,23 @@ function configureVertexAttributes(
   programInfo: ProgramInfo,
 ) {
   gl.enableVertexAttribArray(programInfo.positionAttribute);
-  gl.vertexAttribPointer(programInfo.positionAttribute, 2, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(
+    programInfo.positionAttribute,
+    2,
+    gl.FLOAT,
+    false,
+    24,
+    0,
+  );
   gl.enableVertexAttribArray(programInfo.texCoordAttribute);
-  gl.vertexAttribPointer(programInfo.texCoordAttribute, 2, gl.FLOAT, false, 24, 8);
+  gl.vertexAttribPointer(
+    programInfo.texCoordAttribute,
+    2,
+    gl.FLOAT,
+    false,
+    24,
+    8,
+  );
   gl.enableVertexAttribArray(programInfo.maskTexCoordAttribute);
   gl.vertexAttribPointer(
     programInfo.maskTexCoordAttribute,

@@ -136,8 +136,12 @@ function createGrassPolygonHeightmap(
       secondIndex = (secondIndex - 1 + vertices.length) % vertices.length;
     }
 
-    const leftVertexIndex = polygonIsCounterclockwise ? firstIndex : secondIndex;
-    const rightVertexIndex = polygonIsCounterclockwise ? secondIndex : firstIndex;
+    const leftVertexIndex = polygonIsCounterclockwise
+      ? firstIndex
+      : secondIndex;
+    const rightVertexIndex = polygonIsCounterclockwise
+      ? secondIndex
+      : firstIndex;
 
     currentXPx = appendGrassLineHeightmap(
       vertices[leftVertexIndex]!,

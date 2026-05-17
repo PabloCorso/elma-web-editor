@@ -14,7 +14,8 @@ export type PlayModeRenderVisibility = Pick<
   | "showPictures"
   | "showTextures"
   | "showPolygons"
-  | "showPolygonBounds"
+  | "showGroundBounds"
+  | "showGrassBounds"
 >;
 
 export type PlayModeRenderOptions = {

@@ -16,6 +16,12 @@ type PersistedEditorPreferences = {
   preferences: EditorPreferences;
 };
 
+type PersistedLevelVisibilitySettings = Partial<
+  EditorPreferences["levelVisibility"]
+> & {
+  showPolygonBounds?: boolean;
+};
+
 function isClient() {
   return typeof window !== "undefined";
 }
@@ -57,10 +63,9 @@ export function loadEditorPreferences(): EditorPreferences {
       preferences?.animateSprites ?? defaultEditorPreferences.animateSprites,
     isUIVisible:
       preferences?.isUIVisible ?? defaultEditorPreferences.isUIVisible,
-    levelVisibility: {
-      ...defaultLevelVisibility,
-      ...(preferences?.levelVisibility ?? {}),
-    },
+    levelVisibility: loadLevelVisibilityPreferences(
+      preferences?.levelVisibility,
+    ),
     playModeZoom:
       preferences?.playModeZoom ?? defaultEditorPreferences.playModeZoom,
     playSettings: {
@@ -74,6 +79,25 @@ export function loadEditorPreferences(): EditorPreferences {
     vertexEdgeClickBehavior:
       preferences?.vertexEdgeClickBehavior ??
       defaultEditorPreferences.vertexEdgeClickBehavior,
+  };
+}
+
+function loadLevelVisibilityPreferences(
+  levelVisibility?: PersistedLevelVisibilitySettings,
+): EditorPreferences["levelVisibility"] {
+  const showLegacyPolygonBounds = levelVisibility?.showPolygonBounds;
+
+  return {
+    ...defaultLevelVisibility,
+    ...(levelVisibility ?? {}),
+    showGroundBounds:
+      levelVisibility?.showGroundBounds ??
+      showLegacyPolygonBounds ??
+      defaultLevelVisibility.showGroundBounds,
+    showGrassBounds:
+      levelVisibility?.showGrassBounds ??
+      showLegacyPolygonBounds ??
+      defaultLevelVisibility.showGrassBounds,
   };
 }
 

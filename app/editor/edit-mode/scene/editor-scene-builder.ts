@@ -53,7 +53,8 @@ export function buildEditorWorldScene({
       showPictures: state.levelVisibility.showPictures,
       showTextures: state.levelVisibility.showTextures,
       showPolygons: state.levelVisibility.showPolygons,
-      showPolygonBounds: state.levelVisibility.showPolygonBounds,
+      showGroundBounds: state.levelVisibility.showGroundBounds,
+      showGrassBounds: state.levelVisibility.showGrassBounds,
     },
     viewport: {
       width: viewportSize.width,

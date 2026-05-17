@@ -1,16 +1,11 @@
 import type { LgrAssets } from "~/components/lgr-assets";
-import {
-  colors,
-  ELMA_PIXEL_SCALE,
-} from "~/editor/constants";
+import { colors, ELMA_PIXEL_SCALE } from "~/editor/constants";
 import {
   composeGrassTexture,
   pixelsToWorldUnits,
 } from "~/editor/render/grass-renderer";
 import { PICTURE_SCALE } from "~/editor/render/picture-metrics";
-import {
-  type WebGLRenderContext,
-} from "~/editor/render/webgl-render-context";
+import { type WebGLRenderContext } from "~/editor/render/webgl-render-context";
 import { getSimpleGrassFillQuads } from "~/editor/render/webgl-geometry";
 import { WebGLShapeDrawer } from "~/editor/render/webgl-shape-drawer";
 import type { WorldRenderScene } from "~/editor/render/world-scene";
@@ -142,13 +137,20 @@ export class WebGLPolygonDrawer {
   }
 
   drawPolygonEdges(scene: WorldRenderScene) {
-    if (!scene.visibility.showPolygonBounds) return;
+    if (
+      !scene.visibility.showGroundBounds &&
+      !scene.visibility.showGrassBounds
+    ) {
+      return;
+    }
 
     for (const polygon of scene.polygons) {
       if (polygon.vertices.length < 2) continue;
 
       const lineWidth = 1 / Math.max(scene.viewport.zoom, 1);
       if (polygon.isGrass) {
+        if (!scene.visibility.showGrassBounds) continue;
+
         for (const index of polygon.grassEdgeIndices) {
           const from = polygon.vertices[index]!;
           const to = polygon.vertices[(index + 1) % polygon.vertices.length]!;
@@ -156,6 +158,8 @@ export class WebGLPolygonDrawer {
         }
         continue;
       }
+
+      if (!scene.visibility.showGroundBounds) continue;
 
       for (let index = 0; index < polygon.vertices.length; index += 1) {
         const from = polygon.vertices[index]!;

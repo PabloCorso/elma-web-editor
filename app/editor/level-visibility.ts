@@ -5,7 +5,8 @@ export type LevelVisibilitySettings = {
   showObjectAnimations: boolean;
   showPolygonHandles: boolean;
   showObjectBounds: boolean;
-  showPolygonBounds: boolean;
+  showGroundBounds: boolean;
+  showGrassBounds: boolean;
   showPictureBounds: boolean;
   showTextureBounds: boolean;
   showObjects: boolean;
@@ -21,7 +22,8 @@ export const defaultLevelVisibility: LevelVisibilitySettings = {
   showObjectAnimations: true,
   showPolygonHandles: false,
   showObjectBounds: false,
-  showPolygonBounds: false,
+  showGroundBounds: true,
+  showGrassBounds: true,
   showPictureBounds: false,
   showTextureBounds: false,
   showObjects: true,

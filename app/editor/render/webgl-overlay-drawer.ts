@@ -1,4 +1,7 @@
-import { colorToRgba, type WebGLRenderContext } from "~/editor/render/webgl-render-context";
+import {
+  colorToRgba,
+  type WebGLRenderContext,
+} from "~/editor/render/webgl-render-context";
 import type {
   WorldPoint,
   WorldRenderOverlayItem,

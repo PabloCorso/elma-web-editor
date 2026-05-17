@@ -75,7 +75,8 @@ export class PlayModeSceneRenderer {
         showPictures: true,
         showTextures: true,
         showPolygons: true,
-        showPolygonBounds: false,
+        showGroundBounds: false,
+        showGrassBounds: false,
       },
       resolvePictureDimensions: (picture) =>
         getPictureWorldDimensions(picture, this.lgrAssets),

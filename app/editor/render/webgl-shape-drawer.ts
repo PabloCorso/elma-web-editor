@@ -1,4 +1,7 @@
-import type { WebGLColor, WebGLRenderContext } from "~/editor/render/webgl-render-context";
+import type {
+  WebGLColor,
+  WebGLRenderContext,
+} from "~/editor/render/webgl-render-context";
 import { colorToRgba, hexToRgb } from "~/editor/render/webgl-render-context";
 import type { WorldPoint, WorldRenderScene } from "~/editor/render/world-scene";
 import {

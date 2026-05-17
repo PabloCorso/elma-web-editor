@@ -16,7 +16,8 @@ export type WorldRenderVisibility = {
   showPictures: boolean;
   showTextures: boolean;
   showPolygons: boolean;
-  showPolygonBounds: boolean;
+  showGroundBounds: boolean;
+  showGrassBounds: boolean;
 };
 
 export type WorldRenderViewport = {

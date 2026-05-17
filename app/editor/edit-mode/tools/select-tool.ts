@@ -850,9 +850,15 @@ export class SelectTool extends Tool<SelectToolState> {
 
   private isPolygonSelectable(): boolean {
     const { state } = this.getState();
-    const { showPolygons, showPolygonBounds, showPolygonHandles } =
-      state.levelVisibility;
-    return showPolygons || showPolygonBounds || showPolygonHandles;
+    const {
+      showPolygons,
+      showGroundBounds,
+      showGrassBounds,
+      showPolygonHandles,
+    } = state.levelVisibility;
+    return (
+      showPolygons || showGroundBounds || showGrassBounds || showPolygonHandles
+    );
   }
 
   private isObjectSelectable(): boolean {

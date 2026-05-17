@@ -1,10 +1,6 @@
 import { standardSprites } from "~/components/standard-sprites";
 import type { LgrAssets } from "~/components/lgr-assets";
-import {
-  colors,
-  ELMA_PIXEL_SCALE,
-  OBJECT_DIAMETER,
-} from "~/editor/constants";
+import { colors, ELMA_PIXEL_SCALE, OBJECT_DIAMETER } from "~/editor/constants";
 import {
   defaultBikeCoords,
   getKuskiSelectionCircles,
@@ -358,7 +354,13 @@ export class WebGLWorldItemDrawer {
     scene: WorldRenderScene,
   ) {
     const lineWidth = 2 / Math.max(scene.viewport.zoom, 1);
-    this.shapes.drawLine(fallback.leftWheel, fallback.bike, lineWidth, "#111111", scene);
+    this.shapes.drawLine(
+      fallback.leftWheel,
+      fallback.bike,
+      lineWidth,
+      "#111111",
+      scene,
+    );
     this.shapes.drawLine(
       fallback.rightWheel,
       fallback.bike,
@@ -366,7 +368,13 @@ export class WebGLWorldItemDrawer {
       "#111111",
       scene,
     );
-    this.shapes.drawLine(fallback.bike, fallback.head, lineWidth, "#111111", scene);
+    this.shapes.drawLine(
+      fallback.bike,
+      fallback.head,
+      lineWidth,
+      "#111111",
+      scene,
+    );
     this.shapes.drawCircle(fallback.leftWheel, 0.26, "#111111", scene);
     this.shapes.drawCircle(fallback.rightWheel, 0.26, "#111111", scene);
     this.shapes.drawCircle(fallback.head, 0.16, "#f5d0a9", scene);

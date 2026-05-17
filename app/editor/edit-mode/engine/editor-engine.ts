@@ -1074,9 +1074,15 @@ export class EditorEngine {
   }
 
   private isPolygonSelectable(state: EditorState) {
-    const { showPolygons, showPolygonBounds, showPolygonHandles } =
-      state.levelVisibility;
-    return showPolygons || showPolygonBounds || showPolygonHandles;
+    const {
+      showPolygons,
+      showGroundBounds,
+      showGrassBounds,
+      showPolygonHandles,
+    } = state.levelVisibility;
+    return (
+      showPolygons || showGroundBounds || showGrassBounds || showPolygonHandles
+    );
   }
 
   private isPictureSelectable(state: EditorState, picture: Picture) {

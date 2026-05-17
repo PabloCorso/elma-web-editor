@@ -5,8 +5,9 @@ import {
 import { useEditor, useEditorActions } from "~/editor/use-editor-store";
 import {
   ArrowsClockwiseIcon,
+  BoundingBoxIcon,
+  CaretDownIcon,
   CheckIcon,
-  LayoutIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { SpriteIcon } from "~/components/sprite-icon";
 import {
@@ -29,6 +30,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { Icon } from "~/components/ui/icon";
 import { cn } from "~/utils/misc";
 import { colors, OBJECT_FRAME_PX } from "~/editor/constants";
 import { VertexIcon } from "./vertex-tool-control";
@@ -42,9 +44,17 @@ export function LevelVisibilityControl() {
       <Tooltip>
         <TooltipTrigger>
           <DropdownMenuTrigger>
-            <ToolbarButton aria-label="Visibility options">
-              <LayoutIcon />
-            </ToolbarButton>
+            <ToolbarButton
+              aria-label="Visibility options"
+              className="gap-0 p-2"
+              iconOnly={false}
+              iconBefore={<BoundingBoxIcon />}
+              iconAfter={
+                <Icon size="xs">
+                  <CaretDownIcon />
+                </Icon>
+              }
+            />
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent side="right" className="text-xs">
@@ -154,10 +164,16 @@ export function LevelVisibilityControls({
           onClick={() => onToggle("showTextureBounds")}
         />
         <VisibilityToggleButton
-          label="Polygon bounds"
-          icon={<PolygonBoundsIcon />}
-          active={levelVisibility.showPolygonBounds}
-          onClick={() => onToggle("showPolygonBounds")}
+          label="Ground bounds"
+          icon={<GroundBoundsIcon />}
+          active={levelVisibility.showGroundBounds}
+          onClick={() => onToggle("showGroundBounds")}
+        />
+        <VisibilityToggleButton
+          label="Grass bounds"
+          icon={<GrassBoundsIcon />}
+          active={levelVisibility.showGrassBounds}
+          onClick={() => onToggle("showGrassBounds")}
         />
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
@@ -165,9 +181,10 @@ export function LevelVisibilityControls({
         <DropdownMenuItem
           iconBefore={<ArrowsClockwiseIcon />}
           onClick={onReset}
+          closeOnClick={false}
           disabled={!canReset}
         >
-          Reset visibility
+          Reset defaults
         </DropdownMenuItem>
       </DropdownMenuGroup>
     </>
@@ -422,8 +439,20 @@ function TextureBoundsIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function PolygonBoundsIcon(props: React.SVGProps<SVGSVGElement>) {
+function GroundBoundsIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <VertexIcon sky="transparent" ground="transparent" bounds {...props} />
+  );
+}
+
+function GrassBoundsIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <VertexIcon
+      sky="transparent"
+      ground="transparent"
+      bounds
+      boundsColor={colors.grass}
+      {...props}
+    />
   );
 }
