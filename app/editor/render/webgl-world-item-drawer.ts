@@ -54,8 +54,14 @@ export class WebGLWorldItemDrawer {
       }
 
       this.withItemClip(item, scene, () => {
-        this.drawItem(item, scene);
+        this.drawItem(item, scene, { drawBounds: false });
       });
+    }
+  }
+
+  drawQueuedItemBounds(scene: WorldRenderScene) {
+    for (const item of scene.drawItems) {
+      this.drawItemBounds(item, scene);
     }
   }
 
@@ -89,21 +95,26 @@ export class WebGLWorldItemDrawer {
     gl.disable(gl.STENCIL_TEST);
   }
 
-  private drawItem(item: WorldRenderDrawItem, scene: WorldRenderScene) {
+  private drawItem(
+    item: WorldRenderDrawItem,
+    scene: WorldRenderScene,
+    { drawBounds = true }: { drawBounds?: boolean } = {},
+  ) {
     if (item.type === "picture") {
       if (item.draft && item.clip !== Clip.Unclipped) {
         this.drawPicture(
           item,
           scene,
           item.opacity != null ? item.opacity * 0.35 : 0.35,
+          drawBounds,
         );
         this.withItemClip({ ...item, draft: false }, scene, () => {
-          this.drawPicture(item, scene);
+          this.drawPicture(item, scene, undefined, drawBounds);
         });
         return;
       }
 
-      this.drawPicture(item, scene);
+      this.drawPicture(item, scene, undefined, drawBounds);
       return;
     }
 
@@ -120,19 +131,38 @@ export class WebGLWorldItemDrawer {
     this.drawBike(item, scene);
   }
 
+  private drawItemBounds(item: WorldRenderDrawItem, scene: WorldRenderScene) {
+    if (item.type !== "picture" || !item.showBounds) return;
+
+    const dimensions = this.getPictureWorldDimensions(item);
+    if (!dimensions) return;
+
+    this.shapes.drawRectOutline(
+      item.position.x,
+      item.position.y,
+      dimensions.width,
+      dimensions.height,
+      item.boundsLineWidth ?? 0.02,
+      colors.selection,
+      scene,
+    );
+  }
+
   private drawPicture(
     item: WorldRenderPictureItem,
     scene: WorldRenderScene,
     opacityOverride?: number,
+    drawBounds = true,
   ) {
     if (!this.lgrAssets) return;
     const opacity = opacityOverride ?? item.opacity ?? 1;
     const picture = this.getPictureSprite(item, scene);
-    if (!picture) return;
+    const dimensions = this.getPictureWorldDimensions(item);
+    if (!picture && (!drawBounds || !item.showBounds || !dimensions)) return;
 
-    if (picture.kind === "masked") {
-      const width = picture.mask.width * PICTURE_SCALE;
-      const height = picture.mask.height * PICTURE_SCALE;
+    if (picture?.kind === "masked") {
+      const width = dimensions?.width ?? picture.mask.width * PICTURE_SCALE;
+      const height = dimensions?.height ?? picture.mask.height * PICTURE_SCALE;
       this.drawMaskedTexturedRect({
         textureSprite: picture.texture,
         maskSprite: picture.mask,
@@ -144,7 +174,7 @@ export class WebGLWorldItemDrawer {
         scene,
       });
 
-      if (item.showBounds) {
+      if (drawBounds && item.showBounds) {
         this.shapes.drawRectOutline(
           item.position.x,
           item.position.y,
@@ -158,24 +188,26 @@ export class WebGLWorldItemDrawer {
       return;
     }
 
-    const width = picture.sprite.width * PICTURE_SCALE;
-    const height = picture.sprite.height * PICTURE_SCALE;
+    const width = dimensions?.width ?? picture!.sprite.width * PICTURE_SCALE;
+    const height = dimensions?.height ?? picture!.sprite.height * PICTURE_SCALE;
 
-    this.drawTexturedRect({
-      sprite: picture.sprite,
-      sourceX: 0,
-      sourceY: 0,
-      sourceWidth: picture.sprite.width,
-      sourceHeight: picture.sprite.height,
-      x: item.position.x,
-      y: item.position.y,
-      width,
-      height,
-      opacity,
-      scene,
-    });
+    if (picture) {
+      this.drawTexturedRect({
+        sprite: picture.sprite,
+        sourceX: 0,
+        sourceY: 0,
+        sourceWidth: picture.sprite.width,
+        sourceHeight: picture.sprite.height,
+        x: item.position.x,
+        y: item.position.y,
+        width,
+        height,
+        opacity,
+        scene,
+      });
+    }
 
-    if (item.showBounds) {
+    if (drawBounds && item.showBounds) {
       this.shapes.drawRectOutline(
         item.position.x,
         item.position.y,
@@ -186,6 +218,28 @@ export class WebGLWorldItemDrawer {
         scene,
       );
     }
+  }
+
+  private getPictureWorldDimensions(item: WorldRenderPictureItem) {
+    if (!this.lgrAssets) return null;
+
+    if (item.texture && item.mask) {
+      const maskSprite = this.lgrAssets.getSprite(item.mask);
+      if (!maskSprite) return null;
+
+      return {
+        width: maskSprite.width * PICTURE_SCALE,
+        height: maskSprite.height * PICTURE_SCALE,
+      };
+    }
+
+    const sprite = item.name ? this.lgrAssets.getSprite(item.name) : null;
+    if (!sprite) return null;
+
+    return {
+      width: sprite.width * PICTURE_SCALE,
+      height: sprite.height * PICTURE_SCALE,
+    };
   }
 
   private getPictureSprite(
