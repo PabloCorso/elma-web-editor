@@ -15,8 +15,19 @@ export class LgrAssets {
   private lgr: InstanceType<typeof ElmaLGR> | null = null;
   private lgrSprites: Record<string, LoadedSprite> = {};
   private maskedPreviewUrls = new Map<string, string>();
+  private loadPromise: Promise<void> | null = null;
 
   async load() {
+    if (this.lgr) return;
+    if (this.loadPromise) return this.loadPromise;
+
+    this.loadPromise = this.loadDefaultLgr().finally(() => {
+      this.loadPromise = null;
+    });
+    return this.loadPromise;
+  }
+
+  private async loadDefaultLgr() {
     const buf = await fetch(defaultLgr).then((r) => r.arrayBuffer());
     this.lgr = ElmaLGR.from(new Uint8Array(buf));
     await this.loadAllSprites();

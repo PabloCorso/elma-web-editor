@@ -387,7 +387,7 @@ export function createEditorStore({
         playSettings: initialPreferences?.playSettings ?? defaultPlaySettings,
         vertexEdgeClickBehavior:
           initialPreferences?.vertexEdgeClickBehavior ??
-          ("internal" as VertexEdgeClickBehavior),
+          ("default" as VertexEdgeClickBehavior),
         isUIVisible: initialPreferences?.isUIVisible ?? true,
         isPlayMode: false,
         playModeSeedKeys: [],

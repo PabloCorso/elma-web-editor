@@ -21,12 +21,11 @@ export function DefaultLevelPresetProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [defaultLevelPreset, setDefaultLevelPreset] =
-    useLocalStorage<string>({
-      key: DEFAULT_LEVEL_PRESET_STORAGE_KEY,
-      defaultValue: "default",
-      getInitialValueInEffect: false,
-    });
+  const [defaultLevelPreset, setDefaultLevelPreset] = useLocalStorage<string>({
+    key: DEFAULT_LEVEL_PRESET_STORAGE_KEY,
+    defaultValue: "default",
+    getInitialValueInEffect: false,
+  });
   const safeDefaultLevelPreset = isDefaultLevelPreset(defaultLevelPreset)
     ? defaultLevelPreset
     : "default";

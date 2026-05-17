@@ -6,6 +6,7 @@ import {
   usePlaySettings,
   useEditorStore,
 } from "~/editor/use-editor-store";
+import { createEditorStore } from "~/editor/editor-store";
 import {
   useDefaultLevelPreset,
   useSetDefaultLevelPreset,
@@ -15,6 +16,7 @@ import {
   getDefaultLevel,
   type DefaultLevelPreset,
 } from "~/editor/helpers/level-parser";
+import { defaultLevelVisibility } from "~/editor/level-visibility";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
 import {
   Dialog,
@@ -34,6 +36,7 @@ import {
 import { cn, useModifier } from "~/utils/misc";
 import { useForceUpdate } from "@mantine/hooks";
 import {
+  DEFAULT_PLAY_MODE_ZOOM,
   defaultPlaySettings,
   type PlayRunEndBehavior,
   type PlayKeyBindings,
@@ -44,6 +47,7 @@ import {
   CaretDownIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import datGif from "~/assets/dat.gif";
+import { useLgrAssets } from "~/components/use-lgr-assets";
 
 const LEVEL_PRESETS: Array<{
   id: DefaultLevelPreset;
@@ -120,7 +124,7 @@ export function SettingsPanel() {
     description: ReactNode;
   }> = [
     {
-      id: "smibu",
+      id: "default",
       label: "Default",
       description: "Edit polygons by clicking on vertices or edges.",
     },
@@ -311,7 +315,7 @@ function PreferencesSettingsPanel({
                 "group relative cursor-pointer overflow-hidden rounded-xl border text-left transition-colors focus-visible:focus-ring",
                 isSelected
                   ? "border-blue-400 bg-blue-500/10"
-                  : "border-separator",
+                  : "border-separator hover:border-blue-400/60 hover:bg-blue-500/5",
               )}
               aria-pressed={isSelected}
             >
@@ -341,10 +345,10 @@ function PreferencesSettingsPanel({
               type="button"
               onClick={() => setEditorVertexEdgeClickBehavior(behavior.id)}
               className={cn(
-                "flex h-full flex-col justify-start rounded-xl border p-4 text-left transition-colors focus-visible:focus-ring",
+                "flex h-full cursor-pointer flex-col justify-start rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:focus-ring",
                 isSelected
                   ? "border-blue-400 bg-blue-500/10"
-                  : "border-separator",
+                  : "border-separator hover:border-blue-400/60",
               )}
               aria-pressed={isSelected}
             >
@@ -507,6 +511,7 @@ function formatPlayKeyCode(code: string) {
 }
 
 function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
+  const lgrAssets = useLgrAssets();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<EditorEngine | null>(null);
@@ -562,6 +567,20 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
         initializeFrameRef.current = null;
         engineRef.current = new EditorEngine(canvas, {
           readOnly: true,
+          lgrAssets: lgrAssets.lgr ?? undefined,
+          store: createEditorStore({
+            initialPreferences: {
+              animateSprites: false,
+              isUIVisible: true,
+              levelVisibility: {
+                ...defaultLevelVisibility,
+                showObjectAnimations: false,
+              },
+              playModeZoom: DEFAULT_PLAY_MODE_ZOOM,
+              playSettings: defaultPlaySettings,
+              vertexEdgeClickBehavior: "default",
+            },
+          }),
           initialDocument: {
             level: getDefaultLevel(preset),
             origin: { kind: "default", label: "Preview", canOverwrite: false },
@@ -586,7 +605,7 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
         lastSizeRef.current = { width: 0, height: 0 };
       };
     },
-    [preset],
+    [lgrAssets.lgr, preset],
   );
 
   return (

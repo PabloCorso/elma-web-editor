@@ -7,7 +7,10 @@ import {
   defaultPlaySettings,
 } from "./play-mode/play-settings";
 import type { EditorStore } from "./editor-store";
-import type { EditorPreferences } from "./editor-preference-types";
+import type {
+  EditorPreferences,
+  VertexEdgeClickBehavior,
+} from "./editor-preference-types";
 
 const EDITOR_PREFERENCES_STORAGE_KEY = "elma-web-editor-preferences";
 
@@ -49,8 +52,15 @@ const defaultEditorPreferences: EditorPreferences = {
   levelVisibility: defaultLevelVisibility,
   playModeZoom: DEFAULT_PLAY_MODE_ZOOM,
   playSettings: defaultPlaySettings,
-  vertexEdgeClickBehavior: "internal",
+  vertexEdgeClickBehavior: "default",
 };
+
+function loadVertexEdgeClickBehavior(
+  behavior?: VertexEdgeClickBehavior | "smibu",
+): VertexEdgeClickBehavior {
+  if (behavior === "internal") return "internal";
+  return "default";
+}
 
 export function loadEditorPreferences(): EditorPreferences {
   const persistedPreferences = parseStoredItem<PersistedEditorPreferences>(
@@ -76,9 +86,9 @@ export function loadEditorPreferences(): EditorPreferences {
         ...(preferences?.playSettings?.keyBindings ?? {}),
       },
     },
-    vertexEdgeClickBehavior:
-      preferences?.vertexEdgeClickBehavior ??
-      defaultEditorPreferences.vertexEdgeClickBehavior,
+    vertexEdgeClickBehavior: loadVertexEdgeClickBehavior(
+      preferences?.vertexEdgeClickBehavior,
+    ),
   };
 }
 

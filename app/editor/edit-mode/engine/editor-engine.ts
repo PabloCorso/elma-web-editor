@@ -120,9 +120,10 @@ export class EditorEngine {
       rendererBackend = "webgl",
     }: EditorEngineOptions = {},
   ) {
+    this.lgrAssets = lgrAssets || new LgrAssets();
     const worldRenderer = createWorldSceneRenderer({
       canvas,
-      lgrAssets: lgrAssets ?? null,
+      lgrAssets: this.lgrAssets,
       backend: rendererBackend,
     });
 
@@ -137,7 +138,6 @@ export class EditorEngine {
     this.wheelStep = wheelStep;
     this.pinchPower = pinchPower;
 
-    this.lgrAssets = lgrAssets || new LgrAssets();
     if (!this.lgrAssets.isReady()) {
       void this.lgrAssets.load().then(() => {
         this.requestRender();

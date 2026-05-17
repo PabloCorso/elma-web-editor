@@ -1,6 +1,6 @@
 import type { EditorState } from "./editor-state";
 
-export type VertexEdgeClickBehavior = "internal" | "smibu";
+export type VertexEdgeClickBehavior = "default" | "internal";
 
 export type EditorPreferences = Pick<
   EditorState,
