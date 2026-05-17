@@ -22,7 +22,7 @@ export type ImportResult = {
   error?: string;
 };
 
-export type DefaultLevelPreset = "default" | "smibu" | "internal";
+export type DefaultLevelPreset = "default" | "internal";
 
 export const defaultInternalEditorLevel: Partial<EditorLevel> = {
   polygons: [
@@ -39,23 +39,6 @@ export const defaultInternalEditorLevel: Partial<EditorLevel> = {
   apples: [],
   flowers: [{ x: -2, y: 0.5 }],
   start: { x: 2, y: 0.5 },
-};
-
-export const defaultSmibuLevelEditorLevel: Partial<EditorLevel> = {
-  polygons: [
-    {
-      vertices: [
-        { x: 0, y: -50 },
-        { x: 50, y: -50 },
-        { x: 50, y: 0 },
-        { x: 0, y: 0 },
-      ],
-      grass: false,
-    },
-  ],
-  apples: [],
-  flowers: [{ x: 37.5, y: -25 }],
-  start: { x: 25, y: -25 },
 };
 
 export const defaultLevel: EditorLevel = {
@@ -85,7 +68,6 @@ export function getDefaultLevel(
 ): EditorLevel {
   return {
     ...defaultLevel,
-    ...(preset === "smibu" ? defaultSmibuLevelEditorLevel : {}),
     ...(preset === "internal" ? defaultInternalEditorLevel : {}),
   };
 }

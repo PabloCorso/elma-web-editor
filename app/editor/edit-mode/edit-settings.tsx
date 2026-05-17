@@ -50,7 +50,6 @@ const LEVEL_PRESETS: Array<{
   label: string;
 }> = [
   { id: "default", label: "Default" },
-  { id: "smibu", label: "Smibu Level Editor" },
   { id: "internal", label: "Internal Editor" },
 ];
 
@@ -121,6 +120,11 @@ export function SettingsPanel() {
     description: ReactNode;
   }> = [
     {
+      id: "smibu",
+      label: "Default",
+      description: "Edit polygons by clicking on vertices or edges.",
+    },
+    {
       id: "internal",
       label: "Internal Editor",
       description: (
@@ -137,11 +141,6 @@ export function SettingsPanel() {
           to edit from edges)
         </>
       ),
-    },
-    {
-      id: "smibu",
-      label: "Smibu Level Editor",
-      description: "Edit polygons by clicking on vertices or edges.",
     },
   ];
 
@@ -300,7 +299,7 @@ function PreferencesSettingsPanel({
         <p className="font-medium">Starter template</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {LEVEL_PRESETS.map((preset) => {
           const isSelected = defaultLevelPreset === preset.id;
           return (
@@ -593,7 +592,7 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
   return (
     <div
       ref={wrapperRef}
-      className="relative aspect-[16/10] min-h-[120px] w-full bg-[#0f1720]"
+      className="relative aspect-[16/7] min-h-[84px] w-full bg-[#0f1720]"
     >
       <canvas
         ref={canvasRef}

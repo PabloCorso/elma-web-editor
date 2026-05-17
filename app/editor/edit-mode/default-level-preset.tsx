@@ -9,6 +9,10 @@ type DefaultLevelPresetContextValue = {
   setDefaultLevelPreset: (preset: DefaultLevelPreset) => void;
 };
 
+function isDefaultLevelPreset(value: string): value is DefaultLevelPreset {
+  return value === "default" || value === "internal";
+}
+
 const DefaultLevelPresetContext =
   createContext<DefaultLevelPresetContextValue | null>(null);
 
@@ -18,16 +22,19 @@ export function DefaultLevelPresetProvider({
   children: React.ReactNode;
 }) {
   const [defaultLevelPreset, setDefaultLevelPreset] =
-    useLocalStorage<DefaultLevelPreset>({
+    useLocalStorage<string>({
       key: DEFAULT_LEVEL_PRESET_STORAGE_KEY,
       defaultValue: "default",
       getInitialValueInEffect: false,
     });
+  const safeDefaultLevelPreset = isDefaultLevelPreset(defaultLevelPreset)
+    ? defaultLevelPreset
+    : "default";
 
   return (
     <DefaultLevelPresetContext.Provider
       value={{
-        defaultLevelPreset,
+        defaultLevelPreset: safeDefaultLevelPreset,
         setDefaultLevelPreset,
       }}
     >
