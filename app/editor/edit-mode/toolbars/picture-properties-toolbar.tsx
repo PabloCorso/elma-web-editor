@@ -101,7 +101,7 @@ export function PicturePropertiesToolbar({
           <button
             type="button"
             className={cn(
-              "flex h-8 w-full cursor-pointer items-center justify-center truncate rounded border-0 bg-transparent px-2 text-center text-xs leading-4 outline-hidden hover:bg-primary-hover/50 hover:text-primary focus-visible:focus-ring aria-expanded:bg-primary-hover/50 aria-expanded:text-primary",
+              "flex h-6 w-full cursor-pointer items-center justify-center truncate rounded border-0 bg-transparent px-1.5 text-center text-[11px] leading-3 outline-hidden hover:bg-primary-hover/50 hover:text-primary focus-visible:focus-ring aria-expanded:bg-primary-hover/50 aria-expanded:text-primary",
               isSelected ? "text-primary" : "text-secondary",
               className,
             )}
@@ -117,14 +117,15 @@ export function PicturePropertiesToolbar({
           </button>
         </PopoverTrigger>
         <PopoverContent
-          side="bottom"
+          side="right"
           align="center"
+          sideOffset={8}
           collisionPadding={16}
           positionerClassName="z-60"
-          className="relative z-50 rounded-lg border border-default bg-screen px-2.5 py-2 shadow-xl outline-hidden"
+          className="relative z-50 rounded-lg border border-default bg-screen px-2 py-1.5 shadow-xl outline-hidden"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-center gap-2 pb-2">
+          <div className="flex items-center gap-1.5 pb-1.5">
             <p className="flex-1 text-xs font-bold text-primary">
               Picture properties
             </p>
@@ -173,7 +174,7 @@ export function PicturePropertiesToolbar({
           </div>
           <Toolbar
             orientation="vertical"
-            className="grid min-w-44 grid-cols-[max-content_1fr] items-center gap-x-3 gap-y-1.5 rounded-md border-0 bg-transparent p-0 shadow-none"
+            className="grid min-w-40 grid-cols-[max-content_1fr] items-center gap-x-2 gap-y-1 rounded-md border-0 bg-transparent p-0 shadow-none"
           >
             <label
               className="contents"
@@ -181,6 +182,7 @@ export function PicturePropertiesToolbar({
             >
               <span className="text-xs font-bold text-secondary">Distance</span>
               <DistanceInput
+                compact
                 className="justify-self-end"
                 distance={normalizedDistance}
                 isSelected={isSelected}
@@ -191,6 +193,7 @@ export function PicturePropertiesToolbar({
             <div className="contents">
               <span className="text-xs font-bold text-secondary">Clip</span>
               <ClipSelect
+                compact
                 className="justify-self-end"
                 clip={clip}
                 isSelected={isSelected}

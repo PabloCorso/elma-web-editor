@@ -59,11 +59,11 @@ export function PictureTexturePicker({
                 ref={
                   item.isSelected ? scrollSelectedPickerItemIntoView : undefined
                 }
-                className="flex flex-col items-center py-2"
+                className="flex flex-col items-center py-1.5"
               >
                 <button
                   className={cn(
-                    "group flex cursor-pointer flex-col items-center gap-1 rounded py-1 hover:bg-primary-hover/50 hover:text-primary",
+                    "group flex cursor-pointer flex-col items-center gap-0.5 rounded py-0.5 hover:bg-primary-hover/50 hover:text-primary",
                     pickerColumnClassName,
                     item.isSelected && "bg-primary-hover/50 text-primary",
                   )}
@@ -111,7 +111,7 @@ export function PictureTexturePicker({
                     />
                   </span>
                 </button>
-                <div className="mt-1 max-w-full">
+                <div className="mt-0.5 max-w-full">
                   <PicturePropertiesToolbar
                     variant="summary-popover"
                     className={pickerColumnClassName}
