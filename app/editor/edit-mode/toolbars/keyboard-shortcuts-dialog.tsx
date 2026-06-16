@@ -21,7 +21,12 @@ import {
   useVertexEdgeClickPreference,
 } from "~/editor/use-editor-store";
 import { cn, useModifier } from "~/utils/misc";
-import { VertexIcon, getVertexIconProps } from "./vertex-tool-control";
+import {
+  AUTO_GRASS_ALL_SHORTCUT,
+  AUTO_GRASS_SELECTED_SHORTCUT,
+  VertexIcon,
+  getVertexIconProps,
+} from "./vertex-tool-control";
 import { OPEN_KEYBOARD_SHORTCUTS_SHORTCUT } from "./keyboard-shortcuts";
 
 type ShortcutGroup = {
@@ -268,6 +273,14 @@ function getShortcutGroups(
             {
               shortcut: defaultTools.vertex.variants?.grass?.shortcut ?? "G",
               label: "Toggle grass mode",
+            },
+            {
+              shortcut: AUTO_GRASS_SELECTED_SHORTCUT,
+              label: "Auto grass selected",
+            },
+            {
+              shortcut: AUTO_GRASS_ALL_SHORTCUT.replace("Mod", modifier),
+              label: "Auto grass all",
             },
             ...(toolIcons.showVertexInternalEdgeClickHint
               ? [

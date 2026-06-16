@@ -14,7 +14,10 @@ export const defaultTools = {
     id: "vertex",
     name: "Vertex",
     shortcut: "V",
-    variants: { grass: { name: "Grass", shortcut: "G" } },
+    variants: {
+      grass: { name: "Grass", shortcut: "G" },
+      autoGrass: { name: "Auto grass", shortcut: "" },
+    },
   },
   apple: { id: "apple", name: "Apple", shortcut: "A" },
   killer: { id: "killer", name: "Killer", shortcut: "K" },

@@ -8,10 +8,11 @@ export class LevelFolder {
   private store: EditorStore;
   private handle?: FileSystemDirectoryHandle;
   private folderName?: string;
+  private loadPromise: Promise<boolean>;
 
   constructor(store: EditorStore) {
     this.store = store;
-    void this.loadFromStorage();
+    this.loadPromise = this.loadFromStorage();
   }
 
   get name() {
@@ -35,6 +36,10 @@ export class LevelFolder {
     return true;
   }
 
+  async ready() {
+    return this.loadPromise;
+  }
+
   async pickFolder() {
     try {
       const handle = await window.showDirectoryPicker({
@@ -43,6 +48,7 @@ export class LevelFolder {
       });
       this.handle = handle;
       this.folderName = handle.name;
+      this.loadPromise = Promise.resolve(true);
       await persistHandle(LEVEL_FOLDER_KEY, handle);
       return true;
     } catch (err: any) {
@@ -52,13 +58,22 @@ export class LevelFolder {
   }
 
   async ensureAccess(write = false) {
+    await this.ready();
     if (!this.handle) return false;
     const opts = write ? { mode: "readwrite" } : { mode: "read" };
     if ((await this.handle.queryPermission(opts)) === "granted") return true;
     return (await this.handle.requestPermission(opts)) === "granted";
   }
 
+  async hasAccess(write = false) {
+    await this.ready();
+    if (!this.handle) return false;
+    const opts = write ? { mode: "readwrite" } : { mode: "read" };
+    return (await this.handle.queryPermission(opts)) === "granted";
+  }
+
   async listLevels() {
+    await this.ready();
     if (!this.handle) return [];
     const names: string[] = [];
     for await (const [name, entry] of this.handle.entries()) {
@@ -68,13 +83,19 @@ export class LevelFolder {
   }
 
   async readLevel(name: string) {
-    if (!this.handle) throw new Error("Level folder is not set");
-    const handle = await this.handle.getFileHandle(name);
+    const handle = await this.getLevelFileHandle(name);
     const file = await handle.getFile();
     return file.arrayBuffer();
   }
 
+  async getLevelFileHandle(name: string) {
+    await this.ready();
+    if (!this.handle) throw new Error("Level folder is not set");
+    return this.handle.getFileHandle(name);
+  }
+
   async writeLevel(name: string, data: BlobPart) {
+    await this.ready();
     if (!this.handle) throw new Error("Level folder is not set");
     const handle = await this.handle.getFileHandle(name, { create: true });
     const writable = await handle.createWritable();
@@ -85,6 +106,7 @@ export class LevelFolder {
   async forget() {
     this.handle = undefined;
     this.folderName = undefined;
+    this.loadPromise = Promise.resolve(false);
     await deleteHandle(LEVEL_FOLDER_KEY);
   }
 }

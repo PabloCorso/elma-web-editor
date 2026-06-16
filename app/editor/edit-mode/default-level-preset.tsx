@@ -1,16 +1,21 @@
 import { useLocalStorage } from "@mantine/hooks";
 import { createContext, useContext } from "react";
+import type { EditorLevel } from "~/editor/elma-types";
 import type { DefaultLevelPreset } from "~/editor/helpers/level-parser";
 
 export const DEFAULT_LEVEL_PRESET_STORAGE_KEY = "elma-web-default-level-preset";
+export const CUSTOM_DEFAULT_LEVEL_TEMPLATE_STORAGE_KEY =
+  "elma-web-custom-default-level-template";
 
 type DefaultLevelPresetContextValue = {
   defaultLevelPreset: DefaultLevelPreset;
   setDefaultLevelPreset: (preset: DefaultLevelPreset) => void;
+  customDefaultLevelTemplate: EditorLevel | null;
+  setCustomDefaultLevelTemplate: (level: EditorLevel | null) => void;
 };
 
 function isDefaultLevelPreset(value: string): value is DefaultLevelPreset {
-  return value === "default" || value === "internal";
+  return value === "default" || value === "custom";
 }
 
 const DefaultLevelPresetContext =
@@ -26,15 +31,25 @@ export function DefaultLevelPresetProvider({
     defaultValue: "default",
     getInitialValueInEffect: false,
   });
-  const safeDefaultLevelPreset = isDefaultLevelPreset(defaultLevelPreset)
-    ? defaultLevelPreset
-    : "default";
+  const [customDefaultLevelTemplate, setCustomDefaultLevelTemplate] =
+    useLocalStorage<EditorLevel | null>({
+      key: CUSTOM_DEFAULT_LEVEL_TEMPLATE_STORAGE_KEY,
+      defaultValue: null,
+      getInitialValueInEffect: false,
+    });
+  const safeDefaultLevelPreset =
+    isDefaultLevelPreset(defaultLevelPreset) &&
+    (defaultLevelPreset !== "custom" || customDefaultLevelTemplate)
+      ? defaultLevelPreset
+      : "default";
 
   return (
     <DefaultLevelPresetContext.Provider
       value={{
         defaultLevelPreset: safeDefaultLevelPreset,
         setDefaultLevelPreset,
+        customDefaultLevelTemplate,
+        setCustomDefaultLevelTemplate,
       }}
     >
       {children}
@@ -58,4 +73,12 @@ export function useDefaultLevelPreset() {
 
 export function useSetDefaultLevelPreset() {
   return useDefaultLevelPresetContext().setDefaultLevelPreset;
+}
+
+export function useCustomDefaultLevelTemplate() {
+  return useDefaultLevelPresetContext().customDefaultLevelTemplate;
+}
+
+export function useSetCustomDefaultLevelTemplate() {
+  return useDefaultLevelPresetContext().setCustomDefaultLevelTemplate;
 }

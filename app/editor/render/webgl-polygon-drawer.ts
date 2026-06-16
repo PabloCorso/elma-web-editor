@@ -1,7 +1,7 @@
 import type { LgrAssets } from "~/components/lgr-assets";
 import {
   colors,
-  ELMA_PIXEL_SCALE,
+  GRASS_FILL_DEPTH,
   uiColors,
   uiStrokeWidths,
 } from "~/editor/constants";
@@ -159,6 +159,7 @@ export class WebGLPolygonDrawer {
       const lineWidth =
         uiStrokeWidths.boundsIdleScreen / Math.max(scene.viewport.zoom, 1);
       const idlePolygonBoundsOpacity = 0.5;
+      const boundsOpacity = (polygon.opacity ?? 1) * idlePolygonBoundsOpacity;
       if (polygon.isGrass) {
         if (!scene.visibility.showGrassBounds) continue;
 
@@ -171,7 +172,7 @@ export class WebGLPolygonDrawer {
             lineWidth,
             colors.grass,
             scene,
-            idlePolygonBoundsOpacity,
+            boundsOpacity,
           );
         }
         continue;
@@ -188,7 +189,7 @@ export class WebGLPolygonDrawer {
           lineWidth,
           uiColors.boundsIdle,
           scene,
-          idlePolygonBoundsOpacity,
+          boundsOpacity,
         );
       }
     }
@@ -212,7 +213,7 @@ export class WebGLPolygonDrawer {
     gl.stencilFunc(gl.EQUAL, 0, 0xff);
 
     if (grassTexture) {
-      this.drawGrassTexture(grassTexture, scene);
+      this.drawGrassTexture(grassTexture, scene, polygon.opacity);
       gl.disable(gl.STENCIL_TEST);
       return;
     }
@@ -221,7 +222,7 @@ export class WebGLPolygonDrawer {
       vertices: polygon.vertices,
       grassEdgeIndices: polygon.grassEdgeIndices,
       zoom: scene.viewport.zoom,
-      depth: 20 * ELMA_PIXEL_SCALE,
+      depth: polygon.grassDepth ?? GRASS_FILL_DEPTH,
     })) {
       this.shapes.drawQuad(
         [
@@ -236,6 +237,7 @@ export class WebGLPolygonDrawer {
         ],
         colors.grass,
         scene,
+        polygon.opacity,
       );
     }
 
@@ -249,6 +251,7 @@ export class WebGLPolygonDrawer {
       minYPx: number;
     },
     scene: WorldRenderScene,
+    opacity = 1,
   ) {
     const texture = this.context.getTexture(composed.canvas);
     const minX = pixelsToWorldUnits(composed.minXPx);
@@ -283,7 +286,7 @@ export class WebGLPolygonDrawer {
         1,
         1,
       ],
-      color: [1, 1, 1, 1],
+      color: [1, 1, 1, opacity],
       texture,
       scene,
     });

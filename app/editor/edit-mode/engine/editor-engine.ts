@@ -32,7 +32,11 @@ import {
   SelectTool,
   type SelectToolState,
 } from "~/editor/edit-mode/tools/select-tool";
-import type { VertexToolState } from "~/editor/edit-mode/tools/vertex-tool";
+import {
+  VertexTool,
+  type VertexToolState,
+} from "~/editor/edit-mode/tools/vertex-tool";
+import { defaultTools } from "~/editor/edit-mode/tools/default-tools";
 import type { EditorDocumentInput } from "~/editor/editor-state";
 import { buildEditorWorldScene } from "~/editor/edit-mode/scene/editor-scene-builder";
 import type { WorldRenderOverlayItem } from "~/editor/render/world-scene";
@@ -60,6 +64,7 @@ import {
 import { isWorldPointInGroundRegion } from "~/editor/helpers/polygon-helpers";
 import type { Polygon } from "~/editor/elma-types";
 import { DEFAULT_OBJECT_RENDER_DISTANCE } from "~/editor/render/render-constants";
+import { getAutoGrassablePolygonsFromSelection } from "~/editor/helpers/auto-grass";
 
 type EditorEngineOptions = {
   initialDocument?: EditorDocumentInput;
@@ -813,6 +818,18 @@ export class EditorEngine {
     }
 
     const keyboardContext = this.getKeyboardEventContext(state);
+    const key = event.key.toUpperCase();
+    const modifier = checkModifierKey(event);
+
+    if (key === "G" && event.shiftKey) {
+      if (modifier) {
+        this.autoGrassAll(state);
+      } else {
+        this.autoGrassSelected(state);
+      }
+      event.preventDefault();
+      return;
+    }
 
     // Let active tool handle the key first
     const activeTool = state.actions.getActiveTool();
@@ -824,8 +841,6 @@ export class EditorEngine {
       }
     }
 
-    const key = event.key.toUpperCase();
-    const modifier = checkModifierKey(event);
     this.refreshSelectionHoverForModifierKeys(state, event);
 
     if (modifier && key === "A") {
@@ -915,6 +930,32 @@ export class EditorEngine {
     };
     shortcuts[event.key]?.();
   };
+
+  private autoGrassSelected(state: EditorState): boolean {
+    const selectToolState = state.actions.getToolState<SelectToolState>(
+      defaultTools.select.id,
+    );
+    if (!selectToolState) return false;
+
+    const sourcePolygons = getAutoGrassablePolygonsFromSelection(
+      selectToolState.selectedVertices,
+    );
+    if (sourcePolygons.length === 0) return false;
+
+    return (
+      state.actions
+        .getTool<VertexTool>(defaultTools.vertex.id)
+        ?.autoGrassPolygons(sourcePolygons) ?? false
+    );
+  }
+
+  private autoGrassAll(state: EditorState): boolean {
+    return (
+      state.actions
+        .getTool<VertexTool>(defaultTools.vertex.id)
+        ?.autoGrassAll() ?? false
+    );
+  }
 
   private handleKeyUp = (event: KeyboardEvent) => {
     this.pressedKeys.delete(event.code);

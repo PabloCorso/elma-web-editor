@@ -11,6 +11,7 @@ import { FileSession } from "./helpers/file-session";
 import { LevelFolder } from "./helpers/level-folder";
 import type { LevelVisibilitySettings } from "./level-visibility";
 import type { VertexEdgeClickBehavior } from "./editor-preference-types";
+import type { AutoGrassOptions } from "./helpers/auto-grass";
 import type {
   PlayRunEndBehavior,
   PlayKeyBindings,
@@ -88,6 +89,7 @@ export type EditorState = EditorLevel & {
   levelVisibility: LevelVisibilitySettings;
   playSettings: PlaySettings;
   vertexEdgeClickBehavior: VertexEdgeClickBehavior;
+  autoGrassOptions: AutoGrassOptions;
   isUIVisible: boolean;
   isPlayMode: boolean;
   playModeSeedKeys: string[];
@@ -164,6 +166,7 @@ export type EditorState = EditorLevel & {
       keyBindings?: Partial<PlayKeyBindings>;
     }) => void;
     setVertexEdgeClickBehavior: (behavior: VertexEdgeClickBehavior) => void;
+    setAutoGrassOptions: (options: Partial<AutoGrassOptions>) => void;
     toggleLevelVisibility: (key: keyof LevelVisibilitySettings) => void;
     resetLevelVisibility: () => void;
     setUIVisible: (visible: boolean) => void;

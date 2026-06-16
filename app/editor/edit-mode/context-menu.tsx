@@ -37,6 +37,11 @@ import {
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Icon } from "~/components/ui/icon";
+import {
+  appendAutoGrassForPolygons,
+  defaultAutoGrassOptions,
+  getAutoGrassablePolygonsFromSelection,
+} from "~/editor/helpers/auto-grass";
 import { PictureIcon, SpriteIcon } from "~/components/sprite-icon";
 import {
   useAppleSprites,
@@ -95,6 +100,7 @@ export function EditorContextMenu() {
   const start = useEditor((state) => state.start);
   const polygons = useEditor((state) => state.polygons);
   const pictures = useEditor((state) => state.pictures);
+  const autoGrassOptions = useEditor((state) => state.autoGrassOptions);
   const [selectionFilterSource, setSelectionFilterSource] = useState<{
     key: string;
     selection: SelectionFilterSource;
@@ -126,6 +132,9 @@ export function EditorContextMenu() {
   const commonAppleAnimation = getCommonAppleAnimation(selectedApples);
   const commonAppleGravity = getCommonAppleGravity(selectedApples);
   const selectedPolygons = getSelectedPolygons(selectToolState);
+  const selectedAutoGrassPolygons = getAutoGrassablePolygonsFromSelection(
+    selectToolState.selectedVertices,
+  );
   const canToggleGrass = selectedPolygons.length > 0;
   const selectedPictures = getSelectedPictures(selectToolState, pictures);
   const hasSelection =
@@ -214,6 +223,19 @@ export function EditorContextMenu() {
         tabIndex={-1}
         orientation="horizontal"
         className="border-0 bg-transparent p-0 shadow-none"
+        onAutoGrass={
+          selectedAutoGrassPolygons.length > 0
+            ? () => {
+                setPolygons(
+                  appendAutoGrassForPolygons({
+                    polygons,
+                    sourcePolygons: selectedAutoGrassPolygons,
+                    options: autoGrassOptions ?? defaultAutoGrassOptions,
+                  }),
+                );
+              }
+            : undefined
+        }
         onGrassToggle={() => {
           const selectedPolygonSet = new Set(selectedPolygons);
           setPolygons(
@@ -241,7 +263,7 @@ export function EditorContextMenu() {
         tabIndex={-1}
         orientation="horizontal"
         variant="summary-popover"
-        className="!h-10 w-fit border-0 bg-transparent px-2 shadow-none"
+        className="!h-8 w-fit border-0 bg-transparent px-1.5 shadow-none"
         distance={commonPictureDistance}
         clip={commonPictureClip}
         onDistanceChange={(distance) => {

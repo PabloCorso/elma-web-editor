@@ -1,4 +1,8 @@
-import { ELMA_PIXEL_SCALE, QGRASS_TOP_EXTRA_PX } from "~/editor/constants";
+import {
+  ELMA_PIXEL_SCALE,
+  GRASS_BASELINE_PX,
+  QGRASS_TOP_EXTRA_PX,
+} from "~/editor/constants";
 import type { WorldPoint } from "~/editor/render/world-scene";
 
 const MIN_ZOOM_EPSILON = 0.0001;
@@ -307,7 +311,6 @@ export function getSimpleGrassFillQuads({
   vertices,
   grassEdgeIndices,
   zoom,
-  depth,
 }: {
   vertices: WorldPoint[];
   grassEdgeIndices: number[];
@@ -318,7 +321,8 @@ export function getSimpleGrassFillQuads({
     GRASS_TINY_CANVAS_UNIT_PX / Math.max(zoom, MIN_ZOOM_EPSILON);
   const grassEdgesSet = new Set(grassEdgeIndices);
   const vertexCount = vertices.length;
-  const fillDepth = depth + QGRASS_TOP_EXTRA_PX * ELMA_PIXEL_SCALE;
+  const topOffset =
+    (Math.ceil(GRASS_BASELINE_PX / 2) + QGRASS_TOP_EXTRA_PX) * ELMA_PIXEL_SCALE;
   const quads: Array<
     readonly [WorldPoint, WorldPoint, WorldPoint, WorldPoint]
   > = [];
@@ -388,11 +392,11 @@ export function getSimpleGrassFillQuads({
       { x: toX, y: toY },
       {
         x: toX,
-        y: toY - fillDepth,
+        y: toY - topOffset,
       },
       {
         x: fromX,
-        y: fromY - fillDepth,
+        y: fromY - topOffset,
       },
     ]);
   }

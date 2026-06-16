@@ -7,6 +7,10 @@ import {
   findPolygonLineForEditing,
   findPolygonVertexForEditing,
 } from "~/editor/helpers/selection-helpers";
+import {
+  appendAutoGrassForPolygons,
+  generateAutoGrassPolygons,
+} from "~/editor/helpers/auto-grass";
 import { isPolygonClockwise } from "~/editor/helpers/polygon-helpers";
 import {
   colors,
@@ -29,7 +33,7 @@ import fastDeepEqual from "fast-deep-equal";
 
 const DEFAULT_VARIANT: VertexToolVariant = "normal";
 
-export type VertexToolVariant = "normal" | "grass" | "both";
+export type VertexToolVariant = "normal" | "grass" | "both" | "autoGrass";
 
 export type VertexToolState = {
   drawingPolygon: Polygon;
@@ -115,6 +119,28 @@ export class VertexTool extends Tool<VertexToolState> {
     const { state, toolState } = this.getState();
     if (!toolState) return { polygons: [] };
 
+    if (
+      state.mouseOnCanvas &&
+      toolState.variant === "autoGrass" &&
+      toolState.drawingPolygon.vertices.length === 0
+    ) {
+      const polygon = findPolygonEdgeNearPosition(
+        state.mousePosition,
+        state.polygons,
+        selectionThresholds.polygonEdge / state.zoom,
+        (candidate) => !candidate.grass,
+      );
+      if (!polygon) return { polygons: [] };
+
+      return {
+        polygons: generateAutoGrassPolygons({
+          polygons: state.polygons,
+          sourcePolygons: [polygon],
+          options: state.autoGrassOptions,
+        }),
+      };
+    }
+
     if (toolState.drawingPolygon.vertices.length >= 3) {
       // Create a draft polygon that includes the current mouse position
       return {
@@ -137,6 +163,21 @@ export class VertexTool extends Tool<VertexToolState> {
     const worldPos = context.worldPos;
     const { state, toolState, setToolState } = this.getState();
     if (!toolState) return false;
+
+    if (
+      toolState.variant === "autoGrass" &&
+      toolState.drawingPolygon.vertices.length === 0
+    ) {
+      const polygon = findPolygonEdgeNearPosition(
+        worldPos,
+        state.polygons,
+        selectionThresholds.polygonEdge / state.zoom,
+        (candidate) => !candidate.grass,
+      );
+      if (!polygon) return false;
+
+      return this.autoGrassPolygons([polygon]);
+    }
 
     // If we're already drawing a polygon, continue with normal drawing behavior
     if (toolState.drawingPolygon.vertices.length > 0) {
@@ -263,6 +304,33 @@ export class VertexTool extends Tool<VertexToolState> {
     }
 
     return false;
+  }
+
+  autoGrassAll(): boolean {
+    const { state } = this.getState();
+    return this.autoGrassPolygons(
+      state.polygons.filter((polygon) => !polygon.grass),
+    );
+  }
+
+  autoGrassPolygons(polygons: Polygon[]): boolean {
+    const { state } = this.getState();
+    const sourcePolygons = polygons.filter((polygon) =>
+      state.polygons.includes(polygon),
+    );
+    if (sourcePolygons.length === 0) return false;
+
+    const nextPolygons = appendAutoGrassForPolygons({
+      polygons: state.polygons,
+      sourcePolygons,
+      options: state.autoGrassOptions,
+    });
+    if (nextPolygons === state.polygons) return false;
+
+    this.runHistoryBatch(() => {
+      state.actions.setPolygons(nextPolygons);
+    });
+    return true;
   }
 
   getCursor(_context: EventContext): string {

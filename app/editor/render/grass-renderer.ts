@@ -16,6 +16,11 @@ type GrassVariant = {
   bordersPx: number[];
 };
 
+type GrassSlopeVariant = {
+  widthPx: number;
+  fallPx: number;
+};
+
 type GrassPlacement = {
   xPx: number;
   topYPx: number;
@@ -36,11 +41,30 @@ export type GrassTextureComposition = {
   minYPx: number;
 };
 
+const DEFAULT_STEEPEST_GRASS_SPRITE_FALL_PX = 18;
+const DEFAULT_STEEPEST_GRASS_SPRITE_WIDTH_PX = 10;
+export const DEFAULT_GRASS_MAX_SLOPE_DEGREES = getMaxGrassSlopeDegrees([
+  {
+    widthPx: DEFAULT_STEEPEST_GRASS_SPRITE_WIDTH_PX,
+    fallPx: DEFAULT_STEEPEST_GRASS_SPRITE_FALL_PX,
+  },
+]);
+
 const grassBordersCache = new WeakMap<ImageBitmap, number[]>();
 const grassTextureCache = new WeakMap<
   LgrAssets,
   Map<string, GrassTextureComposition | null>
 >();
+
+export function getMaxGrassSlopeDegrees(variants: GrassSlopeVariant[]) {
+  return variants.reduce((maxSlope, variant) => {
+    if (variant.widthPx <= 0) return maxSlope;
+
+    const slopeDegrees =
+      (Math.atan2(Math.abs(variant.fallPx), variant.widthPx) * 180) / Math.PI;
+    return Math.max(maxSlope, slopeDegrees);
+  }, 0);
+}
 
 export function composeGrassTexture({
   lgrAssets,
@@ -97,6 +121,9 @@ function createGrassPolygonHeightmap(
 ): PolygonHeightmap | null {
   if (vertices.length < 3) return null;
 
+  const lineHeightmap = createLineGrassPolygonHeightmap(vertices);
+  if (lineHeightmap) return lineHeightmap;
+
   const xOriginPx = Math.floor(
     Math.min(
       ...vertices.map((vertex) => vertex.x * ELMA_PIXELS_PER_WORLD_UNIT),
@@ -108,7 +135,15 @@ function createGrassPolygonHeightmap(
   for (let index = 0; index < vertices.length; index += 1) {
     const nextIndex = (index + 1) % vertices.length;
     const span = Math.abs(vertices[index]!.x - vertices[nextIndex]!.x);
-    if (span > longestHorizontalSpan) {
+    const averageY = (vertices[index]!.y + vertices[nextIndex]!.y) / 2;
+    const longestNextIndex = (longestEdgeIndex + 1) % vertices.length;
+    const longestAverageY =
+      (vertices[longestEdgeIndex]!.y + vertices[longestNextIndex]!.y) / 2;
+
+    if (
+      span > longestHorizontalSpan ||
+      (span === longestHorizontalSpan && averageY < longestAverageY)
+    ) {
       longestHorizontalSpan = span;
       longestEdgeIndex = index;
     }
@@ -163,6 +198,59 @@ function createGrassPolygonHeightmap(
 
   const lengthPx = currentXPx - x0Px + 1;
 
+  return {
+    xOriginPx,
+    x0Px,
+    yByXPx,
+    lengthPx,
+    yAtLocalXPx(xPx) {
+      const localIndex = xPx - x0Px;
+      if (localIndex < 0 || localIndex >= lengthPx) return undefined;
+      return yByXPx[localIndex];
+    },
+  };
+}
+
+function createLineGrassPolygonHeightmap(
+  vertices: WorldPoint[],
+): PolygonHeightmap | null {
+  const last = vertices[vertices.length - 1]!;
+  const previous = vertices[vertices.length - 2]!;
+  if (last.x !== previous.x || last.y !== previous.y) return null;
+
+  const surfaceVertices = vertices.slice(0, -1);
+  if (surfaceVertices.length < 2) return null;
+  if (surfaceVertices[0]!.x > surfaceVertices[surfaceVertices.length - 1]!.x) {
+    surfaceVertices.reverse();
+  }
+
+  const xOriginPx = Math.floor(
+    Math.min(
+      ...surfaceVertices.map((vertex) => vertex.x * ELMA_PIXELS_PER_WORLD_UNIT),
+    ),
+  );
+  let x0Px = -1;
+  let currentXPx = -1;
+  const yByXPx: number[] = [];
+
+  for (let index = 0; index < surfaceVertices.length - 1; index += 1) {
+    currentXPx = appendGrassLineHeightmap(
+      surfaceVertices[index]!,
+      surfaceVertices[index + 1]!,
+      xOriginPx,
+      x0Px,
+      currentXPx,
+      yByXPx,
+    );
+
+    if (x0Px < 0 && yByXPx.length > 0) {
+      x0Px = toLocalPixel(surfaceVertices[index]!.x, xOriginPx);
+    }
+  }
+
+  if (x0Px < 0 || yByXPx.length === 0) return null;
+
+  const lengthPx = currentXPx - x0Px + 1;
   return {
     xOriginPx,
     x0Px,

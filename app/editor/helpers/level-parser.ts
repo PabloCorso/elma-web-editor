@@ -23,26 +23,9 @@ export type ImportResult = {
   error?: string;
 };
 
-export type DefaultLevelPreset = "default" | "internal";
+export type DefaultLevelPreset = "default" | "custom";
 
-export const defaultInternalEditorLevel: Partial<EditorLevel> = {
-  polygons: [
-    {
-      vertices: [
-        { x: -24, y: -8 },
-        { x: 24, y: -8 },
-        { x: 24, y: 2 },
-        { x: -24, y: 2 },
-      ],
-      grass: false,
-    },
-  ],
-  apples: [],
-  flowers: [{ x: -2, y: 0.5 }],
-  start: { x: 2, y: 0.5 },
-};
-
-export const defaultLevel: EditorLevel = {
+const baseDefaultLevel: EditorLevel = {
   levelName: "",
   lgr: "default",
   ground: Texture.Ground,
@@ -65,13 +48,41 @@ export const defaultLevel: EditorLevel = {
   pictures: [],
 };
 
+const internalEditorLevelTemplate: Partial<EditorLevel> = {
+  polygons: [
+    {
+      vertices: [
+        { x: -24, y: -8 },
+        { x: 24, y: -8 },
+        { x: 24, y: 2 },
+        { x: -24, y: 2 },
+      ],
+      grass: false,
+    },
+  ],
+  apples: [],
+  flowers: [{ x: -2, y: 0.5 }],
+  start: { x: 2, y: 0.5 },
+};
+
+export const defaultLevel: EditorLevel = {
+  ...baseDefaultLevel,
+  ...internalEditorLevelTemplate,
+};
+
 export function getDefaultLevel(
   preset: DefaultLevelPreset = "default",
+  customLevel?: EditorLevel | null,
 ): EditorLevel {
-  return {
-    ...defaultLevel,
-    ...(preset === "internal" ? defaultInternalEditorLevel : {}),
-  };
+  if (preset === "custom" && customLevel) {
+    return cloneEditorLevel(customLevel);
+  }
+
+  return cloneEditorLevel(defaultLevel);
+}
+
+function cloneEditorLevel(level: EditorLevel): EditorLevel {
+  return structuredClone(level);
 }
 
 export async function editorLevelFromFile(file: File) {

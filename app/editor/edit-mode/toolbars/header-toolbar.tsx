@@ -39,7 +39,10 @@ import {
   editorLevelFromFile,
   elmaLevelFromEditorState,
 } from "~/editor/helpers/level-parser";
-import { useDefaultLevelPreset } from "~/editor/edit-mode/default-level-preset";
+import {
+  useCustomDefaultLevelTemplate,
+  useDefaultLevelPreset,
+} from "~/editor/edit-mode/default-level-preset";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
 import { SettingsDialog } from "~/editor/edit-mode/edit-settings";
@@ -196,6 +199,7 @@ function useMainMenuActions() {
   const activeTool = useEditorActiveTool();
   const { confirmDiscardChanges } = useEditorDocumentGuard();
   const defaultLevelPreset = useDefaultLevelPreset();
+  const customDefaultLevelTemplate = useCustomDefaultLevelTemplate();
   const isPickerActionRunningRef = useRef(false);
 
   const runWithPickerGuard = useCallback(
@@ -262,7 +266,10 @@ function useMainMenuActions() {
 
     activeTool?.clear?.();
     store.getState().fileSession.clear();
-    const defaultLevel = getDefaultLevel(defaultLevelPreset);
+    const defaultLevel = getDefaultLevel(
+      defaultLevelPreset,
+      customDefaultLevelTemplate,
+    );
     replaceDocument({
       level: defaultLevel,
       origin: { kind: "default", label: "Untitled", canOverwrite: false },
@@ -273,6 +280,7 @@ function useMainMenuActions() {
   }, [
     activeTool,
     confirmDiscardChanges,
+    customDefaultLevelTemplate,
     defaultLevelPreset,
     replaceDocument,
     store,

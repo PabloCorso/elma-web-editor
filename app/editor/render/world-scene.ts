@@ -32,6 +32,8 @@ export type WorldRenderPolygonItem = {
   vertices: WorldPoint[];
   isGrass: boolean;
   grassEdgeIndices: number[];
+  grassDepth?: number;
+  opacity?: number;
 };
 
 export type WorldRenderPictureItem = {

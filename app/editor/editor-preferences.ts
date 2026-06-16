@@ -11,6 +11,10 @@ import type {
   EditorPreferences,
   VertexEdgeClickBehavior,
 } from "./editor-preference-types";
+import {
+  defaultAutoGrassOptions,
+  type AutoGrassOptions,
+} from "./helpers/auto-grass";
 
 const EDITOR_PREFERENCES_STORAGE_KEY = "elma-web-editor-preferences";
 
@@ -23,6 +27,10 @@ type PersistedLevelVisibilitySettings = Partial<
   EditorPreferences["levelVisibility"]
 > & {
   showPolygonBounds?: boolean;
+};
+
+type PersistedAutoGrassOptions = Partial<AutoGrassOptions> & {
+  cornerTrim?: number;
 };
 
 function isClient() {
@@ -53,6 +61,7 @@ const defaultEditorPreferences: EditorPreferences = {
   playModeZoom: DEFAULT_PLAY_MODE_ZOOM,
   playSettings: defaultPlaySettings,
   vertexEdgeClickBehavior: "default",
+  autoGrassOptions: defaultAutoGrassOptions,
 };
 
 function loadVertexEdgeClickBehavior(
@@ -89,6 +98,19 @@ export function loadEditorPreferences(): EditorPreferences {
     vertexEdgeClickBehavior: loadVertexEdgeClickBehavior(
       preferences?.vertexEdgeClickBehavior,
     ),
+    autoGrassOptions: loadAutoGrassOptions(preferences?.autoGrassOptions),
+  };
+}
+
+function loadAutoGrassOptions(
+  options?: PersistedAutoGrassOptions,
+): AutoGrassOptions {
+  return {
+    depth: options?.depth ?? defaultAutoGrassOptions.depth,
+    endInset:
+      options?.endInset ??
+      options?.cornerTrim ??
+      defaultAutoGrassOptions.endInset,
   };
 }
 
@@ -128,6 +150,7 @@ function getComparableEditorPreferences(state: EditorState): EditorPreferences {
     playModeZoom: state.playModeZoom,
     playSettings: state.playSettings,
     vertexEdgeClickBehavior: state.vertexEdgeClickBehavior,
+    autoGrassOptions: state.autoGrassOptions,
   };
 }
 

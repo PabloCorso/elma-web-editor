@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import { EditorEngine } from "~/editor/edit-mode/engine/editor-engine";
 import {
   useEditorLevelFolderName,
@@ -8,15 +14,20 @@ import {
 } from "~/editor/use-editor-store";
 import { createEditorStore } from "~/editor/editor-store";
 import {
+  useCustomDefaultLevelTemplate,
   useDefaultLevelPreset,
   useSetDefaultLevelPreset,
+  useSetCustomDefaultLevelTemplate,
 } from "~/editor/edit-mode/default-level-preset";
 import type { VertexEdgeClickBehavior } from "~/editor/editor-preference-types";
 import {
+  editorLevelFromFile,
   getDefaultLevel,
   type DefaultLevelPreset,
 } from "~/editor/helpers/level-parser";
+import type { EditorLevel } from "~/editor/elma-types";
 import { defaultLevelVisibility } from "~/editor/level-visibility";
+import { defaultAutoGrassOptions } from "~/editor/helpers/auto-grass";
 import { supportsFilePickers } from "~/editor/helpers/file-session";
 import {
   Dialog,
@@ -45,6 +56,7 @@ import { Button } from "../../components/ui/button";
 import {
   ArrowCounterClockwiseIcon,
   CaretDownIcon,
+  PlusIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import datGif from "~/assets/dat.gif";
 import { useLgrAssets } from "~/components/use-lgr-assets";
@@ -52,10 +64,7 @@ import { useLgrAssets } from "~/components/use-lgr-assets";
 const LEVEL_PRESETS: Array<{
   id: DefaultLevelPreset;
   label: string;
-}> = [
-  { id: "default", label: "Default" },
-  { id: "internal", label: "Internal Editor" },
-];
+}> = [{ id: "default", label: "Default" }];
 
 const playRunEndBehaviors: Array<{
   id: PlayRunEndBehavior;
@@ -293,10 +302,33 @@ function PreferencesSettingsPanel({
   const store = useEditorStore();
   const defaultLevelPreset = useDefaultLevelPreset();
   const setDefaultLevelPreset = useSetDefaultLevelPreset();
+  const customDefaultLevelTemplate = useCustomDefaultLevelTemplate();
+  const setCustomDefaultLevelTemplate = useSetCustomDefaultLevelTemplate();
   const vertexEdgeClickBehavior = useVertexEdgeClickPreference();
+  const customTemplateInputRef = useRef<HTMLInputElement | null>(null);
+  const [customTemplateError, setCustomTemplateError] = useState<string | null>(
+    null,
+  );
   const { setVertexEdgeClickBehavior: setEditorVertexEdgeClickBehavior } =
     store.getState().actions;
+  const handleCustomTemplateUpload = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
 
+    try {
+      const level = await editorLevelFromFile(file);
+      setCustomDefaultLevelTemplate(level);
+      setDefaultLevelPreset("custom");
+      setCustomTemplateError(null);
+    } catch (error) {
+      setCustomTemplateError(
+        error instanceof Error ? error.message : "Could not import template.",
+      );
+    }
+  };
   return (
     <TabsContent value="default-level" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -330,7 +362,65 @@ function PreferencesSettingsPanel({
             </button>
           );
         })}
+        <div
+          className={cn(
+            "relative aspect-[16/7] min-h-[84px] overflow-hidden rounded-xl border transition-colors",
+            defaultLevelPreset === "custom"
+              ? "border-blue-400 bg-blue-500/10"
+              : "border-separator hover:border-blue-400/60",
+          )}
+        >
+          {customDefaultLevelTemplate ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setDefaultLevelPreset("custom")}
+                className="absolute inset-0 cursor-pointer text-left focus-visible:focus-ring"
+                aria-pressed={defaultLevelPreset === "custom"}
+              >
+                <LevelPresetPreview
+                  preset="custom"
+                  customLevel={customDefaultLevelTemplate}
+                />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/75 via-black/10 to-transparent px-3 py-2">
+                  <div>
+                    <p className="text-xs font-medium text-white/85">Custom</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => customTemplateInputRef.current?.click()}
+                className="absolute top-1/2 left-1/2 flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white/90 shadow-sm transition-colors hover:bg-black/70 focus-visible:focus-ring"
+                aria-label="Replace custom template"
+              >
+                <PlusIcon className="size-5" />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => customTemplateInputRef.current?.click()}
+              className="relative flex h-full w-full cursor-pointer items-center justify-center bg-transparent focus-visible:focus-ring"
+            >
+              <PlusIcon className="size-7 text-primary/70" />
+              <span className="absolute bottom-2 left-3 text-xs font-medium text-primary/85">
+                Custom
+              </span>
+            </button>
+          )}
+          <input
+            ref={customTemplateInputRef}
+            type="file"
+            accept=".lev"
+            className="hidden"
+            onChange={handleCustomTemplateUpload}
+          />
+        </div>
       </div>
+      {customTemplateError && (
+        <p className="text-sm text-red-300">{customTemplateError}</p>
+      )}
 
       <div className="flex flex-col gap-1 pt-2">
         <p className="font-medium">Vertex tool behavior</p>
@@ -510,7 +600,13 @@ function formatPlayKeyCode(code: string) {
   return code;
 }
 
-function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
+function LevelPresetPreview({
+  preset,
+  customLevel,
+}: {
+  preset: DefaultLevelPreset;
+  customLevel?: EditorLevel | null;
+}) {
   const lgrAssets = useLgrAssets();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -579,10 +675,11 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
               playModeZoom: DEFAULT_PLAY_MODE_ZOOM,
               playSettings: defaultPlaySettings,
               vertexEdgeClickBehavior: "default",
+              autoGrassOptions: defaultAutoGrassOptions,
             },
           }),
           initialDocument: {
-            level: getDefaultLevel(preset),
+            level: getDefaultLevel(preset, customLevel),
             origin: { kind: "default", label: "Preview", canOverwrite: false },
             displayName: "Preview",
             hasExternalHandle: false,
@@ -605,7 +702,7 @@ function LevelPresetPreview({ preset }: { preset: DefaultLevelPreset }) {
         lastSizeRef.current = { width: 0, height: 0 };
       };
     },
-    [lgrAssets.lgr, preset],
+    [customLevel, lgrAssets.lgr, preset],
   );
 
   return (

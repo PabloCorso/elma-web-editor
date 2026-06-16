@@ -150,13 +150,32 @@ export function getGrassEdgeIndices(vertices: Array<{ x: number; y: number }>) {
   const vertexCount = vertices.length;
   if (vertexCount < 2) return [];
 
+  const lineGrassEdgeIndices = getLineGrassEdgeIndices(vertices);
+  if (lineGrassEdgeIndices) {
+    return lineGrassEdgeIndices;
+  }
+
   let longestEdgeIndex = -1;
   let longestEdgeLength = -1;
   for (let i = 0; i < vertexCount; i += 1) {
     const from = vertices[i]!;
     const to = vertices[(i + 1) % vertexCount]!;
     const length = Math.hypot(to.x - from.x, to.y - from.y);
-    if (length > longestEdgeLength) {
+    const averageY = (from.y + to.y) / 2;
+    const longestFrom = vertices[longestEdgeIndex];
+    const longestTo =
+      longestEdgeIndex >= 0
+        ? vertices[(longestEdgeIndex + 1) % vertexCount]
+        : undefined;
+    const longestAverageY =
+      longestFrom && longestTo
+        ? (longestFrom.y + longestTo.y) / 2
+        : Number.POSITIVE_INFINITY;
+
+    if (
+      length > longestEdgeLength ||
+      (length === longestEdgeLength && averageY < longestAverageY)
+    ) {
       longestEdgeLength = length;
       longestEdgeIndex = i;
     }
@@ -165,6 +184,28 @@ export function getGrassEdgeIndices(vertices: Array<{ x: number; y: number }>) {
   return [...Array(vertexCount).keys()].filter(
     (index) => index !== longestEdgeIndex,
   );
+}
+
+function getLineGrassEdgeIndices(vertices: Array<{ x: number; y: number }>) {
+  const vertexCount = vertices.length;
+  if (vertexCount < 3) return null;
+
+  const last = vertices[vertexCount - 1]!;
+  const previous = vertices[vertexCount - 2]!;
+  if (!pointsEqual(last, previous)) return null;
+
+  const edgeIndices = [];
+  for (let index = 0; index < vertexCount - 2; index += 1) {
+    const from = vertices[index]!;
+    const to = vertices[index + 1]!;
+    if (!pointsEqual(from, to)) edgeIndices.push(index);
+  }
+
+  return edgeIndices.length > 0 ? edgeIndices : null;
+}
+
+function pointsEqual(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return a.x === b.x && a.y === b.y;
 }
 
 export function getGrassFillQuads({

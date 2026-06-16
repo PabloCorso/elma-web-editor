@@ -49,6 +49,7 @@ export class WebGLShapeDrawer {
     corners: [number, number, number, number, number, number, number, number],
     color: string,
     scene: WorldRenderScene,
+    opacity = 1,
   ) {
     const [x0, y0, x1, y1, x2, y2, x3, y3] = corners;
     this.drawSolidVertices(
@@ -78,7 +79,7 @@ export class WebGLShapeDrawer {
         0,
         0,
       ],
-      [...hexToRgb(color), 1],
+      [...hexToRgb(color), opacity],
       scene,
     );
   }

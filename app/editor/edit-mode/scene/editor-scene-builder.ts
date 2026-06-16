@@ -13,12 +13,20 @@ import {
 } from "./editor-scene";
 import { DEFAULT_OBJECT_RENDER_DISTANCE } from "~/editor/render/render-constants";
 import type { WorldRect } from "~/editor/render/world-geometry";
+import type { WorldPoint } from "~/editor/render/world-scene";
 import {
   getCachedPolygonDerivedData,
   isPictureVisible,
   isPointVisible,
   isPolygonVisible,
 } from "~/editor/render/world-derived-data-cache";
+
+type ScenePolygon = {
+  vertices: WorldPoint[];
+  grass?: boolean;
+  grassDepth?: number;
+  opacity?: number;
+};
 
 const DEFAULT_DISTANCE_AND_CLIP = {
   distance: DEFAULT_OBJECT_RENDER_DISTANCE,
@@ -78,6 +86,8 @@ export function buildEditorWorldScene({
           vertices: polygon.vertices,
           isGrass: Boolean(polygon.grass),
           grassEdgeIndices,
+          grassDepth: polygon.grassDepth,
+          opacity: polygon.opacity,
         };
       }),
     drawItems: getDrawItemQueue(state, viewportRect, resolvePictureDimensions),
@@ -285,9 +295,13 @@ function getDrawItemQueue(
 
 function getScenePolygons(state: EditorState) {
   const activeTool = state.actions.getActiveTool();
-  const draftPolygons = activeTool?.getDrafts?.()?.polygons || [];
+  const draftPolygons: ScenePolygon[] =
+    activeTool?.getDrafts?.()?.polygons?.map((polygon) => ({
+      ...polygon,
+      opacity: DRAFT_PREVIEW_OPACITY,
+    })) || [];
   const vertexToolState = state.actions.getToolState<VertexToolState>("vertex");
-  const scenePolygons = vertexToolState?.editingPolygon
+  const scenePolygons: ScenePolygon[] = vertexToolState?.editingPolygon
     ? state.polygons.filter(
         (polygon) => polygon !== vertexToolState.editingPolygon,
       )

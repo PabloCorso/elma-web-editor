@@ -17,6 +17,7 @@ import {
   defaultPlaySettings,
   DEFAULT_PLAY_MODE_ZOOM,
 } from "./play-mode/play-settings";
+import { defaultAutoGrassOptions } from "./helpers/auto-grass";
 import type { Position } from "./elma-types";
 import type { SelectToolState } from "./edit-mode/tools/select-tool";
 import type {
@@ -394,6 +395,8 @@ export function createEditorStore({
         vertexEdgeClickBehavior:
           initialPreferences?.vertexEdgeClickBehavior ??
           ("default" as VertexEdgeClickBehavior),
+        autoGrassOptions:
+          initialPreferences?.autoGrassOptions ?? defaultAutoGrassOptions,
         isUIVisible: initialPreferences?.isUIVisible ?? true,
         isPlayMode: false,
         playModeSeedKeys: [],
@@ -586,6 +589,11 @@ export function createEditorStore({
 
           setVertexEdgeClickBehavior: (vertexEdgeClickBehavior) =>
             set({ vertexEdgeClickBehavior }),
+
+          setAutoGrassOptions: (options) =>
+            set((state) => ({
+              autoGrassOptions: { ...state.autoGrassOptions, ...options },
+            })),
 
           toggleLevelVisibility: (key) =>
             set((state) => ({

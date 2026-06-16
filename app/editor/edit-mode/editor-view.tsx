@@ -9,16 +9,22 @@ import { KillerTool } from "~/editor/edit-mode/tools/killer-tool";
 import { FlowerTool } from "~/editor/edit-mode/tools/flower-tool";
 import { AIWidget } from "~/editor/edit-mode/widgets/ai-widget";
 import { useLgrAssets } from "~/components/use-lgr-assets";
-import { getBuiltinLevel } from "~/editor/helpers/level-parser";
+import {
+  editorLevelFromFile,
+  getBuiltinLevel,
+  getDefaultLevel,
+} from "~/editor/helpers/level-parser";
 import { PictureTool } from "~/editor/edit-mode/tools/picture-tool";
 import { HandTool } from "~/editor/edit-mode/tools/hand-tool";
 import { TextureTool } from "~/editor/edit-mode/tools/texture-tool";
 import { cn } from "~/utils/misc";
 import type { EditorLevel } from "~/editor/elma-types";
 import type { EditorDocumentInput } from "~/editor/editor-state";
-import { getDefaultLevel } from "~/editor/helpers/level-parser";
 import type { WorldSceneRendererBackend } from "~/editor/render/world-scene-renderer";
-import { useDefaultLevelPreset } from "~/editor/edit-mode/default-level-preset";
+import {
+  useCustomDefaultLevelTemplate,
+  useDefaultLevelPreset,
+} from "~/editor/edit-mode/default-level-preset";
 
 type EditorViewProps = React.ComponentPropsWithRef<"canvas"> & {};
 
@@ -182,35 +188,92 @@ type InitialDocument = {
 // TODO: should this move to FileSession or EditorStore?
 export function useInitialLevel(levelName?: string): InitialDocument {
   const [data, setData] = useState<EditorLevel | undefined>(undefined);
-  const [status, setStatus] = useState<"loading" | "done" | "error">(
-    levelName ? "loading" : "done",
-  );
+  const [fileName, setFileName] = useState<string | undefined>(undefined);
+  const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
+  const store = useEditorStore();
   const defaultLevelPreset = useDefaultLevelPreset();
+  const customDefaultLevelTemplate = useCustomDefaultLevelTemplate();
   const [initialDefaultLevelPreset] = useState(defaultLevelPreset);
+  const [initialCustomDefaultLevelTemplate] = useState(
+    customDefaultLevelTemplate,
+  );
 
-  useEffect(() => {
-    async function loadInitialLevel() {
-      if (!levelName) return {};
-      try {
-        const level = await getBuiltinLevel(`${levelName}.lev`);
-        setData(level ?? undefined);
-        setStatus(level ? "done" : "error");
-      } catch (error) {
-        console.error("Error loading initial level:", error);
-        setData(undefined);
-        setStatus("error");
+  useEffect(
+    function loadInitialLevel() {
+      let isCanceled = false;
+
+      async function loadInitialLevelDocument() {
+        try {
+          if (levelName) {
+            const level = await getBuiltinLevel(`${levelName}.lev`);
+            if (isCanceled) return;
+
+            setData(level ?? undefined);
+            setFileName(undefined);
+            setStatus(level ? "done" : "error");
+            return;
+          }
+
+          const openResult = await store.getState().fileSession.openLast();
+          if (!openResult) {
+            if (isCanceled) return;
+
+            setData(undefined);
+            setFileName(undefined);
+            setStatus("done");
+            return;
+          }
+
+          const nextFileName = openResult.fileName.endsWith(".lev")
+            ? openResult.fileName
+            : `${openResult.fileName}.lev`;
+          const file = new File(
+            [new Uint8Array(openResult.contents)],
+            nextFileName,
+          );
+          const level = await editorLevelFromFile(file);
+          if (isCanceled) return;
+
+          setData(level);
+          setFileName(nextFileName);
+          setStatus("done");
+        } catch (error) {
+          console.error("Error loading initial level:", error);
+          if (isCanceled) return;
+
+          setData(undefined);
+          setFileName(undefined);
+          setStatus("error");
+        }
       }
-    }
 
-    loadInitialLevel();
-  }, [levelName]);
+      void loadInitialLevelDocument();
+
+      return function cancelInitialLevelLoad() {
+        isCanceled = true;
+      };
+    },
+    [levelName, store],
+  );
 
   const document = React.useMemo<EditorDocumentInput | undefined>(() => {
     if (status === "loading") return undefined;
 
+    if (!levelName && data && fileName) {
+      return {
+        level: data,
+        origin: { kind: "file", label: "File", canOverwrite: true },
+        displayName: fileName,
+        hasExternalHandle: true,
+      };
+    }
+
     if (!levelName || !data) {
       return {
-        level: getDefaultLevel(initialDefaultLevelPreset),
+        level: getDefaultLevel(
+          initialDefaultLevelPreset,
+          initialCustomDefaultLevelTemplate,
+        ),
         origin: { kind: "default", label: "Untitled", canOverwrite: false },
         displayName: "Untitled",
         hasExternalHandle: false,
@@ -223,7 +286,14 @@ export function useInitialLevel(levelName?: string): InitialDocument {
       displayName: data.levelName || levelName,
       hasExternalHandle: false,
     };
-  }, [data, initialDefaultLevelPreset, levelName, status]);
+  }, [
+    data,
+    fileName,
+    initialCustomDefaultLevelTemplate,
+    initialDefaultLevelPreset,
+    levelName,
+    status,
+  ]);
 
   return React.useMemo(() => ({ document, status }), [document, status]);
 }
