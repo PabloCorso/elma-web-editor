@@ -494,7 +494,10 @@ export function PlayModeOverlay({
         });
         updatePlayTimeText(formatTime(getTimeCentiseconds(gameState)));
         renderer.render(gameState, {
-          visibility: store.getState().levelVisibility,
+          visibility: {
+            ...store.getState().levelVisibility,
+            showGrassBounds: false,
+          },
         });
 
         if (gameState.result === "escaped") {
