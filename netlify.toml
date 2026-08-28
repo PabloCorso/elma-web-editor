@@ -4,3 +4,32 @@ publish = "build/client"
 
 [dev]
 command = "react-router dev"
+
+# Vite includes a content hash in imported asset filenames. Cache these in the
+# browser for a year: a changed file receives a new URL on the next deploy.
+# Built-in levels under /assets/lev keep stable filenames and are intentionally
+# excluded so users do not retain an outdated level after a deploy.
+[[headers]]
+for = "/assets/*.js"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/assets/*.css"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/assets/*.webp"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/assets/*.png"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/assets/*.lgr"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
