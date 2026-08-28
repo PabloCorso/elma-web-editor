@@ -38,7 +38,8 @@ export class LgrAssets {
   }
 
   private async loadDefaultLgr() {
-    const buf = await fetch(defaultLgr).then((r) => r.arrayBuffer());
+    const response = await fetch(defaultLgr);
+    const buf = await response.arrayBuffer();
     await this.loadFromBytes(buf);
   }
 

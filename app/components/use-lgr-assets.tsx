@@ -36,7 +36,9 @@ type LgrContextType = {
 const LgrContext = createContext<LgrContextType | null>(null);
 
 export function LgrAssetsProvider({ children }: { children: React.ReactNode }) {
-  const [lgrLoader, setLgrLoader] = useState<LgrAssets | null>(null);
+  // Create the default loader during render so consumers, including the editor
+  // engine, share its in-flight load rather than each starting their own.
+  const [lgrLoader, setLgrLoader] = useState<LgrAssets>(() => new LgrAssets());
   const [currentLgrData, setCurrentLgrData] = useState<ArrayBuffer | null>(
     null,
   );
@@ -44,10 +46,11 @@ export function LgrAssetsProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const lgrRequestIdRef = useRef(0);
+  const initialLgrLoaderRef = useRef(lgrLoader);
 
   useEffect(function kickOffLgrLoading() {
     let cancelled = false;
-    let lgr = new LgrAssets();
+    let lgr = initialLgrLoaderRef.current;
     let activated = false;
 
     async function loadInitialLgr() {
@@ -59,7 +62,6 @@ export function LgrAssetsProvider({ children }: { children: React.ReactNode }) {
 
         if (cancelled) return;
         activated = true;
-        setLgrLoader(lgr);
         setIsLoaded(true);
         setError(undefined);
       } catch (loadError) {

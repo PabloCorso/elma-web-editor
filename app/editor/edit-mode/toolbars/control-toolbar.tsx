@@ -11,7 +11,7 @@ import {
   ToolbarSeparator,
   type ToolbarProps,
 } from "~/components/ui/toolbar";
-import { useLgrSprite } from "~/components/use-lgr-assets";
+import { useLgrAssets, useLgrSprite } from "~/components/use-lgr-assets";
 import { AppleToolControl } from "./apple-tool-control";
 import { PictureToolControl } from "./picture-tool-control";
 import { TextureToolControl } from "./texture-tool-control";
@@ -19,6 +19,14 @@ import { VertexToolControl } from "./vertex-tool-control";
 import { cn } from "~/utils/misc";
 import { SelectToolControl } from "./select-tool-control";
 import { useEditorRegisteredTools } from "~/editor/use-editor-store";
+
+const SPRITE_TOOL_IDS = new Set<string>([
+  defaultTools.apple.id,
+  defaultTools.killer.id,
+  defaultTools.flower.id,
+  defaultTools.picture.id,
+  defaultTools.texture.id,
+]);
 
 type ControlToolbarProps = ToolbarProps & {
   isOpenAIEnabled?: boolean;
@@ -30,6 +38,7 @@ export function ControlToolbar({
   ...props
 }: ControlToolbarProps) {
   const toolMetas = useEditorRegisteredTools();
+  const { isLoaded: areSpritesReady } = useLgrAssets();
   const orderedTools = sortToolMetas(
     toolMetas.length > 0 ? toolMetas : Object.values(defaultTools),
   );
@@ -63,6 +72,7 @@ export function ControlToolbar({
             key={tool.id}
             meta={tool}
             tooltipSide="right"
+            disabled={SPRITE_TOOL_IDS.has(tool.id) && !areSpritesReady}
           />
         ))}
 
@@ -73,6 +83,7 @@ export function ControlToolbar({
             key={tool.id}
             meta={tool}
             tooltipSide="right"
+            disabled={SPRITE_TOOL_IDS.has(tool.id) && !areSpritesReady}
           />
         ))}
         {isOpenAIEnabled && <AIChatToolControl tooltipSide="right" />}

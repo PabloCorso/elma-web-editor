@@ -75,6 +75,7 @@ export function LevelPropertiesControl() {
                 aria-label="Level properties"
                 aria-expanded={open}
                 className={cn({ "animate-pulse": isLoading })}
+                disabled={isLoading}
               >
                 <LevelTextureIcon skySrc={skySrc} groundSrc={groundSrc} />
               </ToolbarButton>
