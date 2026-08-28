@@ -32,6 +32,7 @@ Planned features and feedback for Bear Editor.
   - Automatic or action to fix issue when possible
 
 - Faster loads
+  - Investigate making `elmajs` tree-shakeable (it currently enters the client bundle through its CommonJS barrel, bringing unused package areas with it).
 
 ## Other
 
