@@ -38,10 +38,10 @@ export function ToolControlButton({
       className={cn(
         {
           "bg-primary-hover/50": isActive,
-          "animate-pulse bg-primary": isLoading,
         },
         className,
       )}
+      isLoading={isLoading}
       onClick={(event) => {
         if (id) activateTool(id);
         onClick?.(event);

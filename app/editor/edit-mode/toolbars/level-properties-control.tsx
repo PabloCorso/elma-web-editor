@@ -74,7 +74,7 @@ export function LevelPropertiesControl() {
               <ToolbarButton
                 aria-label="Level properties"
                 aria-expanded={open}
-                className={cn({ "animate-pulse": isLoading })}
+                isLoading={isLoading}
                 disabled={isLoading}
               >
                 <LevelTextureIcon skySrc={skySrc} groundSrc={groundSrc} />
@@ -133,6 +133,10 @@ function LevelTextureIcon({
   skySrc?: string;
   groundSrc?: string;
 }) {
+  if (!skySrc || !groundSrc) {
+    return <span aria-hidden="true" className="h-6 w-6" />;
+  }
+
   return (
     <span className="relative h-6 w-6 overflow-hidden rounded-sm bg-screen">
       <PictureIcon

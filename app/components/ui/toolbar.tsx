@@ -37,11 +37,21 @@ export function Toolbar({
   );
 }
 
-type ToolbarButtonProps = ButtonProps;
+type ToolbarButtonProps = ButtonProps & { isLoading?: boolean };
 
-export function ToolbarButton({ children, ...props }: ToolbarButtonProps) {
+export function ToolbarButton({
+  children,
+  className,
+  isLoading,
+  ...props
+}: ToolbarButtonProps) {
   return (
-    <IconButton type="button" iconSize="lg" {...props}>
+    <IconButton
+      type="button"
+      iconSize="lg"
+      className={cn(isLoading && "animate-pulse bg-primary", className)}
+      {...props}
+    >
       {children}
     </IconButton>
   );

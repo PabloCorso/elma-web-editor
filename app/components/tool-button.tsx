@@ -11,12 +11,14 @@ export type ToolButtonProps = ButtonProps & {
   name?: string;
   shortcut?: string;
   tooltipSide?: TooltipContentProps["side"];
+  isLoading?: boolean;
 };
 
 export function ToolButton({
   name,
   shortcut,
   tooltipSide,
+  isLoading,
   children,
   ...props
 }: ToolButtonProps) {
@@ -25,6 +27,7 @@ export function ToolButton({
       <TooltipTrigger>
         <ToolbarButton
           aria-label={`${name}${shortcut ? ` (${shortcut})` : ""}`}
+          isLoading={isLoading}
           {...props}
         >
           {children}

@@ -39,6 +39,7 @@ const HEADER_DROPDOWN_COLLISION_PADDING = 16;
 export function LevelVisibilityControl() {
   const levelVisibility = useEditor((state) => state.levelVisibility);
   const { toggleLevelVisibility, resetLevelVisibility } = useEditorActions();
+  const { isLoaded: areSpritesReady } = useLgrAssets();
 
   return (
     <DropdownMenu modal={false}>
@@ -48,6 +49,8 @@ export function LevelVisibilityControl() {
             <ToolbarButton
               aria-label="Visibility options"
               className="gap-1 p-2"
+              isLoading={!areSpritesReady}
+              disabled={!areSpritesReady}
               iconOnly={false}
               iconBefore={<GroundSkyTexturesIcon />}
               iconAfter={
