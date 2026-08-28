@@ -393,15 +393,20 @@ function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <ToolbarButton
-            className="relative w-14 gap-0"
-            aria-label="Bear Level Editor"
-          >
-            <Logo className="isolate h-8 w-8" />
-            <Icon size="xs">
-              <CaretDownIcon />
-            </Icon>
-          </ToolbarButton>
+          <Tooltip>
+            <TooltipTrigger>
+              <ToolbarButton
+                className="relative w-14 gap-0"
+                aria-label="Main menu"
+              >
+                <Logo className="isolate h-8 w-8" />
+                <Icon size="xs">
+                  <CaretDownIcon />
+                </Icon>
+              </ToolbarButton>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Main menu</TooltipContent>
+          </Tooltip>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           collisionPadding={HEADER_DROPDOWN_COLLISION_PADDING}
