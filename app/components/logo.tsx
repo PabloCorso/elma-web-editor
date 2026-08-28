@@ -1,5 +1,5 @@
 import { cn } from "~/utils/misc";
-import logo from "~/assets/bear-helmet.png";
+import logo from "~/assets/bear-helmet-96.webp";
 
 export function Logo({
   className,
