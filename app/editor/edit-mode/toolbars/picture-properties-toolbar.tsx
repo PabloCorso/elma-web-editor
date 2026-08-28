@@ -148,9 +148,7 @@ export function PicturePropertiesToolbar({
                     <ArrowCounterClockwiseIcon aria-hidden="true" />
                   </IconButton>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="z-[70] px-2 py-1 text-xs">
-                  Reset defaults
-                </TooltipContent>
+                <TooltipContent side="top">Reset defaults</TooltipContent>
               </Tooltip>
             ) : null}
             <Tooltip>
@@ -167,9 +165,7 @@ export function PicturePropertiesToolbar({
                   </IconButton>
                 </PopoverClose>
               </TooltipTrigger>
-              <TooltipContent side="top" className="z-[70] px-2 py-1 text-xs">
-                Close
-              </TooltipContent>
+              <TooltipContent side="top">Close</TooltipContent>
             </Tooltip>
           </div>
           <Toolbar
@@ -394,9 +390,7 @@ function ClipButton({
   return (
     <Tooltip>
       <TooltipTrigger>{button}</TooltipTrigger>
-      <TooltipContent side="top" className="z-[70] px-2 py-1 text-xs">
-        {title}
-      </TooltipContent>
+      <TooltipContent side="top">{title}</TooltipContent>
     </Tooltip>
   );
 }

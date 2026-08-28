@@ -213,9 +213,7 @@ function AutoGrassSettingsTrigger({
                 </IconButton>
               </PopoverClose>
             </TooltipTrigger>
-            <TooltipContent side="top" className="z-[70] px-2 py-1 text-xs">
-              Close
-            </TooltipContent>
+            <TooltipContent side="top">Close</TooltipContent>
           </Tooltip>
         </div>
         <AutoGrassOptionsControl options={options} onChange={onChange} />

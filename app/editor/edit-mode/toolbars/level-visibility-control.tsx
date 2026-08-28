@@ -61,9 +61,7 @@ export function LevelVisibilityControl() {
             />
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">
-          Visibility options
-        </TooltipContent>
+        <TooltipContent side="bottom">Visibility options</TooltipContent>
       </Tooltip>
       <DropdownMenuContent
         className="min-w-56"

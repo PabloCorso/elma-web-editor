@@ -81,9 +81,7 @@ export function LevelPropertiesControl() {
               </ToolbarButton>
             </FloatingToolbarTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            Level properties
-          </TooltipContent>
+          <TooltipContent side="bottom">Level properties</TooltipContent>
         </Tooltip>
       </FloatingToolbarAnchor>
       <FloatingToolbarContent side="bottom" align="center">
@@ -196,9 +194,7 @@ function TexturePickerRow({
                   />
                 </IconButton>
               </TooltipTrigger>
-              <TooltipContent side={tooltipSide} className="text-xs">
-                {textureName}
-              </TooltipContent>
+              <TooltipContent side={tooltipSide}>{textureName}</TooltipContent>
             </Tooltip>
           );
         })}

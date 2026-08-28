@@ -42,7 +42,7 @@ export function TooltipContent({
       >
         <TooltipPrimitive.Popup
           className={cn(
-            "z-50 overflow-hidden rounded-md border border-default bg-screen px-3 py-1.5 text-sm shadow-md",
+            "z-50 overflow-hidden rounded-md border border-default bg-screen px-2.5 py-1.5 text-sm shadow-md",
             className,
           )}
         >

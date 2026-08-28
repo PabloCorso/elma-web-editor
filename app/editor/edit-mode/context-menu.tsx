@@ -510,10 +510,7 @@ function SelectionGroupsMenu({
                       </Icon>
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="z-[70] px-2 py-1 text-xs"
-                  >
+                  <TooltipContent side="right">
                     {quickFilterLabel}
                   </TooltipContent>
                 </Tooltip>

@@ -62,6 +62,11 @@ import type { SelectToolState } from "~/editor/edit-mode/tools/select-tool";
 import { focusPositionsInView } from "~/editor/helpers/camera-helpers";
 import { Logo } from "~/components/logo";
 import { ToolButton } from "./tool";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip.js";
 
 const ISSUE_FOCUS_MIN_ZOOM = 0.2;
 const ISSUE_FOCUS_MAX_ZOOM = 10000;
@@ -472,14 +477,20 @@ function TopologyCheck({
 }) {
   const handleCheckTopology = useTopologyCheckAction(setTopologyResult);
   return (
-    <ToolbarButton
-      onClick={handleCheckTopology}
-      disabled={isLoading || props.disabled}
-      className={cn({ "animate-pulse": isLoading }, className)}
-      {...props}
-    >
-      <CheckIcon className={cn({ invisible: isLoading })} />
-    </ToolbarButton>
+    <Tooltip>
+      <TooltipTrigger>
+        <ToolbarButton
+          aria-label="Topology check"
+          onClick={handleCheckTopology}
+          disabled={isLoading || props.disabled}
+          className={cn({ "animate-pulse": isLoading }, className)}
+          {...props}
+        >
+          <CheckIcon className={cn({ invisible: isLoading })} />
+        </ToolbarButton>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">Typology check</TooltipContent>
+    </Tooltip>
   );
 }
 

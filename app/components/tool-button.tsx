@@ -33,10 +33,7 @@ export function ToolButton({
           {children}
         </ToolbarButton>
       </TooltipTrigger>
-      <TooltipContent
-        side={tooltipSide}
-        className="flex items-center gap-2 text-xs"
-      >
+      <TooltipContent side={tooltipSide} className="flex items-center gap-2">
         {name}
         {shortcut && <span className="text-secondary">{shortcut}</span>}
       </TooltipContent>
