@@ -4,6 +4,22 @@
 
 @source "../node_modules/streamdown/dist/index.js";
 
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-italic.woff2") format("woff2");
+}
+
 :root {
   color-scheme: dark;
 
@@ -27,14 +43,11 @@
 
 @layer theme {
   @theme {
-    --font-sans: InterVariable, sans-serif;
+    --font-sans: Inter, sans-serif;
     --font-sans--font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   @theme inline {
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-
     --color-ground: var(--ground);
 
     --text-color-primary: var(--text-primary);
