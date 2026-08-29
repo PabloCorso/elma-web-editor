@@ -392,9 +392,9 @@ function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger>
-          <Tooltip>
-            <TooltipTrigger>
+        <Tooltip>
+          <TooltipTrigger>
+            <DropdownMenuTrigger>
               <ToolbarButton
                 className="relative w-14 gap-0"
                 aria-label="Main menu"
@@ -404,10 +404,10 @@ function MainDropdownMenu({ onOpenSettings }: { onOpenSettings: () => void }) {
                   <CaretDownIcon />
                 </Icon>
               </ToolbarButton>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Main menu</TooltipContent>
-          </Tooltip>
-        </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Main menu</TooltipContent>
+        </Tooltip>
         <DropdownMenuContent
           collisionPadding={HEADER_DROPDOWN_COLLISION_PADDING}
         >
